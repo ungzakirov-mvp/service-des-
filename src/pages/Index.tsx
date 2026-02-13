@@ -1,12 +1,41 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import Navbar from "@/components/Navbar";
+import Hero from "@/components/Hero";
+import TrustIndicators from "@/components/TrustIndicators";
+import Services from "@/components/Services";
+import About from "@/components/About";
+import Workflow from "@/components/Workflow";
+import FAQ from "@/components/FAQ";
+import ContactForm from "@/components/ContactForm";
+import Footer from "@/components/Footer";
+import { useEffect } from "react";
 
 const Index = () => {
+  useEffect(() => {
+    document.title = "Novum Tech — IT-аутсорсинг для бизнеса в Ташкенте";
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) {
+      meta.setAttribute("content", "Novum Tech — IT-аутсорсинг в Ташкенте. Серверы, безопасность, поддержка рабочих станций. SLA 99.9%, реакция до 30 минут.");
+    } else {
+      const m = document.createElement("meta");
+      m.name = "description";
+      m.content = "Novum Tech — IT-аутсорсинг в Ташкенте. Серверы, безопасность, поддержка рабочих станций. SLA 99.9%, реакция до 30 минут.";
+      document.head.appendChild(m);
+    }
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <main>
+        <Hero />
+        <TrustIndicators />
+        <Services />
+        <About />
+        <Workflow />
+        <FAQ />
+        <ContactForm />
+      </main>
+      <Footer />
     </div>
   );
 };
