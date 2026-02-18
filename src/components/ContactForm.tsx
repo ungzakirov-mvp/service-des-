@@ -3,6 +3,7 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,9 +14,18 @@ interface FormData {
   email: string;
   phone: string;
   message: string;
+  selected_plan: string;
 }
 
-const initialForm: FormData = { name: "", company: "", email: "", phone: "", message: "" };
+const initialForm: FormData = { name: "", company: "", email: "", phone: "", message: "", selected_plan: "" };
+
+const PLANS = [
+  { value: "MICRO", label: "MICRO — до 5 ПК (4 500 000 сум)" },
+  { value: "START", label: "START — до 20 ПК (9 000 000 сум)" },
+  { value: "BUSINESS", label: "BUSINESS — до 40 ПК (14 000 000 сум)" },
+  { value: "ENTERPRISE", label: "ENTERPRISE — до 60 ПК (21 000 000 сум)" },
+  { value: "PRO DIRECTION", label: "PRO DIRECTION — инженер в офисе (от 30 000 000 сум)" },
+];
 
 const formatPhone = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -52,6 +62,11 @@ const ContactForm = () => {
     if (!validate()) return;
     setSubmitting(true);
 
+    const planInfo = form.selected_plan
+      ? `\nИнтересующий тариф: ${form.selected_plan}`
+      : "";
+    const fullMessage = (form.message.trim() + planInfo).trim() || undefined;
+
     try {
       const { data, error } = await supabase.functions.invoke("submit-contact", {
         body: {
@@ -59,7 +74,7 @@ const ContactForm = () => {
           company: form.company.trim(),
           email: form.email.trim(),
           phone: form.phone.trim(),
-          message: form.message.trim() || undefined,
+          message: fullMessage,
           honeypot,
         },
       });
@@ -82,6 +97,8 @@ const ContactForm = () => {
     setForm((p) => ({ ...p, [key]: val }));
     if (errors[key]) setErrors((p) => ({ ...p, [key]: undefined }));
   };
+
+  const selectedPlanLabel = PLANS.find((p) => p.value === form.selected_plan)?.label;
 
   return (
     <section id="contact" className="py-20 md:py-28">
@@ -109,6 +126,7 @@ const ContactForm = () => {
               {errors.company && <p className="text-xs text-destructive mt-1">{errors.company}</p>}
             </div>
           </div>
+
           <div className="grid sm:grid-cols-2 gap-5">
             <div>
               <label className="text-sm font-medium mb-1.5 block">Email *</label>
@@ -126,10 +144,44 @@ const ContactForm = () => {
               {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
             </div>
           </div>
+
+          {/* Tariff select */}
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Интересующий тарифный план</label>
+            <Select value={form.selected_plan} onValueChange={(val) => set("selected_plan", val)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Не выбрано" />
+              </SelectTrigger>
+              <SelectContent>
+                {PLANS.map((plan) => (
+                  <SelectItem key={plan.value} value={plan.value}>
+                    {plan.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
+              Вы можете выбрать тариф предварительно или оставить пустым для получения рекомендации после IT-аудита
+            </p>
+
+            {/* Selected plan confirmation */}
+            {form.selected_plan && selectedPlanLabel && (
+              <div className="mt-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 transition-all duration-300 animate-in fade-in slide-in-from-top-1">
+                <p className="text-sm font-medium text-primary">
+                  Вы выбрали тариф: {form.selected_plan}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Наш специалист подготовит персональное предложение
+                </p>
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="text-sm font-medium mb-1.5 block">Комментарий</label>
             <Textarea value={form.message} onChange={(e) => set("message", e.target.value)} placeholder="Опишите вашу задачу или вопрос..." rows={4} maxLength={2000} />
           </div>
+
           <Button type="submit" size="lg" className="w-full py-6" disabled={submitting}>
             {submitting ? "Отправка..." : "Отправить заявку"}
             {!submitting && <Send className="ml-2" size={18} />}
