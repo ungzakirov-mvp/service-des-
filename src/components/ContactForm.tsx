@@ -24,7 +24,7 @@ const PLANS = [
   { value: "START", label: "START — до 20 ПК (9 000 000 сум)" },
   { value: "BUSINESS", label: "BUSINESS — до 40 ПК (14 000 000 сум)" },
   { value: "ENTERPRISE", label: "ENTERPRISE — до 60 ПК (21 000 000 сум)" },
-  { value: "PRO DIRECTION", label: "PRO DIRECTION — инженер в офисе (от 30 000 000 сум)" },
+  { value: "PRO", label: "PRO — инженер в офисе, до 75 ПК (от 45 000 000 сум)" },
 ];
 
 const formatPhone = (value: string): string => {

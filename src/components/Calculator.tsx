@@ -22,7 +22,7 @@ type Priority = "standard" | "high" | "max";
 const STAFF_COST = 18_000_000;
 
 function calcPlan(pcs: number, engineer: boolean): { name: string; price: number; priceLabel: string } {
-  if (engineer) return { name: "PRO DIRECTION", price: 30_000_000, priceLabel: "от 30 000 000 сум / мес" };
+  if (engineer) return { name: "PRO", price: 45_000_000, priceLabel: "от 45 000 000 сум / мес" };
   if (pcs <= 5) return { name: "MICRO", price: 4_500_000, priceLabel: "4 500 000 сум / мес" };
   if (pcs <= 20) return { name: "START", price: 9_000_000, priceLabel: "9 000 000 сум / мес" };
   if (pcs <= 40) return { name: "BUSINESS", price: 14_000_000, priceLabel: "14 000 000 сум / мес" };

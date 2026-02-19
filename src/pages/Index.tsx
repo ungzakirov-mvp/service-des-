@@ -4,6 +4,7 @@ import TrustIndicators from "@/components/TrustIndicators";
 import Services from "@/components/Services";
 import Pricing from "@/components/Pricing";
 import Calculator from "@/components/Calculator";
+import TariffBuilder from "@/components/TariffBuilder";
 import About from "@/components/About";
 import Workflow from "@/components/Workflow";
 import FAQ from "@/components/FAQ";
@@ -34,6 +35,7 @@ const Index = () => {
         <Services />
         <Pricing />
         <Calculator />
+        <TariffBuilder />
         <About />
         <Workflow />
         <FAQ />
