@@ -58,9 +58,10 @@ const ContactForm = () => {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+ const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   if (!validate()) return;
+
   setSubmitting(true);
 
   try {
@@ -80,6 +81,20 @@ const ContactForm = () => {
         honeypot,
       }),
     });
+
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error((data as any)?.error || "Ошибка отправки");
+
+    toast({ title: t("contact.success"), description: t("contact.success_desc") });
+    setForm(initialForm);
+    setErrors({});
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : t("contact.error");
+    toast({ title: t("contact.error"), description: msg, variant: "destructive" });
+  } finally {
+    setSubmitting(false);
+  }
+};
 
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) throw new Error(data?.error || "Ошибка отправки");
