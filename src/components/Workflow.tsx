@@ -1,23 +1,23 @@
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
-
-const steps = [
-  { num: "01", title: "Экспресс-аудит IT", desc: "Анализируем текущую инфраструктуру, выявляем узкие места и риски" },
-  { num: "02", title: "Формируем предложение", desc: "Составляем план обслуживания и прозрачную смету под ваши задачи" },
-  { num: "03", title: "Подключаем и настраиваем", desc: "Внедряем решения, настраиваем мониторинг и резервное копирование" },
-  { num: "04", title: "Поддержка и контроль", desc: "Обеспечиваем бесперебойную работу с ежемесячной отчётностью" },
-];
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const Workflow = () => {
   const ref = useScrollAnimation();
+  const { t } = useLanguage();
+
+  const steps = [
+    { num: "01", title: t("workflow.s1_title"), desc: t("workflow.s1_desc") },
+    { num: "02", title: t("workflow.s2_title"), desc: t("workflow.s2_desc") },
+    { num: "03", title: t("workflow.s3_title"), desc: t("workflow.s3_desc") },
+    { num: "04", title: t("workflow.s4_title"), desc: t("workflow.s4_desc") },
+  ];
 
   return (
     <section id="workflow" className="py-20 md:py-28">
       <div ref={ref} className="section-fade-in container mx-auto px-4 lg:px-8">
         <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Как мы работаем</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Четыре простых шага к стабильной IT-инфраструктуре
-          </p>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">{t("workflow.title")}</h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">{t("workflow.subtitle")}</p>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">

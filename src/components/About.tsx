@@ -1,30 +1,30 @@
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { CheckCircle2 } from "lucide-react";
-
-const advantages = [
-  "SLA 99.9% — гарантированная доступность инфраструктуры",
-  "Прозрачная ежемесячная отчётность по всем работам",
-  "Реакция на критические инциденты до 30 минут",
-  "Команда сертифицированных IT-специалистов",
-  "Индивидуальный подход к каждому клиенту",
-  "Масштабируемые решения под рост бизнеса",
-];
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const About = () => {
   const ref = useScrollAnimation();
+  const { t } = useLanguage();
+
+  const advantages = [
+    t("about.adv1"),
+    t("about.adv2"),
+    t("about.adv3"),
+    t("about.adv4"),
+    t("about.adv5"),
+    t("about.adv6"),
+  ];
 
   return (
     <section id="about" className="py-20 md:py-28 bg-secondary/20">
       <div ref={ref} className="section-fade-in container mx-auto px-4 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <div>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-6">О компании</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-6">{t("about.title")}</h2>
             <p className="text-muted-foreground leading-relaxed mb-4">
-              <span className="text-foreground font-semibold">Novum Tech</span> — IT-аутсорсинговая компания в Ташкенте, специализирующаяся на полном обслуживании IT-инфраструктуры для среднего бизнеса.
+              <span className="text-foreground font-semibold">Novum Tech</span> {t("about.p1")}
             </p>
-            <p className="text-muted-foreground leading-relaxed">
-              Мы берём на себя все IT-задачи, чтобы вы могли сосредоточиться на развитии бизнеса. От серверов до рабочих станций — ваша инфраструктура под надёжным контролем.
-            </p>
+            <p className="text-muted-foreground leading-relaxed">{t("about.p2")}</p>
           </div>
 
           <div className="space-y-4">

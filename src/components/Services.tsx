@@ -5,68 +5,68 @@ import {
   HardDrive, Cloud, Lock, Mail,
   Eye, Network
 } from "lucide-react";
-
-const services = [
-  {
-    icon: Server,
-    title: "Server Management",
-    subtitle: "Серверные решения",
-    desc: "Проектирование, настройка и сопровождение серверной инфраструктуры. Мониторинг 24/7, резервное копирование и отказоустойчивость.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "IT Security Audit",
-    subtitle: "Безопасность IT",
-    desc: "Комплексный аудит безопасности, выявление уязвимостей, настройка защиты данных и соответствие стандартам информационной безопасности.",
-  },
-  {
-    icon: Monitor,
-    title: "Workstation Support",
-    subtitle: "Поддержка оборудования",
-    desc: "Обслуживание и настройка рабочих станций, установка ПО, оперативное решение проблем пользователей и техническая поддержка.",
-  },
-];
-
-const licenseCategories = [
-  {
-    group: "Программное обеспечение",
-    items: [
-      { icon: KeyRound, name: "Microsoft 365, Windows Server, Azure" },
-      { icon: Mail, name: "Корпоративные почтовые решения" },
-      { icon: Cloud, name: "Облачные решения и миграция" },
-    ],
-  },
-  {
-    group: "Безопасность",
-    items: [
-      { icon: Bug, name: "ESET NOD32 и антивирусы корпоративного уровня" },
-      { icon: ShieldAlert, name: "DLP-системы и Endpoint Protection" },
-      { icon: Eye, name: "SIEM-системы мониторинга" },
-    ],
-  },
-  {
-    group: "Инфраструктура",
-    items: [
-      { icon: Flame, name: "Firewall решения и VPN" },
-      { icon: HardDrive, name: "Backup-системы и восстановление" },
-      { icon: Printer, name: "Системы безопасной печати" },
-      { icon: Network, name: "Сетевая инфраструктура" },
-    ],
-  },
-];
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const Services = () => {
   const ref = useScrollAnimation();
   const ref2 = useScrollAnimation();
+  const { t } = useLanguage();
+
+  const services = [
+    {
+      icon: Server,
+      title: t("services.server"),
+      subtitle: t("services.server_sub"),
+      desc: t("services.server_desc"),
+    },
+    {
+      icon: ShieldCheck,
+      title: t("services.security"),
+      subtitle: t("services.security_sub"),
+      desc: t("services.security_desc"),
+    },
+    {
+      icon: Monitor,
+      title: t("services.workstation"),
+      subtitle: t("services.workstation_sub"),
+      desc: t("services.workstation_desc"),
+    },
+  ];
+
+  const licenseCategories = [
+    {
+      group: t("services.software"),
+      items: [
+        { icon: KeyRound, name: t("services.ms365") },
+        { icon: Mail, name: t("services.email") },
+        { icon: Cloud, name: t("services.cloud") },
+      ],
+    },
+    {
+      group: t("services.security_cat"),
+      items: [
+        { icon: Bug, name: t("services.antivirus") },
+        { icon: ShieldAlert, name: t("services.dlp") },
+        { icon: Eye, name: t("services.siem") },
+      ],
+    },
+    {
+      group: t("services.infra"),
+      items: [
+        { icon: Flame, name: t("services.firewall") },
+        { icon: HardDrive, name: t("services.backup") },
+        { icon: Printer, name: t("services.print") },
+        { icon: Network, name: t("services.network") },
+      ],
+    },
+  ];
 
   return (
     <section id="services" className="py-20 md:py-28">
       <div ref={ref} className="section-fade-in container mx-auto px-4 lg:px-8">
         <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Наши услуги</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Комплексное IT-обслуживание для стабильной работы вашего бизнеса
-          </p>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">{t("services.title")}</h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">{t("services.subtitle")}</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
@@ -89,10 +89,8 @@ const Services = () => {
       {/* Licenses subsection */}
       <div ref={ref2} className="section-fade-in container mx-auto px-4 lg:px-8 mt-20">
         <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Продажа и интеграция лицензий</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Поставка, лицензирование и внедрение корпоративного ПО и решений безопасности
-          </p>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">{t("services.licenses_title")}</h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">{t("services.licenses_subtitle")}</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 lg:gap-8">

@@ -1,15 +1,17 @@
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { Shield, Users, Clock, BarChart3 } from "lucide-react";
-
-const items = [
-  { icon: Shield, label: "SLA 99.9%", desc: "Гарантия доступности" },
-  { icon: Users, label: "20–100 сотрудников", desc: "Идеальный масштаб" },
-  { icon: Clock, label: "Реакция до 30 мин", desc: "Оперативная поддержка" },
-  { icon: BarChart3, label: "Прозрачная отчётность", desc: "Полный контроль" },
-];
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const TrustIndicators = () => {
   const ref = useScrollAnimation();
+  const { t } = useLanguage();
+
+  const items = [
+    { icon: Shield, label: t("trust.sla"), desc: t("trust.sla_desc") },
+    { icon: Users, label: t("trust.staff"), desc: t("trust.staff_desc") },
+    { icon: Clock, label: t("trust.reaction"), desc: t("trust.reaction_desc") },
+    { icon: BarChart3, label: t("trust.report"), desc: t("trust.report_desc") },
+  ];
 
   return (
     <section id="trust" className="py-12 border-y border-border bg-secondary/30">

@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { TrendingDown, Zap, X } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const formatPhone = (value: string): string => {
   const digits = value.replace(/\D/g, "");
@@ -18,7 +19,6 @@ const formatPhone = (value: string): string => {
 };
 
 type Priority = "standard" | "high" | "max";
-
 const STAFF_COST = 18_000_000;
 
 function calcPlan(pcs: number, engineer: boolean): { name: string; price: number; priceLabel: string } {
@@ -36,13 +36,13 @@ function formatNum(n: number) {
 const Calculator = () => {
   const ref = useScrollAnimation();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const [pcs, setPcs] = useState(10);
   const [printers, setPrinters] = useState(2);
   const [engineer, setEngineer] = useState(false);
   const [priority, setPriority] = useState<Priority>("standard");
 
-  // Modal state
   const [showModal, setShowModal] = useState(false);
   const [leadName, setLeadName] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
@@ -55,7 +55,7 @@ const Calculator = () => {
   const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!leadName.trim() || !leadPhone.trim() || !leadCompany.trim()) {
-      toast({ title: "Заполните все поля", variant: "destructive" });
+      toast({ title: t("common.fill_all"), variant: "destructive" });
       return;
     }
     setSubmitting(true);
@@ -70,11 +70,11 @@ const Calculator = () => {
           honeypot: "",
         },
       });
-      toast({ title: "Заявка отправлена!", description: "Мы свяжемся с вами в ближайшее время." });
+      toast({ title: t("common.sent"), description: t("common.sent_desc") });
       setShowModal(false);
       setLeadName(""); setLeadPhone(""); setLeadCompany("");
     } catch {
-      toast({ title: "Ошибка", description: "Попробуйте ещё раз.", variant: "destructive" });
+      toast({ title: t("contact.error"), description: t("common.error_retry"), variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -83,70 +83,46 @@ const Calculator = () => {
   return (
     <section id="calculator" className="py-20 md:py-28 bg-secondary/20">
       <div ref={ref} className="section-fade-in container mx-auto px-4 lg:px-8 max-w-5xl">
-        {/* Header */}
         <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Рассчитайте стоимость IT-поддержки за 30 секунд
-          </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Получите мгновенный расчёт и рекомендуемый тариф
-          </p>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">{t("calc.title")}</h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">{t("calc.subtitle")}</p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* LEFT — controls */}
           <div className="rounded-xl border border-border bg-card p-8 space-y-8">
-
-            {/* PCs slider */}
             <div>
               <div className="flex justify-between items-center mb-3">
-                <label className="text-sm font-medium">Количество компьютеров</label>
+                <label className="text-sm font-medium">{t("calc.pcs")}</label>
                 <span className="text-primary font-bold text-lg tabular-nums">{pcs}</span>
               </div>
-              <Slider
-                min={1} max={60} step={1}
-                value={[pcs]}
-                onValueChange={([v]) => setPcs(v)}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
-                <span>1</span><span>60</span>
-              </div>
+              <Slider min={1} max={60} step={1} value={[pcs]} onValueChange={([v]) => setPcs(v)} className="w-full" />
+              <div className="flex justify-between text-xs text-muted-foreground mt-1.5"><span>1</span><span>60</span></div>
             </div>
 
-            {/* Printers slider */}
             <div>
               <div className="flex justify-between items-center mb-3">
-                <label className="text-sm font-medium">Количество принтеров</label>
+                <label className="text-sm font-medium">{t("calc.printers")}</label>
                 <span className="text-primary font-bold text-lg tabular-nums">{printers}</span>
               </div>
-              <Slider
-                min={0} max={10} step={1}
-                value={[printers]}
-                onValueChange={([v]) => setPrinters(v)}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1.5">
-                <span>0</span><span>10</span>
-              </div>
+              <Slider min={0} max={10} step={1} value={[printers]} onValueChange={([v]) => setPrinters(v)} className="w-full" />
+              <div className="flex justify-between text-xs text-muted-foreground mt-1.5"><span>0</span><span>10</span></div>
             </div>
 
-            {/* Engineer toggle */}
             <div className="flex items-center justify-between py-4 border-t border-b border-border">
               <div>
-                <div className="text-sm font-medium">Постоянный инженер</div>
-                <div className="text-xs text-muted-foreground mt-0.5">Инженер всегда в вашем офисе</div>
+                <div className="text-sm font-medium">{t("calc.engineer")}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{t("calc.engineer_desc")}</div>
               </div>
               <div className="flex items-center gap-3">
-                <span className={`text-xs ${!engineer ? "text-foreground" : "text-muted-foreground"}`}>Нет</span>
+                <span className={`text-xs ${!engineer ? "text-foreground" : "text-muted-foreground"}`}>{t("calc.no")}</span>
                 <Switch checked={engineer} onCheckedChange={setEngineer} />
-                <span className={`text-xs ${engineer ? "text-primary font-medium" : "text-muted-foreground"}`}>Да</span>
+                <span className={`text-xs ${engineer ? "text-primary font-medium" : "text-muted-foreground"}`}>{t("calc.yes")}</span>
               </div>
             </div>
 
-            {/* Priority select */}
             <div>
-              <label className="text-sm font-medium mb-3 block">Приоритет поддержки</label>
+              <label className="text-sm font-medium mb-3 block">{t("calc.priority")}</label>
               <div className="grid grid-cols-3 gap-2">
                 {(["standard", "high", "max"] as Priority[]).map((p) => (
                   <button
@@ -158,7 +134,7 @@ const Calculator = () => {
                         : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground"
                     }`}
                   >
-                    {p === "standard" ? "Стандартный" : p === "high" ? "Высокий" : "Максимальный"}
+                    {p === "standard" ? t("calc.standard") : p === "high" ? t("calc.high") : t("calc.max")}
                   </button>
                 ))}
               </div>
@@ -167,54 +143,44 @@ const Calculator = () => {
 
           {/* RIGHT — result */}
           <div className="flex flex-col gap-5">
-            {/* Result card */}
             <div className="rounded-xl border border-primary/40 bg-card p-8 flex-1">
-              <div className="text-xs font-semibold tracking-widest uppercase text-primary mb-5">
-                Результат расчёта
-              </div>
-
+              <div className="text-xs font-semibold tracking-widest uppercase text-primary mb-5">{t("calc.result")}</div>
               <div className="mb-6">
-                <div className="text-muted-foreground text-sm mb-1">Рекомендуемый тариф</div>
+                <div className="text-muted-foreground text-sm mb-1">{t("calc.recommended")}</div>
                 <div className="text-2xl font-bold text-foreground transition-all duration-300">{plan.name}</div>
               </div>
-
               <div className="h-px bg-border mb-6" />
-
               <div className="mb-6">
-                <div className="text-muted-foreground text-sm mb-1">Стоимость в месяц</div>
-                <div className="text-3xl font-bold text-primary transition-all duration-300">
-                  {plan.priceLabel}
-                </div>
+                <div className="text-muted-foreground text-sm mb-1">{t("calc.monthly")}</div>
+                <div className="text-3xl font-bold text-primary transition-all duration-300">{plan.priceLabel}</div>
               </div>
-
               {saving > 0 && (
                 <div className="rounded-lg bg-primary/10 border border-primary/20 p-4 flex items-center gap-3">
                   <TrendingDown size={20} className="text-primary shrink-0" />
                   <div>
-                    <div className="text-xs font-medium text-primary">Ваша экономия</div>
-                    <div className="text-sm font-bold text-foreground">{formatNum(saving)} сум / мес</div>
+                    <div className="text-xs font-medium text-primary">{t("calc.saving")}</div>
+                    <div className="text-sm font-bold text-foreground">{formatNum(saving)} {t("calc.per_month")}</div>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Savings info block */}
             <div className="rounded-xl border border-border bg-card p-6">
               <div className="flex items-start gap-3 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <Zap size={16} className="text-primary" />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold mb-1">Экономия</div>
+                  <div className="text-sm font-semibold mb-1">{t("calc.saving_info")}</div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Штатный IT-инженер обходится от{" "}
-                    <span className="text-foreground font-medium">18 000 000 сум в месяц</span>.
-                    Novum Tech предоставляет полноценную команду поддержки без кадровых рисков.
+                    {t("calc.saving_desc")}{" "}
+                    <span className="text-foreground font-medium">{t("calc.saving_desc2")}</span>
+                    {t("calc.saving_desc3")}
                   </p>
                 </div>
               </div>
               <Button className="w-full" onClick={() => setShowModal(true)}>
-                Получить предложение
+                {t("calc.get_offer")}
               </Button>
             </div>
           </div>
@@ -229,35 +195,27 @@ const Calculator = () => {
         >
           <div className="w-full max-w-sm rounded-xl border border-border bg-card p-7 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold">Получить предложение</h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <h3 className="text-lg font-bold">{t("calc.get_offer")}</h3>
+              <button onClick={() => setShowModal(false)} className="text-muted-foreground hover:text-foreground transition-colors">
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleLeadSubmit} className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Имя *</label>
-                <Input value={leadName} onChange={(e) => setLeadName(e.target.value)} placeholder="Ваше имя" />
+                <label className="text-sm font-medium mb-1.5 block">{t("builder.name")}</label>
+                <Input value={leadName} onChange={(e) => setLeadName(e.target.value)} placeholder={t("builder.your_name")} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Телефон *</label>
-                <Input
-                  value={leadPhone}
-                  onChange={(e) => setLeadPhone(formatPhone(e.target.value))}
-                  placeholder="+998 ..."
-                  maxLength={20}
-                />
+                <label className="text-sm font-medium mb-1.5 block">{t("builder.phone")}</label>
+                <Input value={leadPhone} onChange={(e) => setLeadPhone(formatPhone(e.target.value))} placeholder="+998 ..." maxLength={20} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Компания *</label>
-                <Input value={leadCompany} onChange={(e) => setLeadCompany(e.target.value)} placeholder="Название компании" />
+                <label className="text-sm font-medium mb-1.5 block">{t("builder.company")}</label>
+                <Input value={leadCompany} onChange={(e) => setLeadCompany(e.target.value)} placeholder={t("builder.company_name")} />
               </div>
               <Button type="submit" className="w-full mt-2" disabled={submitting}>
-                {submitting ? "Отправка..." : "Отправить"}
+                {submitting ? t("builder.sending") : t("builder.send")}
               </Button>
             </form>
           </div>
