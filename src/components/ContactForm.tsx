@@ -69,17 +69,36 @@ const ContactForm = () => {
       : "";
     const fullMessage = (form.message.trim() + planInfo).trim() || undefined;
 
-    try {
-      const { data, error } = await supabase.functions.invoke("submit-contact", {
-        body: {
-          name: form.name.trim(),
-          company: form.company.trim(),
-          email: form.email.trim(),
-          phone: form.phone.trim(),
-          message: fullMessage,
-          honeypot,
-        },
-      });
+   try {
+  const planInfo = form.selected_plan ? `\nИнтересующий тариф: ${form.selected_plan}` : "";
+  const fullMessage = (form.message.trim() + planInfo).trim();
+
+  const resp = await fetch("/api/audit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: form.name.trim(),
+      company: form.company.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      message: fullMessage,
+      selected_plan: form.selected_plan,
+      honeypot,
+    }),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(data?.error || "Ошибка отправки");
+
+  toast({ title: t("contact.success"), description: t("contact.success_desc") });
+  setForm(initialForm);
+  setErrors({});
+} catch (err: unknown) {
+  const msg = err instanceof Error ? err.message : t("contact.error");
+  toast({ title: t("contact.error"), description: msg, variant: "destructive" });
+} finally {
+  setSubmitting(false);
+}
 
       if (error) throw error;
       if (data && !data.success) throw new Error(data.error || "Error");
