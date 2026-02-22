@@ -44,15 +44,234 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_plans: {
+        Row: {
+          badge: string | null
+          computers: string
+          created_at: string
+          cta_key: string
+          extra_features: Json
+          highlight: boolean
+          id: string
+          is_active: boolean
+          name: string
+          plan_key: string
+          price: string
+          refills: string
+          service_desk_basic: boolean
+          service_desk_mobile: boolean
+          sla: string
+          sort_order: number
+          tickets: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          badge?: string | null
+          computers: string
+          created_at?: string
+          cta_key?: string
+          extra_features?: Json
+          highlight?: boolean
+          id?: string
+          is_active?: boolean
+          name: string
+          plan_key: string
+          price: string
+          refills?: string
+          service_desk_basic?: boolean
+          service_desk_mobile?: boolean
+          sla?: string
+          sort_order?: number
+          tickets?: string
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          badge?: string | null
+          computers?: string
+          created_at?: string
+          cta_key?: string
+          extra_features?: Json
+          highlight?: boolean
+          id?: string
+          is_active?: boolean
+          name?: string
+          plan_key?: string
+          price?: string
+          refills?: string
+          service_desk_basic?: boolean
+          service_desk_mobile?: boolean
+          sla?: string
+          sort_order?: number
+          tickets?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      service_categories: {
+        Row: {
+          icon: string
+          id: string
+          is_active: boolean
+          label_en: string
+          label_ru: string
+          label_uz: string
+          sort_order: number
+        }
+        Insert: {
+          icon?: string
+          id: string
+          is_active?: boolean
+          label_en?: string
+          label_ru: string
+          label_uz?: string
+          sort_order?: number
+        }
+        Update: {
+          icon?: string
+          id?: string
+          is_active?: boolean
+          label_en?: string
+          label_ru?: string
+          label_uz?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          category: string
+          category_icon: string
+          created_at: string
+          default_qty: number
+          description_en: string | null
+          description_ru: string | null
+          description_uz: string | null
+          id: string
+          is_active: boolean
+          name_en: string
+          name_ru: string
+          name_uz: string
+          price: number
+          service_key: string
+          sort_order: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          category_icon?: string
+          created_at?: string
+          default_qty?: number
+          description_en?: string | null
+          description_ru?: string | null
+          description_uz?: string | null
+          id?: string
+          is_active?: boolean
+          name_en?: string
+          name_ru: string
+          name_uz?: string
+          price?: number
+          service_key: string
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          category_icon?: string
+          created_at?: string
+          default_qty?: number
+          description_en?: string | null
+          description_ru?: string | null
+          description_uz?: string | null
+          id?: string
+          is_active?: boolean
+          name_en?: string
+          name_ru?: string
+          name_uz?: string
+          price?: number
+          service_key?: string
+          sort_order?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_visits: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          device_type: string | null
+          id: string
+          page: string
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          page?: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          page?: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -179,6 +398,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
