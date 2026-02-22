@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,11 +12,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
-type Unit = "шт." | "час" | "м.";
+type Unit = string;
 
 interface ServiceItem {
   id: string;
-  nameKey: string;
+  name_ru: string;
+  name_uz: string;
+  name_en: string;
   price: number;
   unit: Unit;
   defaultQty: number;
@@ -24,75 +26,20 @@ interface ServiceItem {
 
 interface Category {
   id: string;
-  labelKey: string;
-  icon: LucideIcon;
+  label_ru: string;
+  label_uz: string;
+  label_en: string;
+  icon: string;
   items: ServiceItem[];
 }
 
-const CATEGORIES: Category[] = [
-  {
-    id: "visit",
-    labelKey: "builder.cat_visit",
-    icon: Car,
-    items: [
-      { id: "visit_tashkent", nameKey: "item.visit_tashkent", price: 150_000, unit: "шт.", defaultQty: 1 },
-      { id: "visit_hour", nameKey: "item.visit_hour", price: 350_000, unit: "час", defaultQty: 1 },
-    ],
-  },
-  {
-    id: "pc",
-    labelKey: "builder.cat_pc",
-    icon: Monitor,
-    items: [
-      { id: "pc_windows", nameKey: "item.pc_windows", price: 250_000, unit: "шт.", defaultQty: 1 },
-      { id: "pc_virus", nameKey: "item.pc_virus", price: 150_000, unit: "шт.", defaultQty: 1 },
-      { id: "pc_restore", nameKey: "item.pc_restore", price: 200_000, unit: "шт.", defaultQty: 1 },
-      { id: "pc_backup", nameKey: "item.pc_backup", price: 170_000, unit: "шт.", defaultQty: 1 },
-    ],
-  },
-  {
-    id: "server",
-    labelKey: "builder.cat_server",
-    icon: Server,
-    items: [
-      { id: "srv_linux", nameKey: "item.srv_linux", price: 450_000, unit: "шт.", defaultQty: 1 },
-      { id: "srv_winsrv", nameKey: "item.srv_winsrv", price: 1_100_000, unit: "шт.", defaultQty: 1 },
-      { id: "srv_ad", nameKey: "item.srv_ad", price: 1_500_000, unit: "шт.", defaultQty: 1 },
-      { id: "srv_vpn", nameKey: "item.srv_vpn", price: 1_000_000, unit: "шт.", defaultQty: 1 },
-      { id: "srv_zabbix", nameKey: "item.srv_zabbix", price: 1_200_000, unit: "шт.", defaultQty: 1 },
-    ],
-  },
-  {
-    id: "network",
-    labelKey: "builder.cat_network",
-    icon: Network,
-    items: [
-      { id: "net_switch", nameKey: "item.net_switch", price: 600_000, unit: "шт.", defaultQty: 1 },
-      { id: "net_router", nameKey: "item.net_router", price: 600_000, unit: "шт.", defaultQty: 1 },
-      { id: "net_wifi", nameKey: "item.net_wifi", price: 500_000, unit: "шт.", defaultQty: 1 },
-    ],
-  },
-  {
-    id: "cabling",
-    labelKey: "builder.cat_cabling",
-    icon: Wrench,
-    items: [
-      { id: "sks_cable", nameKey: "item.sks_cable", price: 12_000, unit: "м.", defaultQty: 10 },
-      { id: "sks_socket", nameKey: "item.sks_socket", price: 80_000, unit: "шт.", defaultQty: 1 },
-      { id: "sks_rack", nameKey: "item.sks_rack", price: 2_500_000, unit: "шт.", defaultQty: 1 },
-    ],
-  },
-  {
-    id: "cctv",
-    labelKey: "builder.cat_cctv",
-    icon: Camera,
-    items: [
-      { id: "cctv_cam", nameKey: "item.cctv_cam", price: 400_000, unit: "шт.", defaultQty: 1 },
-      { id: "cctv_cam_high", nameKey: "item.cctv_cam_high", price: 600_000, unit: "шт.", defaultQty: 1 },
-      { id: "cctv_dvr", nameKey: "item.cctv_dvr", price: 650_000, unit: "шт.", defaultQty: 1 },
-    ],
-  },
-];
+const ICON_MAP: Record<string, LucideIcon> = {
+  Car, Clock, Monitor, Server, Network, Wrench, Camera,
+};
+
+function getIcon(name: string): LucideIcon {
+  return ICON_MAP[name] || Wrench;
+}
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 function formatNum(n: number) {
@@ -113,8 +60,10 @@ const formatPhone = (value: string): string => {
 const TariffBuilder = () => {
   const ref = useScrollAnimation();
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [dbLoaded, setDbLoaded] = useState(false);
   const [selected, setSelected] = useState<Record<string, number>>({});
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -123,6 +72,38 @@ const TariffBuilder = () => {
   const [leadPhone, setLeadPhone] = useState("");
   const [leadCompany, setLeadCompany] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      const [catsRes, svcsRes] = await Promise.all([
+        supabase.from("service_categories").select("*").order("sort_order"),
+        supabase.from("services").select("*").eq("is_active", true).order("sort_order"),
+      ]);
+      const cats = (catsRes.data || []) as any[];
+      const svcs = (svcsRes.data || []) as any[];
+      const mapped: Category[] = cats.map((c) => ({
+        id: c.id,
+        label_ru: c.label_ru,
+        label_uz: c.label_uz,
+        label_en: c.label_en,
+        icon: c.icon,
+        items: svcs
+          .filter((s) => s.category === c.id)
+          .map((s) => ({
+            id: s.service_key,
+            name_ru: s.name_ru,
+            name_uz: s.name_uz || s.name_ru,
+            name_en: s.name_en || s.name_ru,
+            price: Number(s.price),
+            unit: s.unit,
+            defaultQty: s.default_qty,
+          })),
+      }));
+      setCategories(mapped);
+      setDbLoaded(true);
+    };
+    load();
+  }, []);
 
   const toggleCategory = (id: string) =>
     setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -146,9 +127,21 @@ const TariffBuilder = () => {
     }
   };
 
+  const getItemName = (item: ServiceItem) => {
+    if (lang === "uz") return item.name_uz;
+    if (lang === "en") return item.name_en;
+    return item.name_ru;
+  };
+
+  const getCatLabel = (cat: Category) => {
+    if (lang === "uz") return cat.label_uz;
+    if (lang === "en") return cat.label_en;
+    return cat.label_ru;
+  };
+
   const allItems = useMemo(
-    () => CATEGORIES.flatMap((c) => c.items),
-    []
+    () => categories.flatMap((c) => c.items),
+    [categories]
   );
 
   const { total, lineItems } = useMemo(() => {
@@ -168,7 +161,7 @@ const TariffBuilder = () => {
   const buildMessage = () => {
     const lines = lineItems.map(
       (li) =>
-        `  • ${t(li.nameKey)} × ${li.qty} ${li.unit} = ${formatNum(li.subtotal)} ${t("builder.sum")}`
+        `  • ${getItemName(li)} × ${li.qty} ${li.unit} = ${formatNum(li.subtotal)} ${t("builder.sum")}`
     );
     return (
       `Конструктор тарифа:\n${lines.join("\n")}\n` +
@@ -218,9 +211,9 @@ const TariffBuilder = () => {
         <div className="grid lg:grid-cols-3 gap-8 items-start">
           {/* LEFT — service categories */}
           <div className="lg:col-span-2 space-y-4">
-            {CATEGORIES.map((cat) => {
+            {categories.map((cat) => {
               const isOpen = !collapsed[cat.id];
-              const CatIcon = cat.icon;
+              const CatIcon = getIcon(cat.icon);
               return (
                 <div
                   key={cat.id}
@@ -234,7 +227,7 @@ const TariffBuilder = () => {
                       <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                         <CatIcon size={16} className="text-primary" />
                       </div>
-                      <span className="font-semibold text-foreground">{t(cat.labelKey)}</span>
+                      <span className="font-semibold text-foreground">{getCatLabel(cat)}</span>
                     </span>
                     {isOpen ? (
                       <ChevronUp size={18} className="text-muted-foreground" />
@@ -257,7 +250,7 @@ const TariffBuilder = () => {
                           >
                             <div className="flex-1 min-w-0 pr-4">
                               <div className="text-sm font-medium text-foreground truncate">
-                                {t(item.nameKey)}
+                                {getItemName(item)}
                               </div>
                               <div className="text-xs text-muted-foreground mt-0.5">
                                 {formatNum(item.price)} {t("builder.sum")} / {item.unit}
@@ -328,7 +321,7 @@ const TariffBuilder = () => {
                       <div key={li.id} className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-medium text-foreground/90 leading-tight">
-                            {t(li.nameKey)}
+                            {getItemName(li)}
                           </div>
                           <div className="text-xs text-muted-foreground mt-0.5">
                             {li.qty} {li.unit} × {formatNum(li.price)}

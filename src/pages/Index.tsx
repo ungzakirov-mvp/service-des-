@@ -11,8 +11,11 @@ import FAQ from "@/components/FAQ";
 import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
 import { useEffect } from "react";
+import { useVisitTracker } from "@/hooks/useVisitTracker";
 
 const Index = () => {
+  useVisitTracker();
+
   useEffect(() => {
     document.title = "Novum Tech — IT-аутсорсинг для бизнеса в Ташкенте";
     const meta = document.querySelector('meta[name="description"]');

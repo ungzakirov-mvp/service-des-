@@ -6,6 +6,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/AdminLogin";
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminPricing from "./pages/AdminPricing";
 
 const queryClient = new QueryClient();
 
@@ -18,7 +22,11 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route element={<AdminLayout />}>
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/pricing" element={<AdminPricing />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
