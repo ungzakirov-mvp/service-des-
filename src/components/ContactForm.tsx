@@ -83,7 +83,7 @@ const ContactForm = () => {
       });
 
       if (fnError) throw new Error(fnError.message || "Ошибка отправки");
-
+      if (data && !data.success) throw new Error(data.error || "Ошибка отправки");
 
       toast({ title: t("contact.success"), description: t("contact.success_desc") });
       setForm(initialForm);
