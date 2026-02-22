@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Send } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 interface FormData {
@@ -69,10 +70,8 @@ const ContactForm = () => {
       const planInfo = form.selected_plan ? `\nИнтересующий тариф: ${form.selected_plan}` : "";
       const fullMessage = (form.message.trim() + planInfo).trim();
 
-      const resp = await fetch("/api/audit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const { data, error: fnError } = await supabase.functions.invoke("submit-contact", {
+        body: {
           name: form.name.trim(),
           company: form.company.trim(),
           email: form.email.trim(),
@@ -80,11 +79,11 @@ const ContactForm = () => {
           message: fullMessage,
           selected_plan: form.selected_plan,
           honeypot,
-        }),
+        },
       });
 
-      const data = await resp.json();
-      if (!resp.ok) throw new Error((data as any)?.error || "Ошибка отправки");
+      if (fnError) throw new Error(fnError.message || "Ошибка отправки");
+
 
       toast({ title: t("contact.success"), description: t("contact.success_desc") });
       setForm(initialForm);
