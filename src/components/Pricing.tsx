@@ -197,7 +197,7 @@ const Pricing = () => {
                 <MetaStat label={t("pricing.refills")} value={plan.refills} />
               </div>
 
-              {plan.serviceDeskBasic && <ServiceDeskBlock mobile={plan.serviceDeskMobile} />}
+              {plan.service_desk_basic && <ServiceDeskBlock mobile={plan.service_desk_mobile} />}
 
               <div className="h-px bg-border mb-4" />
 
