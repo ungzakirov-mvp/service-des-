@@ -232,6 +232,7 @@ const Pricing = () => {
             </div>
           ))}
         </div>
+        )}
 
         {/* Why Service Desk */}
         <div ref={whyRef} className="section-fade-in mt-20">
