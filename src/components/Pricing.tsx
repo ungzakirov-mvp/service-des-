@@ -15,6 +15,26 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface PricingPlan {
+  id: string;
+  name: string;
+  price: string;
+  unit: string;
+  computers: string;
+  sla: string;
+  tickets: string;
+  refills: string;
+  extra_features: string[];
+  service_desk_basic: boolean;
+  service_desk_mobile: boolean;
+  cta_key: string;
+  highlight: boolean;
+  badge: string | null;
+}
 
 /* ─────────────────── Main component ─────────────────── */
 
@@ -23,91 +43,41 @@ const Pricing = () => {
   const whyRef = useScrollAnimation();
   const trustRef = useScrollAnimation();
   const { t } = useLanguage();
+  const [plans, setPlans] = useState<PricingPlan[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const plans = [
-    {
-      id: "micro",
-      name: "MICRO",
-      price: "4 500 000",
-      unit: t("pricing.per_month"),
-      computers: t("pricing.workstations") === "Workstations" ? "Up to 5 PCs" : "До 5 ПК",
-      sla: "SLA 8h",
-      tickets: "8",
-      refills: "3",
-      extraFeatures: [t("plan.remote_support")],
-      serviceDeskBasic: false,
-      serviceDeskMobile: false,
-      cta: t("plan.start_work"),
-      highlight: false,
-    },
-    {
-      id: "start",
-      name: "START",
-      price: "9 000 000",
-      unit: t("pricing.per_month"),
-      computers: t("pricing.workstations") === "Workstations" ? "Up to 20 PCs" : "До 20 ПК",
-      sla: "SLA 4h",
-      tickets: "25",
-      refills: "6",
-      extraFeatures: [t("plan.priority_support")],
-      serviceDeskBasic: true,
-      serviceDeskMobile: false,
-      cta: t("plan.connect_sd"),
-      highlight: false,
-    },
-    {
-      id: "business",
-      name: "BUSINESS",
-      price: "14 000 000",
-      unit: t("pricing.per_month"),
-      computers: t("pricing.workstations") === "Workstations" ? "Up to 40 PCs" : "До 40 ПК",
-      sla: "SLA 2–4h",
-      tickets: "45",
-      refills: "10",
-      extraFeatures: [t("plan.priority_visit")],
-      serviceDeskBasic: true,
-      serviceDeskMobile: true,
-      cta: t("plan.connect_sd"),
-      highlight: false,
-    },
-    {
-      id: "enterprise",
-      name: "ENTERPRISE",
-      price: "21 000 000",
-      unit: t("pricing.per_month"),
-      computers: t("pricing.workstations") === "Workstations" ? "Up to 60 PCs" : "До 60 ПК",
-      sla: "SLA 2h",
-      tickets: "65",
-      refills: "14",
-      extraFeatures: [t("plan.max_priority")],
-      serviceDeskBasic: true,
-      serviceDeskMobile: true,
-      cta: t("plan.connect_sd"),
-      highlight: false,
-    },
-    {
-      id: "pro",
-      name: "PRO",
-      price: "от 45 000 000",
-      unit: t("pricing.per_month"),
-      computers: t("pricing.workstations") === "Workstations" ? "Up to 75 PCs" : "До 75 ПК",
-      sla: "SLA 1h",
-      tickets: "70",
-      refills: "∞",
-      extraFeatures: [
-        t("plan.engineer"),
-        t("plan.full_control"),
-        t("plan.cctv_mount"),
-        t("plan.cctv_dvr"),
-        t("plan.cctv_service"),
-      ],
-      serviceDeskBasic: true,
-      serviceDeskMobile: true,
-      cta: t("pricing.get_support"),
-      highlight: true,
-      badge: t("pricing.recommended"),
-    },
-  ];
+  useEffect(() => {
+    const fetchPlans = async () => {
+      const { data, error } = await supabase
+        .from("pricing_plans")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+
+      if (!error && data) {
+        setPlans(
+          data.map((p) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            unit: p.unit,
+            computers: p.computers,
+            sla: p.sla,
+            tickets: p.tickets,
+            refills: p.refills,
+            extra_features: Array.isArray(p.extra_features) ? (p.extra_features as string[]) : [],
+            service_desk_basic: p.service_desk_basic,
+            service_desk_mobile: p.service_desk_mobile,
+            cta_key: p.cta_key,
+            highlight: p.highlight,
+            badge: p.badge,
+          }))
+        );
+      }
+      setLoading(false);
+    };
+    fetchPlans();
+  }, []);
 
   const whyItems = [
     { icon: Activity, title: t("pricing.why_control"), desc: t("pricing.why_control_desc") },
@@ -185,6 +155,13 @@ const Pricing = () => {
         </div>
 
         {/* Cards grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-[400px] rounded-xl" />
+            ))}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
           {plans.map((plan, i) => (
             <div
@@ -227,12 +204,12 @@ const Pricing = () => {
                 <MetaStat label={t("pricing.refills")} value={plan.refills} />
               </div>
 
-              {plan.serviceDeskBasic && <ServiceDeskBlock mobile={plan.serviceDeskMobile} />}
+              {plan.service_desk_basic && <ServiceDeskBlock mobile={plan.service_desk_mobile} />}
 
               <div className="h-px bg-border mb-4" />
 
               <ul className="space-y-2.5 flex-1 mb-5">
-                {plan.extraFeatures.map((f) => (
+                {plan.extra_features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm text-foreground/85">
                     <Check size={14} className={`shrink-0 mt-0.5 ${plan.highlight ? "text-primary" : "text-primary/70"}`} />
                     {f}
@@ -250,11 +227,12 @@ const Pricing = () => {
                 }`}
                 onClick={handleCta}
               >
-                {plan.cta}
+                {t(plan.cta_key)}
               </Button>
             </div>
           ))}
         </div>
+        )}
 
         {/* Why Service Desk */}
         <div ref={whyRef} className="section-fade-in mt-20">
