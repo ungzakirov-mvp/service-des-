@@ -562,6 +562,9 @@ export const translations: Translations = {
     "nav.about": "About",
     "nav.workflow": "How We Work",
     "nav.contacts": "Contact",
+    "nav.faq": "FAQ",
+    "nav.constructor": "Plan Builder",
+    "nav.privacy": "Privacy",
     "nav.audit": "Request Audit",
 
     // Hero
