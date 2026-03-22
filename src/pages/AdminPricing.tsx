@@ -90,7 +90,19 @@ const AdminPricing = () => {
 
   /* ── Plan editing ────────────────────────────── */
   const updatePlan = (id: string, field: keyof PricingPlan, value: any) => {
-    setPlans((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
+    setPlans((prev) => {
+      if (field === "highlight" && value === true) {
+        // Exclusive: only one plan can be highlighted; move badge too
+        const currentHighlighted = prev.find((p) => p.highlight);
+        const badgeText = currentHighlighted?.badge || "Рекомендуемый";
+        return prev.map((p) =>
+          p.id === id
+            ? { ...p, highlight: true, badge: badgeText }
+            : { ...p, highlight: false, badge: p.id === currentHighlighted?.id ? null : p.badge }
+        );
+      }
+      return prev.map((p) => (p.id === id ? { ...p, [field]: value } : p));
+    });
   };
 
   const savePlan = async (plan: PricingPlan) => {
