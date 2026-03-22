@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, X, Save } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Save, FolderPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminServices = () => {
@@ -12,6 +12,8 @@ const AdminServices = () => {
   const { toast } = useToast();
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState<any>(null);
+  const [showNewCat, setShowNewCat] = useState(false);
+  const [newCat, setNewCat] = useState({ id: "", label_ru: "", label_uz: "", label_en: "", icon: "Wrench", sort_order: 0 });
 
   const { data: services } = useQuery({
     queryKey: ["admin-services"],
@@ -27,6 +29,20 @@ const AdminServices = () => {
       const { data } = await supabase.from("service_categories").select("*").order("sort_order");
       return data || [];
     },
+  });
+
+  const saveCatMutation = useMutation({
+    mutationFn: async (cat: any) => {
+      const { error } = await supabase.from("service_categories").insert(cat);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-categories"] });
+      setShowNewCat(false);
+      setNewCat({ id: "", label_ru: "", label_uz: "", label_en: "", icon: "Wrench", sort_order: 0 });
+      toast({ title: "Категория создана" });
+    },
+    onError: (e: any) => toast({ title: "Ошибка", description: e.message, variant: "destructive" }),
   });
 
   const saveMutation = useMutation({
@@ -88,13 +104,54 @@ const AdminServices = () => {
             </div>
             <div>
               <label className="text-sm text-slate-400 mb-1 block">Категория</label>
-              <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
-                className="w-full h-10 rounded-md border border-slate-700 bg-slate-800 px-3 text-sm text-white">
-                <option value="">Выберите</option>
-                {categories?.map((c) => <option key={c.id} value={c.id}>{c.label_ru}</option>)}
-              </select>
+              <div className="flex gap-2">
+                <select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  className="flex-1 h-10 rounded-md border border-slate-700 bg-slate-800 px-3 text-sm text-white">
+                  <option value="">Выберите</option>
+                  {categories?.map((c) => <option key={c.id} value={c.id}>{c.label_ru}</option>)}
+                </select>
+                <Button type="button" size="icon" variant="outline" className="border-slate-700 text-slate-400 hover:text-white shrink-0" onClick={() => setShowNewCat(true)}>
+                  <FolderPlus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
+
+          {showNewCat && (
+            <div className="bg-slate-800 border border-blue-500/30 rounded-xl p-4 space-y-3">
+              <h3 className="text-sm font-bold text-blue-400">Новая категория</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-slate-500">ID (латиница)</label>
+                  <Input value={newCat.id} onChange={(e) => setNewCat({ ...newCat, id: e.target.value })} className="bg-slate-900 border-slate-700 text-white" placeholder="network" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500">Иконка</label>
+                  <Input value={newCat.icon} onChange={(e) => setNewCat({ ...newCat, icon: e.target.value })} className="bg-slate-900 border-slate-700 text-white" />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs text-slate-500">RU</label>
+                  <Input value={newCat.label_ru} onChange={(e) => setNewCat({ ...newCat, label_ru: e.target.value })} className="bg-slate-900 border-slate-700 text-white" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500">UZ</label>
+                  <Input value={newCat.label_uz} onChange={(e) => setNewCat({ ...newCat, label_uz: e.target.value })} className="bg-slate-900 border-slate-700 text-white" />
+                </div>
+                <div>
+                  <label className="text-xs text-slate-500">EN</label>
+                  <Input value={newCat.label_en} onChange={(e) => setNewCat({ ...newCat, label_en: e.target.value })} className="bg-slate-900 border-slate-700 text-white" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => saveCatMutation.mutate(newCat)} disabled={!newCat.id || !newCat.label_ru}>
+                  <Save className="h-3 w-3 mr-1" /> Создать
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setShowNewCat(false)} className="text-slate-400">Отмена</Button>
+              </div>
+            </div>
+          )}
 
           {(["ru", "uz", "en"] as const).map((l) => (
             <div key={l} className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-3">
