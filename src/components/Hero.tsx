@@ -22,12 +22,12 @@ const Hero = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/50 to-background" />
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 lg:px-8 text-center max-w-4xl">
+      <div className="relative z-10 container mx-auto px-4 lg:px-8 text-center max-w-6xl">
         <div className="inline-block mb-6 px-4 py-1.5 rounded-full border border-border bg-secondary/50 text-xs text-muted-foreground tracking-wide uppercase">
           {t("hero.badge")}
         </div>
 
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight tracking-tight mb-6">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-[1.1] tracking-tight mb-6">
           {t("hero.title1")}{" "}
           <span className="text-primary">{t("hero.title2")}</span>{" "}
           {t("hero.title3")}
