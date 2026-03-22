@@ -1,12 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
-import { LayoutDashboard, CreditCard, Headphones, MessageSquare, LogOut, Home } from "lucide-react";
+import { LayoutDashboard, CreditCard, Headphones, MessageSquare, LogOut, Home, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
   { to: "/admin/dashboard", icon: LayoutDashboard, label: "Обзор", exact: true },
   { to: "/admin/pricing", icon: CreditCard, label: "Тарифы" },
+  { to: "/admin/categories", icon: FolderOpen, label: "Категории" },
   { to: "/admin/services", icon: Headphones, label: "Услуги" },
   { to: "/admin/requests", icon: MessageSquare, label: "Заявки" },
 ];
