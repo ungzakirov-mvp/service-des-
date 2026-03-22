@@ -8,6 +8,9 @@ export const translations: Translations = {
     "nav.about": "О нас",
     "nav.workflow": "Как мы работаем",
     "nav.contacts": "Контакты",
+    "nav.faq": "FAQ",
+    "nav.constructor": "Конструктор тарифа",
+    "nav.privacy": "Конфиденциальность",
     "nav.audit": "Запросить аудит",
 
     // Hero
@@ -41,6 +44,16 @@ export const translations: Translations = {
     "services.workstation": "Workstation Support",
     "services.workstation_sub": "Поддержка оборудования",
     "services.workstation_desc": "Обслуживание и настройка рабочих станций, установка ПО, оперативное решение проблем пользователей и техническая поддержка.",
+    "services.scs": "Монтажные работы СКС",
+    "services.scs_sub": "Структурированные кабельные системы",
+    "services.scs_desc": "Проектирование и монтаж СКС, прокладка кабельных трасс, установка коммутационных шкафов и розеток.",
+    "services.office_tech": "Офисная техника",
+    "services.office_tech_sub": "Обслуживание и ремонт",
+    "services.office_tech_desc": "Обслуживание, ремонт и настройка принтеров, МФУ и другой офисной техники. Заправка картриджей.",
+    "services.automation": "Автоматизация",
+    "services.automation_sub": "Бизнес-процессы",
+    "services.automation_desc": "Сопровождение и автоматизация бизнес-процессов. Внедрение CRM, ERP и интеграция систем.",
+    "services.view_all": "Все услуги",
     "services.licenses_title": "Продажа и интеграция лицензий",
     "services.licenses_subtitle": "Поставка, лицензирование и внедрение корпоративного ПО и решений безопасности",
     "services.software": "Программное обеспечение",
@@ -248,6 +261,10 @@ export const translations: Translations = {
     "contact.your_name": "Ваше имя",
     "contact.company_name": "Название компании",
 
+    // Contacts page
+    "contacts.address_label": "Адрес",
+    "contacts.address_value": "г. Ташкент, Узбекистан",
+
     // Footer
     "footer.desc": "IT-аутсорсинг для среднего бизнеса в Ташкенте. Стабильность, безопасность и прозрачность.",
     "footer.nav": "Навигация",
@@ -268,6 +285,9 @@ export const translations: Translations = {
     "nav.about": "Biz haqimizda",
     "nav.workflow": "Qanday ishlaymiz",
     "nav.contacts": "Aloqa",
+    "nav.faq": "FAQ",
+    "nav.constructor": "Tarif konstruktori",
+    "nav.privacy": "Maxfiylik",
     "nav.audit": "Audit so'rash",
 
     // Hero
@@ -301,6 +321,16 @@ export const translations: Translations = {
     "services.workstation": "Workstation Support",
     "services.workstation_sub": "Uskunalarni qo'llab-quvvatlash",
     "services.workstation_desc": "Ish stantsiyalarini xizmat ko'rsatish va sozlash, dasturiy ta'minotni o'rnatish, foydalanuvchilar muammolarini tezkor hal qilish.",
+    "services.scs": "SKS montaj ishlari",
+    "services.scs_sub": "Strukturaviy kabel tizimlari",
+    "services.scs_desc": "SKS loyihalash va montaj qilish, kabel yo'llari, kommutatsiya shkaflari va rozetkalar o'rnatish.",
+    "services.office_tech": "Ofis texnikasi",
+    "services.office_tech_sub": "Xizmat ko'rsatish va ta'mirlash",
+    "services.office_tech_desc": "Printerlar, MFU va boshqa ofis texnikasiga xizmat ko'rsatish, ta'mirlash va sozlash. Kartrijlarni to'ldirish.",
+    "services.automation": "Avtomatlashtirish",
+    "services.automation_sub": "Biznes jarayonlar",
+    "services.automation_desc": "Biznes jarayonlarini qo'llab-quvvatlash va avtomatlashtirish. CRM, ERP joriy etish va tizimlar integratsiyasi.",
+    "services.view_all": "Barcha xizmatlar",
     "services.licenses_title": "Litsenziyalar sotish va integratsiya",
     "services.licenses_subtitle": "Korporativ dasturiy ta'minot va xavfsizlik yechimlarini yetkazib berish",
     "services.software": "Dasturiy ta'minot",
@@ -508,6 +538,10 @@ export const translations: Translations = {
     "contact.your_name": "Ismingiz",
     "contact.company_name": "Kompaniya nomi",
 
+    // Contacts page
+    "contacts.address_label": "Manzil",
+    "contacts.address_value": "Toshkent sh., O'zbekiston",
+
     // Footer
     "footer.desc": "Toshkentda o'rta biznes uchun IT-autsorsing. Barqarorlik, xavfsizlik va shaffoflik.",
     "footer.nav": "Navigatsiya",
@@ -528,6 +562,9 @@ export const translations: Translations = {
     "nav.about": "About",
     "nav.workflow": "How We Work",
     "nav.contacts": "Contact",
+    "nav.faq": "FAQ",
+    "nav.constructor": "Plan Builder",
+    "nav.privacy": "Privacy",
     "nav.audit": "Request Audit",
 
     // Hero
@@ -561,6 +598,16 @@ export const translations: Translations = {
     "services.workstation": "Workstation Support",
     "services.workstation_sub": "Equipment Support",
     "services.workstation_desc": "Workstation maintenance and setup, software installation, rapid problem resolution, and technical support.",
+    "services.scs": "Structured Cabling",
+    "services.scs_sub": "SCS Installation",
+    "services.scs_desc": "Design and installation of structured cabling systems, cable routing, patch panels and outlets.",
+    "services.office_tech": "Office Equipment",
+    "services.office_tech_sub": "Maintenance & Repair",
+    "services.office_tech_desc": "Maintenance, repair, and setup of printers, MFPs, and other office equipment. Cartridge refills.",
+    "services.automation": "Automation",
+    "services.automation_sub": "Business Processes",
+    "services.automation_desc": "Business process support and automation. CRM, ERP implementation and system integration.",
+    "services.view_all": "All Services",
     "services.licenses_title": "License Sales & Integration",
     "services.licenses_subtitle": "Supply, licensing, and deployment of enterprise software and security solutions",
     "services.software": "Software",
@@ -767,6 +814,10 @@ export const translations: Translations = {
     "contact.err_message": "Message is too long",
     "contact.your_name": "Your name",
     "contact.company_name": "Company name",
+
+    // Contacts page
+    "contacts.address_label": "Address",
+    "contacts.address_value": "Tashkent, Uzbekistan",
 
     // Footer
     "footer.desc": "IT outsourcing for medium business in Tashkent. Stability, security, and transparency.",

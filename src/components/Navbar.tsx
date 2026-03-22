@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Menu, X, Globe, LogIn } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useLanguage, Lang } from "@/i18n/LanguageContext";
 
@@ -16,13 +16,14 @@ const Navbar = () => {
   const [langOpen, setLangOpen] = useState(false);
   const { lang, setLang, t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const navLinks = [
-    { label: t("nav.services"), href: "#services" },
-    { label: t("nav.pricing"), href: "#pricing" },
-    { label: t("nav.about"), href: "#about" },
-    { label: t("nav.workflow"), href: "#workflow" },
-    { label: t("nav.contacts"), href: "#contact" },
+    { label: t("nav.services"), href: "/services" },
+    { label: t("nav.pricing"), href: "/#pricing" },
+    { label: t("nav.about"), href: "/about" },
+    { label: t("nav.faq"), href: "/faq" },
+    { label: t("nav.contacts"), href: "/contacts" },
   ];
 
   useEffect(() => {
@@ -33,7 +34,15 @@ const Navbar = () => {
 
   const handleClick = (href: string) => {
     setOpen(false);
-    document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
+    if (href.startsWith("/#")) {
+      if (location.pathname === "/") {
+        document.querySelector(href.slice(1))?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        navigate(href);
+      }
+    } else {
+      navigate(href);
+    }
   };
 
   const currentLang = LANGS.find((l) => l.code === lang)!;
@@ -45,7 +54,7 @@ const Navbar = () => {
       }`}
     >
       <div className="container mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
-        <a href="#" className="text-2xl font-bold tracking-tight text-foreground">
+        <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="text-2xl font-bold tracking-tight text-foreground">
           Novum<span className="text-primary">Tech</span>
         </a>
 
@@ -92,7 +101,7 @@ const Navbar = () => {
             )}
           </div>
 
-          <Button size="sm" onClick={() => handleClick("#contact")}>
+          <Button size="sm" onClick={() => navigate("/contacts")}>
             {t("nav.audit")}
           </Button>
           <Button
@@ -108,7 +117,6 @@ const Navbar = () => {
 
         {/* Mobile toggle + lang */}
         <div className="md:hidden flex items-center gap-2">
-          {/* Mobile language switcher */}
           <div className="relative">
             <button
               onClick={() => setLangOpen(!langOpen)}
@@ -157,7 +165,7 @@ const Navbar = () => {
                 {l.label}
               </button>
             ))}
-            <Button className="mt-2" onClick={() => handleClick("#contact")}>
+            <Button className="mt-2" onClick={() => { setOpen(false); navigate("/contacts"); }}>
               {t("nav.audit")}
             </Button>
             <Button

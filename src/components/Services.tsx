@@ -3,14 +3,17 @@ import {
   Server, ShieldCheck, Monitor, KeyRound,
   ShieldAlert, Printer, Bug, Flame,
   HardDrive, Cloud, Lock, Mail,
-  Eye, Network
+  Eye, Network, Cable, Wrench, Settings, Cpu
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const Services = () => {
   const ref = useScrollAnimation();
   const ref2 = useScrollAnimation();
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   const services = [
     {
@@ -30,6 +33,24 @@ const Services = () => {
       title: t("services.workstation"),
       subtitle: t("services.workstation_sub"),
       desc: t("services.workstation_desc"),
+    },
+    {
+      icon: Cable,
+      title: t("services.scs"),
+      subtitle: t("services.scs_sub"),
+      desc: t("services.scs_desc"),
+    },
+    {
+      icon: Printer,
+      title: t("services.office_tech"),
+      subtitle: t("services.office_tech_sub"),
+      desc: t("services.office_tech_desc"),
+    },
+    {
+      icon: Settings,
+      title: t("services.automation"),
+      subtitle: t("services.automation_sub"),
+      desc: t("services.automation_desc"),
     },
   ];
 
@@ -55,7 +76,6 @@ const Services = () => {
       items: [
         { icon: Flame, name: t("services.firewall") },
         { icon: HardDrive, name: t("services.backup") },
-        { icon: Printer, name: t("services.print") },
         { icon: Network, name: t("services.network") },
       ],
     },
@@ -69,7 +89,7 @@ const Services = () => {
           <p className="text-muted-foreground max-w-xl mx-auto">{t("services.subtitle")}</p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {services.map((s) => (
             <div
               key={s.title}
@@ -83,6 +103,12 @@ const Services = () => {
               <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
             </div>
           ))}
+        </div>
+
+        <div className="text-center mt-10">
+          <Button variant="outline" onClick={() => navigate("/services")} className="hover:bg-primary hover:text-primary-foreground">
+            {t("services.view_all")}
+          </Button>
         </div>
       </div>
 

@@ -3,12 +3,6 @@ import Hero from "@/components/Hero";
 import TrustIndicators from "@/components/TrustIndicators";
 import Services from "@/components/Services";
 import Pricing from "@/components/Pricing";
-import Calculator from "@/components/Calculator";
-import TariffBuilder from "@/components/TariffBuilder";
-import About from "@/components/About";
-import Workflow from "@/components/Workflow";
-import FAQ from "@/components/FAQ";
-import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
 import ClientsMarquee from "@/components/ClientsMarquee";
 import { useEffect } from "react";
@@ -39,12 +33,6 @@ const Index = () => {
         <Services />
         <ClientsMarquee />
         <Pricing />
-        <Calculator />
-        <TariffBuilder />
-        <About />
-        <Workflow />
-        <FAQ />
-        <ContactForm />
       </main>
       <Footer />
     </div>

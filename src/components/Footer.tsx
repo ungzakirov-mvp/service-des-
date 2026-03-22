@@ -1,24 +1,36 @@
 import { Phone, Mail } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const Footer = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   const navLinks = [
-    { label: t("nav.services"), href: "#services" },
-    { label: t("nav.about"), href: "#about" },
-    { label: t("nav.workflow"), href: "#workflow" },
-    { label: t("nav.contacts"), href: "#contact" },
+    { label: t("nav.services"), href: "/services" },
+    { label: t("nav.pricing"), href: "/#pricing" },
+    { label: t("nav.about"), href: "/about" },
+    { label: t("nav.faq"), href: "/faq" },
+    { label: t("nav.contacts"), href: "/contacts" },
+    { label: t("nav.constructor"), href: "/constructor" },
+    { label: t("nav.privacy"), href: "/privacy" },
   ];
 
-  const scrollTo = (href: string) => document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
+  const handleClick = (href: string) => {
+    if (href.startsWith("/#")) {
+      navigate(href);
+    } else {
+      navigate(href);
+    }
+    window.scrollTo({ top: 0 });
+  };
 
   return (
     <footer className="border-t border-border bg-secondary/20 py-12">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
           <div>
-            <a href="#" className="text-xl font-bold tracking-tight">
+            <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="text-xl font-bold tracking-tight">
               Novum<span className="text-primary">Tech</span>
             </a>
             <p className="text-sm text-muted-foreground mt-3 leading-relaxed max-w-xs">{t("footer.desc")}</p>
@@ -30,7 +42,7 @@ const Footer = () => {
               {navLinks.map((l) => (
                 <li key={l.href}>
                   <button
-                    onClick={() => scrollTo(l.href)}
+                    onClick={() => handleClick(l.href)}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {l.label}
