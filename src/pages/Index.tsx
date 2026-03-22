@@ -10,6 +10,7 @@ import Workflow from "@/components/Workflow";
 import FAQ from "@/components/FAQ";
 import ContactForm from "@/components/ContactForm";
 import Footer from "@/components/Footer";
+import ClientsMarquee from "@/components/ClientsMarquee";
 import { useEffect } from "react";
 import { useVisitTracker } from "@/hooks/useVisitTracker";
 
@@ -36,6 +37,7 @@ const Index = () => {
         <Hero />
         <TrustIndicators />
         <Services />
+        <ClientsMarquee />
         <Pricing />
         <Calculator />
         <TariffBuilder />

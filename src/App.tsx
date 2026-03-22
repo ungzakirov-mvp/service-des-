@@ -10,6 +10,10 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminPricing from "./pages/AdminPricing";
+import ServicesPage from "./pages/ServicesPage";
+import ConstructorPage from "./pages/ConstructorPage";
+import ServiceDeskPage from "./pages/ServiceDeskPage";
+import PrivacyPage from "./pages/PrivacyPage";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +26,10 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/services" element={<Index />} />
+            <Route path="/constructor" element={<Index />} />
+            <Route path="/service-desk" element={<Index />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/admin" element={<AdminLogin />} />
             <Route element={<AdminLayout />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
