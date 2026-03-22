@@ -815,6 +815,10 @@ export const translations: Translations = {
     "contact.your_name": "Your name",
     "contact.company_name": "Company name",
 
+    // Contacts page
+    "contacts.address_label": "Address",
+    "contacts.address_value": "Tashkent, Uzbekistan",
+
     // Footer
     "footer.desc": "IT outsourcing for medium business in Tashkent. Stability, security, and transparency.",
     "footer.nav": "Navigation",
