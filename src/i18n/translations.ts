@@ -569,12 +569,12 @@ export const translations: Translations = {
 
     // Hero
     "hero.badge": "IT Outsourcing in Tashkent",
-    "hero.title1": "IT Outsourcing",
-    "hero.title2": "for Business",
+    "hero.title1": "IT Outsourcing for companies",
+    "hero.title2": "5–150 workstations",
     "hero.title3": "in Tashkent",
-    "hero.desc": "We take full responsibility for your IT infrastructure: stability, security, and control for companies with 20–100 employees",
-    "hero.cta": "Request IT Audit",
-    "hero.more": "Learn More",
+    "hero.desc": "SLA-based support, Service Desk, workstation, server and office infrastructure maintenance. Transparent pricing, contracts and clear terms.",
+    "hero.cta": "Build a Plan",
+    "hero.more": "Choose a Plan",
 
     // Trust Indicators
     "trust.sla": "SLA 99.9%",
