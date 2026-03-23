@@ -19,4 +19,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://project-novum-evolve.lovable.app/sitemap.xml
+Sitemap: https://novumtech.uz/sitemap.xml
