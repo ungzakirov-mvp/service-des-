@@ -1,42 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://project-novum-evolve.lovable.app/</loc>
+    <loc>https://novumtech.uz/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://project-novum-evolve.lovable.app/services</loc>
+    <loc>https://novumtech.uz/services</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://project-novum-evolve.lovable.app/constructor</loc>
+    <loc>https://novumtech.uz/constructor</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://project-novum-evolve.lovable.app/about</loc>
+    <loc>https://novumtech.uz/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://project-novum-evolve.lovable.app/faq</loc>
+    <loc>https://novumtech.uz/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://project-novum-evolve.lovable.app/contacts</loc>
+    <loc>https://novumtech.uz/contacts</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://project-novum-evolve.lovable.app/service-desk</loc>
+    <loc>https://novumtech.uz/service-desk</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://project-novum-evolve.lovable.app/privacy</loc>
+    <loc>https://novumtech.uz/privacy</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
