@@ -92,14 +92,26 @@ const AdminPricing = () => {
   const updatePlan = (id: string, field: keyof PricingPlan, value: any) => {
     setPlans((prev) => {
       if (field === "highlight" && value === true) {
-        // Exclusive: only one plan can be highlighted; move badge too
         const currentHighlighted = prev.find((p) => p.highlight);
         const badgeText = currentHighlighted?.badge || "Рекомендуемый";
-        return prev.map((p) =>
+        const updated = prev.map((p) =>
           p.id === id
             ? { ...p, highlight: true, badge: badgeText }
             : { ...p, highlight: false, badge: p.id === currentHighlighted?.id ? null : p.badge }
         );
+        // Persist all plans that changed highlight/badge
+        updated.forEach((p) => {
+          const old = prev.find((o) => o.id === p.id);
+          if (old && (old.highlight !== p.highlight || old.badge !== p.badge)) {
+            supabase.from("pricing_plans").update({ highlight: p.highlight, badge: p.badge }).eq("id", p.id).then();
+          }
+        });
+        return updated;
+      }
+      if (field === "highlight" && value === false) {
+        const updated = prev.map((p) => (p.id === id ? { ...p, highlight: false, badge: null } : p));
+        supabase.from("pricing_plans").update({ highlight: false, badge: null }).eq("id", id).then();
+        return updated;
       }
       return prev.map((p) => (p.id === id ? { ...p, [field]: value } : p));
     });
