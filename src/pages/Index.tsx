@@ -15,6 +15,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Novum Tech — IT-аутсорсинг для бизнеса в Ташкенте"
+        description="IT-аутсорсинг в Ташкенте. Серверы, безопасность, поддержка рабочих станций. SLA 99.9%, реакция до 30 минут."
+        canonical={`${BASE}/`}
+      />
       <Navbar />
       <main>
         <Hero />

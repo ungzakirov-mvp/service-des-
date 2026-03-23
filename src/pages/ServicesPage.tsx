@@ -4,6 +4,7 @@ import { useLanguage } from '@/i18n/LanguageContext';
 import ScrollReveal from '@/components/ScrollReveal';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import SEOHead from '@/components/SEOHead';
 import { Server, Headphones, Database, Wifi, Printer, ClipboardCheck } from 'lucide-react';
 
 const iconMap: Record<string, any> = { Server, Headphones, Database, Wifi, Printer, ClipboardCheck };
