@@ -20,6 +20,7 @@ const Navbar = () => {
 
   const navLinks = [
     { label: t("nav.services"), href: "/services" },
+    { label: t("nav.constructor"), href: "/constructor" },
     { label: t("nav.pricing"), href: "/#pricing" },
     { label: t("nav.about"), href: "/about" },
     { label: t("nav.faq"), href: "/faq" },
