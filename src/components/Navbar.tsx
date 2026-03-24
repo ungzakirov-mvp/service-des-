@@ -55,7 +55,7 @@ const Navbar = () => {
       }`}
     >
       <div className="container mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
-        <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="text-2xl font-bold tracking-tight text-foreground">
+        <a href="/" onClick={(e) => { e.preventDefault(); navigate("/"); }} className="font-bold tracking-tight text-foreground text-3xl">
           Novum<span className="text-primary">Tech</span>
         </a>
 
