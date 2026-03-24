@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 const clients = [
   'JacMotors Uzbekistan',
   'Neftgazinjiniring',
-  'UNG-Oversea',
+  'UNG Overseas',
   'UNG Academy',
   'Silk Road Energy Injiniring',
 ];
