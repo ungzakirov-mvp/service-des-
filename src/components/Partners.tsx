@@ -1,19 +1,32 @@
 import ScrollReveal from '@/components/ScrollReveal';
 import { useLanguage } from '@/i18n/LanguageContext';
 
+import microsoftLogo from '@/assets/partners/microsoft.png';
+import dellLogo from '@/assets/partners/dell.png';
+import hpLogo from '@/assets/partners/hp.png';
+import esetLogo from '@/assets/partners/eset.png';
+import xeroxLogo from '@/assets/partners/xerox.png';
+import hitachiLogo from '@/assets/partners/hitachi-vantara.png';
+import safeticaLogo from '@/assets/partners/safetica.png';
+import scopdLogo from '@/assets/partners/scopd.png';
+import yealinkLogo from '@/assets/partners/yealink.png';
+import polyLogo from '@/assets/partners/poly.png';
+import logitechLogo from '@/assets/partners/logitech.png';
+import verticaLogo from '@/assets/partners/vertica.png';
+
 const partners = [
-  { name: 'Microsoft', style: 'font-[600] tracking-[-0.02em]', color: '#00A4EF' },
-  { name: 'DELL', style: 'font-[700] tracking-[0.08em] uppercase', color: '#007DB8' },
-  { name: 'HP', style: 'font-[700] tracking-[0.04em] uppercase', color: '#0096D6' },
-  { name: 'ESET', style: 'font-[800] tracking-[0.06em] uppercase', color: '#1EC26A' },
-  { name: 'Xerox', style: 'font-[700] tracking-[-0.01em]', color: '#E4002B' },
-  { name: 'Hitachi Vantara', style: 'font-[600] tracking-[-0.01em]', color: '#E60027' },
-  { name: 'Safetica', style: 'font-[600] tracking-[0.02em]', color: '#00B4D8' },
-  { name: 'Scopd', style: 'font-[700] tracking-[0.04em]', color: '#8B5CF6' },
-  { name: 'Yealink', style: 'font-[600] tracking-[0.02em]', color: '#0073CF' },
-  { name: 'Poly', style: 'font-[700] tracking-[0.02em]', color: '#00873C' },
-  { name: 'Logitech', style: 'font-[700] tracking-[-0.01em]', color: '#00B057' },
-  { name: 'VERTICA', style: 'font-[800] tracking-[0.1em] uppercase', color: '#0EA5E9' },
+  { name: 'Microsoft', logo: microsoftLogo },
+  { name: 'DELL', logo: dellLogo },
+  { name: 'HP', logo: hpLogo },
+  { name: 'ESET', logo: esetLogo },
+  { name: 'Xerox', logo: xeroxLogo },
+  { name: 'Hitachi Vantara', logo: hitachiLogo },
+  { name: 'Safetica', logo: safeticaLogo },
+  { name: 'Scopd', logo: scopdLogo },
+  { name: 'Yealink', logo: yealinkLogo },
+  { name: 'Poly', logo: polyLogo },
+  { name: 'Logitech', logo: logitechLogo },
+  { name: 'VERTICA', logo: verticaLogo },
 ];
 
 export default function Partners() {
@@ -34,18 +47,15 @@ export default function Partners() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 lg:gap-5">
           {partners.map((p, i) => (
             <ScrollReveal key={p.name} delay={i * 50}>
-              <div className="group relative glass rounded-2xl p-6 lg:p-7 flex items-center justify-center h-24 lg:h-28 cursor-default transition-all duration-500 hover:scale-105 hover:border-primary/20 hover:shadow-[0_0_40px_-10px_hsl(217,91%,60%,0.15)]">
-                <span
-                  className={`text-lg lg:text-xl text-muted-foreground/60 transition-all duration-500 group-hover:opacity-100 whitespace-nowrap ${p.style}`}
-                  style={{
-                    fontFamily: "'Inter', system-ui, sans-serif",
-                    transition: 'color 0.5s, opacity 0.5s',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = p.color)}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = '')}
-                >
-                  {p.name}
-                </span>
+              <div className="group glass rounded-2xl p-5 lg:p-6 flex items-center justify-center h-24 lg:h-28 cursor-default transition-all duration-500 hover:scale-105 hover:border-primary/20 hover:shadow-[0_0_40px_-10px_hsl(217,91%,60%,0.15)]">
+                <img
+                  src={p.logo}
+                  alt={p.name}
+                  loading="lazy"
+                  width={512}
+                  height={512}
+                  className="h-12 lg:h-14 w-auto object-contain brightness-0 invert opacity-50 transition-all duration-500 group-hover:opacity-90"
+                />
               </div>
             </ScrollReveal>
           ))}
