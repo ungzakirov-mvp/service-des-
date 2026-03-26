@@ -39,6 +39,7 @@ const Index = () => {
         <Hero />
         <TrustIndicators />
         <Services />
+        <Partners />
         <ClientsMarquee />
         <Pricing />
       </main>
