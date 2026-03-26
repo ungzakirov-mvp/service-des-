@@ -25,7 +25,7 @@ export const translations: Translations = {
     // Trust Indicators
     "trust.sla": "SLA 99.9%",
     "trust.sla_desc": "Гарантия доступности",
-    "trust.staff": "20–100 сотрудников",
+    "trust.staff": "5–150 сотрудников",
     "trust.staff_desc": "Идеальный масштаб",
     "trust.reaction": "Реакция до 30 мин",
     "trust.reaction_desc": "Оперативная поддержка",
@@ -302,7 +302,7 @@ export const translations: Translations = {
     // Trust Indicators
     "trust.sla": "SLA 99.9%",
     "trust.sla_desc": "Mavjudlik kafolati",
-    "trust.staff": "20–100 xodim",
+    "trust.staff": "5–150 xodim",
     "trust.staff_desc": "Ideal miqyos",
     "trust.reaction": "30 daqiqada javob",
     "trust.reaction_desc": "Tezkor qo'llab-quvvatlash",
@@ -579,7 +579,7 @@ export const translations: Translations = {
     // Trust Indicators
     "trust.sla": "SLA 99.9%",
     "trust.sla_desc": "Uptime guarantee",
-    "trust.staff": "20–100 employees",
+    "trust.staff": "5–150 employees",
     "trust.staff_desc": "Perfect scale",
     "trust.reaction": "Response in 30 min",
     "trust.reaction_desc": "Rapid support",
