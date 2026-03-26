@@ -167,5 +167,8 @@ export default function ServiceDeskPage() {
         </div>
       </div>
     </section>
+      </main>
+      <Footer />
+    </div>
   );
 }
