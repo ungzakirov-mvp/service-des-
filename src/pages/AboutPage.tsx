@@ -4,6 +4,7 @@ import About from "@/components/About";
 import Workflow from "@/components/Workflow";
 import ScrollReveal from "@/components/ScrollReveal";
 import SEOHead from "@/components/SEOHead";
+import SeoTextBlock, { SeoLink } from "@/components/SeoTextBlock";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function AboutPage() {
@@ -11,7 +12,7 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead title="О компании Novum Tech — IT-аутсорсинг в Ташкенте" description="Команда Novum Tech: опыт, подход и процессы IT-аутсорсинга для бизнеса в Узбекистане." canonical="https://novumtech.uz/about" />
+      <SEOHead title="IT компания Ташкент — о Novum Tech | IT аутсорсинг Узбекистан" description="Novum Tech — IT компания в Ташкенте. Опытная команда, прозрачные процессы, SLA 99.9%. IT аутсорсинг, обслуживание компьютеров, внедрение CRM в Узбекистане." canonical="https://novumtech.uz/about" />
       <Navbar />
       <main className="pt-16">
         <section className="relative py-20 lg:py-32 overflow-hidden">
@@ -26,6 +27,22 @@ export default function AboutPage() {
         <About />
         <Workflow />
       </main>
+
+      <SeoTextBlock>
+        <h2>IT компания в Ташкенте — почему выбирают Novum Tech</h2>
+        <p>
+          Novum Tech — это IT компания в Ташкенте с опытом комплексного обслуживания IT-инфраструктуры для бизнеса. Мы предоставляем IT аутсорсинг в Ташкенте для компаний от 5 до 150 рабочих мест, обеспечивая стабильную работу всех систем без необходимости содержать штатный IT-отдел.
+        </p>
+        <h3>Наш подход к IT обслуживанию</h3>
+        <p>
+          В основе нашей работы — прозрачность и предсказуемость. Каждый клиент получает договор с чётким SLA, фиксированную стоимость обслуживания и регулярную отчётность. Наш <SeoLink to="/service-desk">service desk</SeoLink> принимает заявки 24/7, а время реакции составляет до 30 минут.
+        </p>
+        <h3>Комплексные IT услуги</h3>
+        <p>
+          Мы не просто чиним компьютеры — мы выстраиваем IT-процессы. Обслуживание компьютеров в Ташкенте, настройка серверов, монтаж СКС, внедрение CRM в Узбекистане и автоматизация бизнес-процессов — всё это входит в наш <SeoLink to="/services">каталог IT услуг</SeoLink>. Рассчитайте стоимость в <SeoLink to="/constructor">конструкторе тарифов</SeoLink>.
+        </p>
+      </SeoTextBlock>
+
       <Footer />
     </div>
   );

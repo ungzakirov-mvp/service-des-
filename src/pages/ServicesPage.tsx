@@ -5,6 +5,7 @@ import ScrollReveal from '@/components/ScrollReveal';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEOHead from '@/components/SEOHead';
+import SeoTextBlock, { SeoLink } from '@/components/SeoTextBlock';
 import { Server, Headphones, Database, Wifi, Printer, ClipboardCheck } from 'lucide-react';
 
 const iconMap: Record<string, any> = { Server, Headphones, Database, Wifi, Printer, ClipboardCheck };
@@ -28,7 +29,7 @@ export default function ServicesPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead title="Услуги IT-аутсорсинга — Novum Tech" description="Полный спектр IT-услуг: поддержка, серверы, сети, видеонаблюдение, IP-телефония и IT-аудит в Ташкенте." canonical="https://novumtech.uz/services" />
+      <SEOHead title="IT услуги Ташкент — обслуживание компьютеров и серверов | Novum Tech" description="IT услуги в Ташкенте: обслуживание компьютеров, серверов, монтаж СКС, внедрение CRM, service desk. IT компания Novum Tech — полный спектр IT аутсорсинга." canonical="https://novumtech.uz/services" />
       <Navbar />
       <main className="pt-16">
         <section className="relative py-20 lg:py-32 overflow-hidden">
@@ -58,6 +59,26 @@ export default function ServicesPage() {
           </div>
         </section>
       </main>
+
+      <SeoTextBlock>
+        <h2>IT услуги в Ташкенте — полный спектр обслуживания</h2>
+        <p>
+          Novum Tech предоставляет широкий перечень IT услуг в Ташкенте для бизнеса любого масштаба. Наша IT компания в Ташкенте специализируется на комплексном обслуживании IT-инфраструктуры: от обслуживания компьютеров и ноутбуков до настройки серверного оборудования и корпоративных сетей.
+        </p>
+        <h3>Монтаж структурированных кабельных систем (СКС)</h3>
+        <p>
+          Профессиональный монтаж СКС — основа надёжной корпоративной сети. Мы выполняем проектирование, прокладку кабельных трасс, монтаж патч-панелей, сетевых розеток и коммутационного оборудования с гарантией качества.
+        </p>
+        <h3>Service desk и техническая поддержка</h3>
+        <p>
+          Наш <SeoLink to="/service-desk">service desk в Ташкенте</SeoLink> обеспечивает оперативную обработку заявок и решение инцидентов. IT аутсорсинг с SLA — это гарантия времени реакции и прозрачная отчётность для вашего бизнеса.
+        </p>
+        <h3>Внедрение CRM и автоматизация</h3>
+        <p>
+          Помогаем с внедрением CRM в Узбекистане и автоматизацией бизнес-процессов. Настроим систему под задачи вашей компании, обучим сотрудников и обеспечим техническое сопровождение. <SeoLink to="/constructor">Соберите свой тариф</SeoLink> или <SeoLink to="/contacts">свяжитесь с нами</SeoLink> для консультации.
+        </p>
+      </SeoTextBlock>
+
       <Footer />
     </div>
   );

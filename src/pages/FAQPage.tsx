@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import FAQ from "@/components/FAQ";
 import ScrollReveal from "@/components/ScrollReveal";
 import SEOHead from "@/components/SEOHead";
+import SeoTextBlock, { SeoLink } from "@/components/SeoTextBlock";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function FAQPage() {
@@ -10,7 +11,7 @@ export default function FAQPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead title="FAQ — Вопросы об IT-аутсорсинге | Novum Tech" description="Ответы на частые вопросы об IT-аутсорсинге, SLA, тарифах и условиях обслуживания от Novum Tech." canonical="https://novumtech.uz/faq" />
+      <SEOHead title="FAQ — вопросы об IT аутсорсинге Ташкент | Novum Tech" description="Ответы на частые вопросы об IT аутсорсинге в Ташкенте: SLA, тарифы, service desk, обслуживание компьютеров. IT компания Novum Tech — всё прозрачно." canonical="https://novumtech.uz/faq" />
       <Navbar />
       <main className="pt-16">
         <section className="relative py-20 lg:py-32 overflow-hidden">
@@ -24,6 +25,22 @@ export default function FAQPage() {
           </div>
         </section>
       </main>
+
+      <SeoTextBlock>
+        <h2>Частые вопросы об IT аутсорсинге в Ташкенте</h2>
+        <p>
+          Выбор IT компании в Ташкенте — важное решение для бизнеса. В этом разделе мы собрали ответы на самые частые вопросы об IT аутсорсинге, чтобы вы могли принять взвешенное решение. Novum Tech работает по договору с фиксированным SLA и прозрачной отчётностью.
+        </p>
+        <h3>Как работает IT аутсорсинг?</h3>
+        <p>
+          IT аутсорсинг в Ташкенте от Novum Tech — это передача обслуживания IT-инфраструктуры внешней команде профессионалов. Вы получаете обслуживание компьютеров, серверов, сетей, <SeoLink to="/service-desk">service desk</SeoLink> и техническую поддержку по фиксированной ежемесячной стоимости без необходимости содержать штатных IT-специалистов.
+        </p>
+        <h3>Что входит в IT обслуживание?</h3>
+        <p>
+          В зависимости от выбранного тарифа, IT обслуживание может включать: поддержку рабочих мест, администрирование серверов, монтаж СКС, настройку сетевого оборудования и внедрение CRM в Узбекистане. Ознакомьтесь с полным <SeoLink to="/services">каталогом IT услуг</SeoLink> или <SeoLink to="/constructor">соберите свой тариф</SeoLink> в конструкторе.
+        </p>
+      </SeoTextBlock>
+
       <Footer />
     </div>
   );
