@@ -71,7 +71,7 @@ export default function ClientsMarquee() {
   return (
     <>
       {/* === CLIENTS LOGOS === */}
-      <section className="py-12 lg:py-16 relative overflow-hidden">
+      <section className="py-8 lg:py-16 relative overflow-hidden">
         <div className="section-divider" />
         <div className="container mx-auto px-4 lg:px-8 pt-12 lg:pt-16">
           <ScrollReveal>
@@ -100,7 +100,7 @@ export default function ClientsMarquee() {
       </section>
 
       {/* === TESTIMONIALS === */}
-      <section className="py-12 lg:py-20 relative">
+      <section className="py-8 lg:py-20 relative">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_50%,hsl(217,91%,60%,0.03),transparent)]" />
         <div className="container mx-auto px-4 lg:px-8 relative">
           <ScrollReveal>
