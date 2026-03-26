@@ -5,6 +5,7 @@ import Services from "@/components/Services";
 import Pricing from "@/components/Pricing";
 import Footer from "@/components/Footer";
 import ClientsMarquee from "@/components/ClientsMarquee";
+import Partners from "@/components/Partners";
 import SEOHead from "@/components/SEOHead";
 import SeoTextBlock, { SeoLink } from "@/components/SeoTextBlock";
 import { useVisitTracker } from "@/hooks/useVisitTracker";
