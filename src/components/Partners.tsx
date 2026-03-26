@@ -47,14 +47,14 @@ export default function Partners() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 lg:gap-5">
           {partners.map((p, i) => (
             <ScrollReveal key={p.name} delay={i * 50}>
-              <div className="group glass rounded-2xl p-4 lg:p-5 flex items-center justify-center h-36 lg:h-44 cursor-default transition-all duration-500 hover:scale-105 hover:border-primary/20 hover:shadow-[0_0_40px_-10px_hsl(217,91%,60%,0.15)] bg-white/5 hover:bg-white/10">
+              <div className="group flex items-center justify-center h-36 lg:h-44 cursor-default transition-all duration-500 hover:scale-110">
                 <img
                   src={p.logo}
                   alt={p.name}
                   loading="lazy"
                   width={512}
                   height={512}
-                  className="h-24 lg:h-28 w-auto object-contain opacity-85 transition-all duration-500 group-hover:opacity-100 group-hover:scale-110"
+                  className="h-36 lg:h-44 w-auto object-contain opacity-85 transition-all duration-500 group-hover:opacity-100"
                 />
               </div>
             </ScrollReveal>
