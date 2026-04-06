@@ -1,0 +1,19 @@
+{
+  "name": "novum-tech-bot",
+  "version": "1.0.0",
+  "description": "Telegram бот для сбора товаров от поставщиков",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "setup-db": "node src/setup-database.js"
+  },
+  "dependencies": {
+    "grammy": "^1.21.1",
+    "@supabase/supabase-js": "^2.95.3",
+    "dotenv": "^16.4.7",
+    "node-cron": "^3.0.3",
+    "cheerio": "^1.0.0"
+  }
+}
