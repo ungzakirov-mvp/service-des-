@@ -71,7 +71,7 @@ function calcScore(lead) {
 
 async function upsertLead(lead) {
   const domain = normalizeDomain(lead.website || lead.domain || "");
-  if (!domain && !lead.email && !lead.telegram) return null;
+  if (!domain && !lead.email && !lead.telegram && !lead.phone) return null;
 
   const payload = {
     company_name: lead.company_name || domain || "Компания без названия",
@@ -142,16 +142,21 @@ async function scanLeads(limitQueries = 3) {
     for (const item of results) {
       const website = item.link;
       const domain = normalizeDomain(website);
-      if (!domain) continue;
+      const snippetBlob = `${item.title || ""} ${item.snippet || ""}`;
+      const snippetContacts = extractContacts(snippetBlob);
+
+      if (!domain && !snippetContacts.emails[0] && !snippetContacts.telegrams[0] && !snippetContacts.phones[0]) {
+        continue;
+      }
 
       const enriched = await enrichFromWebsite(website);
       const lead = await upsertLead({
         company_name: item.title?.slice(0, 120) || domain,
         website,
         domain,
-        email: enriched.email,
-        telegram: enriched.telegram,
-        phone: enriched.phone,
+        email: enriched.email || snippetContacts.emails[0] || null,
+        telegram: enriched.telegram || snippetContacts.telegrams[0] || null,
+        phone: enriched.phone || snippetContacts.phones[0] || null,
         source: `serper:${query}`,
       });
       if (lead) saved += 1;
