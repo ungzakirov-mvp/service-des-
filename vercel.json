@@ -3,6 +3,7 @@
   "outputDirectory": "dist",
   "framework": null,
   "routes": [
+    { "src": "/api/seo/(.*)", "dest": "/api/seo.js" },
     { "src": "/api/seo", "dest": "/api/seo.js" },
     { "src": "/((?!api/).*)", "destination": "/index.html" }
   ],

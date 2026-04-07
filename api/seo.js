@@ -13,15 +13,31 @@ const pages = {
   '/privacy': { title: 'Политика конфиденциальности — Novum Tech', desc: 'Политика конфиденциальности IT-компании Novum Tech.', h1: 'Политика конфиденциальности' },
 };
 
+const BOT_PATTERNS = ['googlebot', 'yandex', 'bingbot', 'yahoo', 'duckduckbot', 'baiduspider', 'applebot', 'semrush', 'ahrefs', 'gptbot', 'claudebot'];
+
+function isBot(userAgent) {
+  if (!userAgent) return false;
+  const ua = userAgent.toLowerCase();
+  return BOT_PATTERNS.some(bot => ua.includes(bot));
+}
+
 const base = 'https://novumtech.uz';
 
 export default function handler(req) {
+  const userAgent = req.headers.get('user-agent') || '';
   const url = new URL(req.url);
   const path = url.pathname;
+  
+  // Если это не бот - возвращаем 404 (Vercel отдаст index.html через rewrites)
+  if (!isBot(userAgent)) {
+    return new Response(null, { status: 404 });
+  }
+  
+  // Для ботов - отдаём SEO контент
   const page = pages[path];
-
+  
   if (!page) {
-    return new Response('Not Found', { status: 404 });
+    return new Response(null, { status: 404 });
   }
 
   const html = `<!DOCTYPE html>
