@@ -26,7 +26,7 @@ const base = 'https://novumtech.uz';
 export default function handler(req) {
   const userAgent = req.headers.get('user-agent') || '';
   const url = new URL(req.url);
-  const path = url.pathname;
+  const targetPath = url.searchParams.get('path') || '/';
   
   // Если это не бот - возвращаем 404 (Vercel отдаст index.html через rewrites)
   if (!isBot(userAgent)) {
@@ -34,7 +34,7 @@ export default function handler(req) {
   }
   
   // Для ботов - отдаём SEO контент
-  const page = pages[path];
+  const page = pages[targetPath];
   
   if (!page) {
     return new Response(null, { status: 404 });
@@ -50,11 +50,11 @@ export default function handler(req) {
   <meta name="robots" content="index, follow">
   <meta name="googlebot" content="index, follow">
   <meta name="yandex-verification" content="fd1a4df8eccf9101">
-  <link rel="canonical" href="${base}${path}">
+  <link rel="canonical" href="${base}${targetPath}">
   <meta property="og:title" content="${page.title}">
   <meta property="og:description" content="${page.desc}">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="${base}${path}">
+  <meta property="og:url" content="${base}${targetPath}">
   <meta property="og:locale" content="ru_RU">
   <script type="application/ld+json">
   {
@@ -81,7 +81,7 @@ export default function handler(req) {
     <p><strong>⏰</strong> Пн-Пт: 09:00-18:00</p>
   </div>
   <div style="margin-top: 30px;">
-    <a href="${base}${path}" style="display: inline-block; padding: 14px 28px; background: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">Перейти на сайт →</a>
+    <a href="${base}${targetPath}" style="display: inline-block; padding: 14px 28px; background: #2563eb; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">Перейти на сайт →</a>
   </div>
 </body>
 </html>`;
