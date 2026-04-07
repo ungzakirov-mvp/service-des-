@@ -49,7 +49,16 @@ const BOT_PATTERNS = [
 ];
 
 export const config = {
-  matcher: Object.keys(pages)
+  matcher: [
+    '/',
+    '/services',
+    '/about',
+    '/faq',
+    '/contacts',
+    '/constructor',
+    '/service-desk',
+    '/privacy'
+  ]
 };
 
 export default function middleware(request) {
@@ -57,7 +66,7 @@ export default function middleware(request) {
   const isBot = BOT_PATTERNS.some(bot => userAgent.toLowerCase().includes(bot));
   
   if (!isBot) {
-    return NextResponse.next();
+    return new Response(null, { status: 404 });
   }
   
   const url = new URL(request.url);
@@ -65,7 +74,7 @@ export default function middleware(request) {
   const page = pages[path];
   
   if (!page) {
-    return NextResponse.next();
+    return new Response(null, { status: 404 });
   }
   
   const base = 'https://novumtech.uz';
