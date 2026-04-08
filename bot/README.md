@@ -206,6 +206,8 @@ npm run start:leads
 - `/batchpitch [n]` — пачка готовых сообщений
 - `/plan [n]` — приоритетный план касаний на день
 - `/pitch <id>` — шаблоны Telegram + Email под лид
+- `/nudge <id>` — 3 варианта сообщения для первого/второго касания
+- `/result <id> <interested|meeting|no_reply|not_now|wrong_contact|won|lost>` — быстрый результат по контакту
 - `/status <id> <new|contacted|meeting|proposal|won|lost>`
 - `/addlead Компания | сайт | email | telegram | телефон`
 - `/autopilot` — запустить авто outreach прямо сейчас

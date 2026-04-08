@@ -221,6 +221,14 @@ function buildTelegramPitch(lead) {
   ].join("\n");
 }
 
+function buildTelegramVariants(lead) {
+  return [
+    `Здравствуйте, ${lead.company_name}! Мы в Novum Tech помогаем компаниям в Ташкенте закрывать IT-заявки быстрее. Могу отправить короткий бесплатный аудит (3 пункта) для вашей инфраструктуры?`,
+    `${lead.company_name}, добрый день! Подскажите, у вас есть SLA по IT-поддержке? Мы обычно снижаем простои за 2-4 недели внедрения Service Desk. Если интересно, скину кейс на 1 страницу.`,
+    `Добрый день! Если тема IT-поддержки сейчас не в приоритете, могу просто отправить чек-лист "10 типовых IT-рисков для компаний Ташкента" — бесплатно, без обязательств.`
+  ];
+}
+
 function buildEmailPitch(lead) {
   const subject = `Идея по снижению IT-рисков для ${lead.company_name}`;
   const body = [
@@ -372,6 +380,21 @@ async function getTopLeads(limit = 10) {
   return data || [];
 }
 
+async function resolveLeadId(input) {
+  const value = (input || "").trim();
+  if (!value) return null;
+  if (value.length >= 30) return value;
+
+  const { data } = await supabase
+    .from("leads")
+    .select("id")
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  const row = (data || []).find((x) => x.id.startsWith(value));
+  return row ? row.id : null;
+}
+
 async function getFollowupLeads(limit = 10) {
   const threshold = new Date(Date.now() - MIN_CONTACT_INTERVAL_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const { data } = await supabase
@@ -457,6 +480,8 @@ bot.command("start", async (ctx) => {
       "/batchpitch [n] - пачка готовых сообщений",
       "/plan [n] - план касаний на сегодня",
       "/pitch <id> - шаблоны Telegram+Email",
+      "/nudge <id> - 3 варианта 1-го/2-го касания",
+      "/result <id> <interested|meeting|no_reply|not_now|wrong_contact|won|lost>",
       "/status <id> <new|contacted|meeting|proposal|won|lost>",
       "/addlead Компания | сайт | email | telegram | телефон",
       "/autopilot - запустить авто outreach сейчас",
@@ -588,9 +613,14 @@ bot.command("next", async (ctx) => {
 
 bot.command("pitch", async (ctx) => {
   if (!adminOnly(ctx)) return;
-  const id = (ctx.match || "").trim();
-  if (!id) {
+  const rawId = (ctx.match || "").trim();
+  if (!rawId) {
     await ctx.reply("Используй: /pitch <id>");
+    return;
+  }
+  const id = await resolveLeadId(rawId);
+  if (!id) {
+    await ctx.reply("Лид не найден по этому id/префиксу.");
     return;
   }
   const { data } = await supabase
@@ -608,6 +638,90 @@ bot.command("pitch", async (ctx) => {
   const email = buildEmailPitch(data);
   await ctx.reply(`📩 Telegram:\n\n${tg}`);
   await ctx.reply(`📧 Email subject: ${email.subject}\n\n${email.body}`);
+});
+
+bot.command("nudge", async (ctx) => {
+  if (!adminOnly(ctx)) return;
+  const rawId = (ctx.match || "").trim();
+  if (!rawId) {
+    await ctx.reply("Используй: /nudge <id>");
+    return;
+  }
+  const id = await resolveLeadId(rawId);
+  if (!id) {
+    await ctx.reply("Лид не найден по этому id/префиксу.");
+    return;
+  }
+
+  const { data } = await supabase
+    .from("leads")
+    .select("id, company_name, email, telegram, status")
+    .eq("id", id)
+    .single();
+
+  if (!data) {
+    await ctx.reply("Лид не найден.");
+    return;
+  }
+
+  const variants = buildTelegramVariants(data);
+  await ctx.reply(
+    [
+      `🎯 ${data.company_name} (#${data.id.slice(0, 8)})`,
+      `Статус: ${data.status}`,
+      "",
+      `Вариант 1:\n${variants[0]}`,
+      "",
+      `Вариант 2:\n${variants[1]}`,
+      "",
+      `Вариант 3:\n${variants[2]}`,
+      "",
+      `После отправки отметь результат: /result ${data.id.slice(0, 8)} interested|meeting|no_reply|not_now|wrong_contact|won|lost`,
+    ].join("\n")
+  );
+});
+
+bot.command("result", async (ctx) => {
+  if (!adminOnly(ctx)) return;
+  const [rawId, outcome] = (ctx.match || "").trim().split(/\s+/);
+  const allowed = new Set(["interested", "meeting", "no_reply", "not_now", "wrong_contact", "won", "lost"]);
+  if (!rawId || !allowed.has(outcome)) {
+    await ctx.reply("Используй: /result <id> <interested|meeting|no_reply|not_now|wrong_contact|won|lost>");
+    return;
+  }
+  const id = await resolveLeadId(rawId);
+  if (!id) {
+    await ctx.reply("Лид не найден по этому id/префиксу.");
+    return;
+  }
+
+  const map = {
+    interested: "proposal",
+    meeting: "meeting",
+    no_reply: "contacted",
+    not_now: "contacted",
+    wrong_contact: "lost",
+    won: "won",
+    lost: "lost",
+  };
+
+  const patch = {
+    status: map[outcome],
+    last_contacted_at: new Date().toISOString(),
+  };
+
+  if (outcome === "wrong_contact" || outcome === "lost") {
+    patch.do_not_contact = true;
+  }
+
+  const { error } = await supabase.from("leads").update(patch).eq("id", id);
+  if (error) {
+    await ctx.reply(`Ошибка обновления: ${error.message}`);
+    return;
+  }
+
+  await logLeadActivity(id, "other", "note", { outcome, mapped_status: map[outcome] });
+  await ctx.reply(`✅ Результат сохранён: ${outcome} -> ${map[outcome]}`);
 });
 
 bot.command("status", async (ctx) => {
