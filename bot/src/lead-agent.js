@@ -16,6 +16,10 @@ if (!botToken || !supabaseUrl || !supabaseKey) {
 const bot = new Bot(botToken);
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+bot.catch((err) => {
+  console.error("Telegram bot runtime error:", err.error || err);
+});
+
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || "8374898260";
 const LEAD_CITY = process.env.LEAD_CITY || "Ташкент";
 const DAILY_REPORT_CRON = process.env.DAILY_REPORT_CRON || "0 9 * * *";
@@ -921,7 +925,11 @@ if (AUTO_OUTREACH) {
 
 async function bootstrap() {
   console.log("Lead Agent started");
-  await bot.api.sendMessage(ADMIN_CHAT_ID, "✅ Lead Agent запущен. Команда /start покажет управление.");
+  try {
+    await bot.api.sendMessage(ADMIN_CHAT_ID, "✅ Lead Agent запущен. Команда /start покажет управление.");
+  } catch (error) {
+    console.warn("Startup notify skipped:", error?.description || error?.message || error);
+  }
   await bot.start();
 }
 
