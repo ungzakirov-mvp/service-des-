@@ -56,8 +56,15 @@ const LOW_QUALITY_DOMAINS = new Set([
   "instagram.com",
   "t.me",
   "facebook.com",
-  "glotr.uz",
 ]);
+
+function buildQueryVariants(baseQuery) {
+  return [
+    baseQuery,
+    `${baseQuery} официальный сайт site:.uz -2gis -yandex -maps`,
+    `${baseQuery} сайт компании -2gis -yandex -maps`,
+  ];
+}
 
 function adminOnly(ctx) {
   return String(ctx.chat?.id || "") === String(ADMIN_CHAT_ID);
@@ -184,10 +191,14 @@ async function enrichFromWebsite(url) {
 
 async function scanLeads(limitQueries = 3) {
   let saved = 0;
-  for (const query of BASE_QUERIES.slice(0, limitQueries)) {
-    const results = await runSerperSearch(query, 8);
-    console.log(`[scan] query="${query}" results=${results.length}`);
-    for (const item of results) {
+  let totalResults = 0;
+  let totalCandidates = 0;
+  for (const baseQuery of BASE_QUERIES.slice(0, limitQueries)) {
+    for (const query of buildQueryVariants(baseQuery)) {
+      const results = await runSerperSearch(query, 8);
+      totalResults += results.length;
+      console.log(`[scan] query="${query}" results=${results.length}`);
+      for (const item of results) {
       const website = item.link || item.displayLink || "";
       const domain = normalizeDomain(website || item.displayLink || "");
       const snippetBlob = `${item.title || ""} ${item.snippet || ""}`;
@@ -196,6 +207,7 @@ async function scanLeads(limitQueries = 3) {
       if (!domain && !snippetContacts.emails[0] && !snippetContacts.telegrams[0] && !snippetContacts.phones[0]) {
         continue;
       }
+      totalCandidates += 1;
 
       const enriched = await enrichFromWebsite(website);
       const lead = await upsertLead({
@@ -210,8 +222,10 @@ async function scanLeads(limitQueries = 3) {
         industry: inferIndustry(`${query} ${item.title || ""} ${item.snippet || ""}`),
       });
       if (lead) saved += 1;
+      }
     }
   }
+  console.log(`[scan] total_results=${totalResults} total_candidates=${totalCandidates} saved=${saved}`);
   return saved;
 }
 
@@ -539,7 +553,11 @@ bot.command("scan", async (ctx) => {
 
   await ctx.reply(`🔎 Запускаю поиск лидов по ${queryCount} нишам...`);
   const saved = await scanLeads(queryCount);
-  await ctx.reply(`✅ Готово. Добавлено/обновлено лидов: ${saved}`);
+  if (saved === 0) {
+    await ctx.reply("⚠️ Готово, но лидов 0. Проверь Logs в Railway: строки [scan] покажут, есть ли выдача и кандидаты. Запусти /scan 8 для расширенного поиска.");
+  } else {
+    await ctx.reply(`✅ Готово. Добавлено/обновлено лидов: ${saved}`);
+  }
 });
 
 bot.command("today", async (ctx) => {
