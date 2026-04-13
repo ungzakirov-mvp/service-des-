@@ -25,6 +25,7 @@ const LEAD_CITY = process.env.LEAD_CITY || "Ташкент";
 const DAILY_REPORT_CRON = process.env.DAILY_REPORT_CRON || "0 9 * * *";
 const EVENING_REPORT_CRON = process.env.EVENING_REPORT_CRON || "0 18 * * *";
 const DAILY_REPORT_TIMEZONE = process.env.DAILY_REPORT_TIMEZONE || "Asia/Tashkent";
+const LEAD_AGGRESSIVE_MODE = String(process.env.LEAD_AGGRESSIVE_MODE || "true").toLowerCase() === "true";
 const AUTO_OUTREACH = String(process.env.AUTO_OUTREACH || "false").toLowerCase() === "true";
 const AUTO_OUTREACH_CRON = process.env.AUTO_OUTREACH_CRON || "30 9 * * *";
 const MAX_DAILY_OUTREACH = Number(process.env.MAX_DAILY_OUTREACH || 8);
@@ -119,7 +120,7 @@ function preferredChannel(lead) {
 
 async function upsertLead(lead) {
   const domain = normalizeDomain(lead.website || lead.domain || "");
-  if (domain && LOW_QUALITY_DOMAINS.has(domain)) return null;
+  if (!LEAD_AGGRESSIVE_MODE && domain && LOW_QUALITY_DOMAINS.has(domain)) return null;
   if (!domain && !lead.email && !lead.telegram && !lead.phone) return null;
 
   const payload = {
@@ -193,6 +194,8 @@ async function scanLeads(limitQueries = 3) {
   let saved = 0;
   let totalResults = 0;
   let totalCandidates = 0;
+  let filteredLowQuality = 0;
+  let upsertErrors = 0;
   for (const baseQuery of BASE_QUERIES.slice(0, limitQueries)) {
     for (const query of buildQueryVariants(baseQuery)) {
       const results = await runSerperSearch(query, 8);
@@ -203,6 +206,11 @@ async function scanLeads(limitQueries = 3) {
       const domain = normalizeDomain(website || item.displayLink || "");
       const snippetBlob = `${item.title || ""} ${item.snippet || ""}`;
       const snippetContacts = extractContacts(snippetBlob);
+
+      if (!LEAD_AGGRESSIVE_MODE && domain && LOW_QUALITY_DOMAINS.has(domain)) {
+        filteredLowQuality += 1;
+        continue;
+      }
 
       if (!domain && !snippetContacts.emails[0] && !snippetContacts.telegrams[0] && !snippetContacts.phones[0]) {
         continue;
@@ -221,12 +229,16 @@ async function scanLeads(limitQueries = 3) {
         notes: item.snippet || null,
         industry: inferIndustry(`${query} ${item.title || ""} ${item.snippet || ""}`),
       });
-      if (lead) saved += 1;
+      if (lead) {
+        saved += 1;
+      } else {
+        upsertErrors += 1;
+      }
       }
     }
   }
-  console.log(`[scan] total_results=${totalResults} total_candidates=${totalCandidates} saved=${saved}`);
-  return saved;
+  console.log(`[scan] total_results=${totalResults} total_candidates=${totalCandidates} filtered=${filteredLowQuality} saved=${saved} upsert_errors=${upsertErrors}`);
+  return { saved, totalResults, totalCandidates, filteredLowQuality, upsertErrors };
 }
 
 function buildTelegramPitch(lead) {
@@ -552,11 +564,15 @@ bot.command("scan", async (ctx) => {
   }
 
   await ctx.reply(`🔎 Запускаю поиск лидов по ${queryCount} нишам...`);
-  const saved = await scanLeads(queryCount);
-  if (saved === 0) {
-    await ctx.reply("⚠️ Готово, но лидов 0. Проверь Logs в Railway: строки [scan] покажут, есть ли выдача и кандидаты. Запусти /scan 8 для расширенного поиска.");
+  const result = await scanLeads(queryCount);
+  if (result.saved === 0) {
+    await ctx.reply(
+      `⚠️ Готово, лидов 0.\nresults=${result.totalResults}, candidates=${result.totalCandidates}, filtered=${result.filteredLowQuality}, upsert_errors=${result.upsertErrors}.\nПроверь Logs и выполни /scan 8.`
+    );
   } else {
-    await ctx.reply(`✅ Готово. Добавлено/обновлено лидов: ${saved}`);
+    await ctx.reply(
+      `✅ Готово. Добавлено/обновлено лидов: ${result.saved}\nresults=${result.totalResults}, candidates=${result.totalCandidates}, filtered=${result.filteredLowQuality}.`
+    );
   }
 });
 
