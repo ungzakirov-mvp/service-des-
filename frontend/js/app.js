@@ -798,17 +798,19 @@ async function loadOpenTickets() {
         }
         
         const tickets = await res.json();
-        console.log('Tickets:', tickets);
+        console.log('Tickets loaded:', tickets);
         
         if (!tickets || tickets.length === 0) {
             container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.85rem;">Нет заявок</p>';
             return;
         }
         
+        console.log('Ticket data:', tickets);
+        
         container.innerHTML = tickets.map(t => `
             <div onclick="openTicketModal(${t.id})" style="cursor:pointer;padding:0.5rem;margin-bottom:0.5rem;background:rgba(0,0,0,0.2);border-radius:8px;border-left:3px solid ${t.priority === 'critical' ? 'var(--jarvis-rose)' : t.priority === 'high' ? '#f59e0b' : 'var(--jarvis-cyan)'};">
                 <div style="display:flex;justify-content:space-between;font-size:0.85rem;">
-                    <span style="color:var(--text-primary);font-weight:500;">#${t.id}</span>
+                    <span style="color:var(--text-primary);font-weight:500;">#${t.id} ${t.readable_id ? '('+t.readable_id+')' : ''}</span>
                     <span style="color:var(--text-tertiary);font-size:0.75rem;">${t.status}</span>
                 </div>
                 <div style="font-size:0.8rem;color:var(--text-secondary);">${(t.title || t.subject || 'Без заголовка').substring(0, 40)}${((t.title || t.subject) || '').length > 40 ? '...' : ''}</div>
@@ -1095,6 +1097,12 @@ async function openTicketModal(ticketId) {
 
         // Load ticket files/attachments
         loadTicketFiles(ticket);
+        
+        // Load checklist if agent
+        window.currentTicketId = ticketId;
+        if (typeof loadChecklist === 'function') {
+            loadChecklist(ticketId);
+        }
 
     } catch (error) {
         console.error('Modal error:', error);
