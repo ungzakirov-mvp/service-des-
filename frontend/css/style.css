@@ -1360,11 +1360,12 @@ body {
 
 .notification-dropdown {
     position: fixed;
-    top: 70px;
-    right: 20px;
+    top: 130px;
+    left: 50%;
+    transform: translateX(-50%);
     width: 380px;
     max-width: calc(100vw - 40px);
-    max-height: calc(100vh - 100px);
+    max-height: calc(100vh - 180px);
     z-index: 99999;
     padding: 0;
     backdrop-filter: blur(25px);
