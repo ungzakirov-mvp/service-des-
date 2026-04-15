@@ -816,15 +816,12 @@ async function loadOpenTickets() {
         container.innerHTML = '';
         
         tickets.forEach(t => {
-            console.log('Ticket:', t.id, t.title, t.status);
             const div = document.createElement('div');
-            div.style.cssText = 'cursor:pointer;padding:0.5rem;margin-bottom:0.5rem;background:#2a2a4a;border-radius:8px;display:flex;align-items:center;gap:0.5rem;';
-            div.onclick = () => { console.log('Click ticket:', t.id); openTicketModal(t.id); };
-            div.innerHTML = '<span style="color:#00d4ff;font-weight:bold;">#' + t.id + '</span><span style="color:#fff;font-size:0.85rem;">' + (t.title || t.subject || 'Без заголовка').substring(0, 30) + '</span>';
+            div.style.cssText = 'cursor:pointer;padding:0.75rem;margin-bottom:0.5rem;background:#1a1a3a;border-radius:8px;border:1px solid #00d4ff;display:flex;align-items:center;gap:0.5rem;';
+            div.onclick = () => openTicketModal(t.id);
+            div.innerHTML = '<span style="color:#00d4ff;font-weight:bold;font-size:1.2rem;">#' + t.id + '</span><span style="color:#fff;font-size:1rem;">' + (t.title || t.subject || 'Без заголовка') + '</span>';
             container.appendChild(div);
         });
-        
-        alert('Показано ' + tickets.length + ' заявок');
     } catch (e) {
         console.error('Load open tickets error:', e);
         container.innerHTML = '<p style="color:var(--jarvis-rose);font-size:0.85rem;">Ошибка: ' + e.message + '</p>';
