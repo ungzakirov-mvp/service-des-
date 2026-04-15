@@ -773,12 +773,11 @@ function showView(viewName) {
         loadUsers();
     } else if (viewName === 'assets') {
         loadAssetsView();
-    } else if (viewName === 'create') {
+} else if (viewName === 'createView') {
         loadOpenTickets();
     }
 }
 
-// Load open tickets for create view
 async function loadOpenTickets() {
     const container = document.getElementById('openTicketsList');
     if (!container) return;
