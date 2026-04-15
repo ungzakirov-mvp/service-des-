@@ -779,17 +779,25 @@ function showView(viewName) {
 }
 
 async function loadOpenTickets() {
+    console.log('loadOpenTickets called');
     const container = document.getElementById('openTicketsList');
-    if (!container) return;
+    console.log('Container:', container);
+    if (!container) {
+        alert('Container not found!');
+        return;
+    }
     
     container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.85rem;">Загрузка...</p>';
     
+    const token = localStorage.getItem('access_token');
+    console.log('Token exists:', !!token);
+    
     try {
         const res = await fetch('/api/tickets/', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         
-        console.log('Tickets response:', res.status);
+        console.log('Response status:', res.status);
         
         if (!res.ok) {
             container.innerHTML = '<p style="color:var(--jarvis-rose);font-size:0.85rem;">Ошибка: ' + res.status + '</p>';
@@ -797,14 +805,12 @@ async function loadOpenTickets() {
         }
         
         const tickets = await res.json();
-        console.log('Tickets loaded:', tickets);
+        console.log('Tickets:', tickets);
         
         if (!tickets || tickets.length === 0) {
             container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.85rem;">Нет заявок</p>';
             return;
         }
-        
-        console.log('Ticket data:', tickets);
         
         container.innerHTML = tickets.map(t => `
             <div onclick="openTicketModal(${t.id})" style="cursor:pointer;padding:0.5rem;margin-bottom:0.5rem;background:rgba(0,0,0,0.2);border-radius:8px;border-left:3px solid ${t.priority === 'critical' ? 'var(--jarvis-rose)' : t.priority === 'high' ? '#f59e0b' : 'var(--jarvis-cyan)'};">
