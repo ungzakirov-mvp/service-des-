@@ -2376,9 +2376,83 @@ async function handleCreateAsset(e) {
     }
 }
 
+// ============================================
+// DEMO FLOATING CARDS FUNCTIONALITY
+// ============================================
+let demoTimerInterval = null;
+let demoTimerSeconds = 0;
+
+function demoToggleTimer() {
+    const display = document.getElementById('demoTimerDisplay');
+    const playBtn = document.querySelector('#demoCardsContainer .btn-primary');
+    const stopBtn = document.querySelector('#demoCardsContainer .btn-danger');
+    
+    if (demoTimerInterval) {
+        clearInterval(demoTimerInterval);
+        demoTimerInterval = null;
+        if (playBtn) playBtn.style.display = '';
+        if (stopBtn) stopBtn.style.display = 'none';
+    } else {
+        demoTimerInterval = setInterval(() => {
+            demoTimerSeconds++;
+            const h = Math.floor(demoTimerSeconds / 3600);
+            const m = Math.floor((demoTimerSeconds % 3600) / 60);
+            const s = demoTimerSeconds % 60;
+            if (display) display.textContent = 
+                String(h).padStart(2,'0') + ':' +
+                String(m).padStart(2,'0') + ':' +
+                String(s).padStart(2,'0');
+        }, 1000);
+        if (playBtn) playBtn.style.display = 'none';
+        if (stopBtn) stopBtn.style.display = '';
+    }
+}
+
+function demoStopTimer() {
+    if (demoTimerInterval) {
+        clearInterval(demoTimerInterval);
+        demoTimerInterval = null;
+    }
+    demoTimerSeconds = 0;
+    const display = document.getElementById('demoTimerDisplay');
+    if (display) display.textContent = '00:00:00';
+    const playBtn = document.querySelector('#demoCardsContainer .btn-primary');
+    const stopBtn = document.querySelector('#demoCardsContainer .btn-danger');
+    if (playBtn) playBtn.style.display = '';
+    if (stopBtn) stopBtn.style.display = 'none';
+}
+
+function demoUpdateCheckProgress() {
+    const container = document.getElementById('demoChecklistItems');
+    if (!container) return;
+    const checked = container.querySelectorAll('.completed').length;
+    const total = container.children.length;
+    const progressEl = document.getElementById('demoCheckProgress');
+    if (progressEl) progressEl.textContent = checked + '/' + total;
+}
+
+function demoRate(rating) {
+    const stars = document.querySelectorAll('#demoRatingStars .fa-star');
+    stars.forEach((star, i) => {
+        star.classList.toggle('fas', i < rating);
+        star.classList.toggle('far', i >= rating);
+    });
+    showToast('Оценка ' + rating + ' сохранена', 'success');
+}
+
+// Initialize demo cards
 document.addEventListener('DOMContentLoaded', () => {
-    const addAssetForm = document.getElementById('addAssetForm');
-    if (addAssetForm) addAssetForm.addEventListener('submit', handleCreateAsset);
+    demoUpdateCheckProgress();
+    
+    // Add CSS for demo checklist
+    const style = document.createElement('style');
+    style.textContent = `
+        #demoCardsContainer .checklist-item.completed .checklist-checkbox { background: var(--jarvis-emerald); border-color: var(--jarvis-emerald); }
+        #demoCardsContainer .checklist-item.completed .checklist-checkbox::after { content: '✓'; color: white; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; }
+        #demoCardsContainer .checklist-checkbox { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-radius: 4px; display: inline-flex; }
+    `;
+    document.head.appendChild(style);
+});
     
     const assetSearchInput = document.getElementById('assetSearchInput');
     if (assetSearchInput) {
@@ -2393,4 +2467,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const assetStatusFilter = document.getElementById('assetStatusFilter');
     if (assetStatusFilter) assetStatusFilter.addEventListener('change', () => loadAssetsView());
 });
+
+// Asset form handler
+const addAssetFormEl = document.getElementById('addAssetForm');
+if (addAssetFormEl) addAssetFormEl.addEventListener('submit', handleCreateAsset);
 

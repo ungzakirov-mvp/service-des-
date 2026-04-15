@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Service Desk - Premium Help Desk System</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%2300d4ff'/><text x='50' y='72' text-anchor='middle' font-size='60' fill='white' font-family='sans-serif' font-weight='bold'>SD</text></svg>">
-    <link rel="stylesheet" href="css/style.css?v=3.0.9">
+    <link rel="stylesheet" href="css/style.css?v=3.1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1523,12 +1523,62 @@
             </div>
         </div>
 
-        <script src="js/api.js?v=3.0.9"></script>
-        <script src="js/features-api.js?v=3.0.9"></script>
-        <script src="js/i18n.js?v=3.0.9"></script>
-        <script src="js/app.js?v=3.0.9"></script>
-        <script src="js/features-simple.js?v=3.0.9"></script>
-        <script src="js/features-agent.js?v=3.0.9"></script>
+        <!-- Demo Floating Cards - Above All Forms -->
+        <div id="demoCardsContainer" style="position:fixed;bottom:20px;right:20px;z-index:999999;display:flex;flex-direction:column;gap:10px;max-width:320px;pointer-events:none;">
+            <!-- Timer Demo Card -->
+            <div class="glass-card" style="padding:1rem;pointer-events:auto;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+                    <i class="fas fa-stopwatch" style="color:var(--jarvis-cyan);"></i>
+                    <span style="font-weight:600;color:var(--text-primary);font-size:0.85rem;">Таймер</span>
+                </div>
+                <div id="demoTimerDisplay" style="font-size:2rem;font-family:'JetBrains Mono',monospace;color:var(--jarvis-cyan);font-weight:700;text-align:center;">00:00:00</div>
+                <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.5rem;">
+                    <button class="btn btn-small btn-primary" onclick="demoToggleTimer()" style="padding:0.4rem 0.75rem;"><i class="fas fa-play"></i></button>
+                    <button class="btn btn-small btn-danger" onclick="demoStopTimer()" style="padding:0.4rem 0.75rem;display:none;"><i class="fas fa-stop"></i></button>
+                </div>
+            </div>
+            
+            <!-- Checklist Demo Card -->
+            <div class="glass-card" style="padding:1rem;pointer-events:auto;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                    <span style="display:flex;align-items:center;gap:0.5rem;"><i class="fas fa-tasks" style="color:var(--jarvis-emerald);"></i><span style="font-weight:600;color:var(--text-primary);font-size:0.85rem;">Чек-лист</span></span>
+                    <span id="demoCheckProgress" style="color:var(--jarvis-emerald);font-size:0.8rem;">0/3</span>
+                </div>
+                <div id="demoChecklistItems" style="font-size:0.8rem;">
+                    <div class="checklist-item completed" style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;" onclick="this.classList.toggle('completed');demoUpdateCheckProgress()">
+                        <div class="checklist-checkbox checked"></div><span>Принять заявку</span>
+                    </div>
+                    <div class="checklist-item" style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;" onclick="this.classList.toggle('completed');demoUpdateCheckProgress()">
+                        <div class="checklist-checkbox"></div><span>Диагностика</span>
+                    </div>
+                    <div class="checklist-item" style="display:flex;align-items:center;gap:0.5rem;padding:0.3rem;cursor:pointer;" onclick="this.classList.toggle('completed');demoUpdateCheckProgress()">
+                        <div class="checklist-checkbox"></div><span>Перезагрузка</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Rating Demo Card -->
+            <div class="glass-card" style="padding:1rem;pointer-events:auto;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+                    <i class="fas fa-star" style="color:#fbbf24;"></i>
+                    <span style="font-weight:600;color:var(--text-primary);font-size:0.85rem;">Оценка</span>
+                </div>
+                <div id="demoRatingStars" style="font-size:1.25rem;color:#fbbf24;cursor:pointer;">
+                    <i class="far fa-star" onclick="demoRate(1)"></i>
+                    <i class="far fa-star" onclick="demoRate(2)"></i>
+                    <i class="far fa-star" onclick="demoRate(3)"></i>
+                    <i class="far fa-star" onclick="demoRate(4)"></i>
+                    <i class="far fa-star" onclick="demoRate(5)"></i>
+                </div>
+            </div>
+        </div>
+
+        <script src="js/api.js?v=3.1.0"></script>
+        <script src="js/features-api.js?v=3.1.0"></script>
+        <script src="js/i18n.js?v=3.1.0"></script>
+        <script src="js/app.js?v=3.1.0"></script>
+        <script src="js/features-simple.js?v=3.1.0"></script>
+        <script src="js/features-agent.js?v=3.1.0"></script>
 </body>
 
 </html>
