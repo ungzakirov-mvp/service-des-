@@ -784,18 +784,24 @@ async function loadOpenTickets() {
     if (!container) return;
     
     try {
-        const status = await api.request('/tickets?status=open&limit=50');
-        if (!status.ok) throw new Error('Failed to load');
+        const res = await fetch('/api/tickets?limit=50', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+        });
         
-        const data = await api.request('/tickets?limit=50');
-        const tickets = data.filter(t => t.status !== 'closed' && t.status !== 'resolved');
+        if (!res.ok) {
+            container.innerHTML = '<p style="color:var(--jarvis-rose);font-size:0.85rem;">Ошибка загрузки</p>';
+            return;
+        }
         
-        if (tickets.length === 0) {
+        const tickets = await res.json();
+        const openTickets = tickets.filter(t => t.status !== 'closed' && t.status !== 'resolved');
+        
+        if (openTickets.length === 0) {
             container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.85rem;">Нет открытых заявок</p>';
             return;
         }
         
-        container.innerHTML = tickets.map(t => `
+        container.innerHTML = openTickets.map(t => `
             <div onclick="openTicketModal(${t.id})" style="cursor:pointer;padding:0.5rem;margin-bottom:0.5rem;background:rgba(0,0,0,0.2);border-radius:8px;border-left:3px solid ${t.priority === 'critical' ? 'var(--jarvis-rose)' : t.priority === 'high' ? '#f59e0b' : 'var(--jarvis-cyan)'};">
                 <div style="display:flex;justify-content:space-between;font-size:0.85rem;">
                     <span style="color:var(--text-primary);font-weight:500;">#${t.id}</span>
