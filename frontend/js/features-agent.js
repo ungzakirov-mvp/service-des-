@@ -134,20 +134,25 @@ async function loadTimeSummary(ticketId) {
 }
 
 // ============================================
-// CANNED RESPONSES
+// AGENT CANNED RESPONSES (uses API)
 // ============================================
-let cannedResponses = [];
+// Reuses cannedResponses from features-simple.js or loads from API if needed
+let _agentCannedResponses = null;
 
-// Load canned responses on init
-async function loadCannedResponses() {
+async function getAgentCannedResponses() {
+    if (_agentCannedResponses) return _agentCannedResponses;
     try {
-        cannedResponses = await featuresAPI.getCannedResponses();
+        _agentCannedResponses = await featuresAPI.getCannedResponses();
     } catch (e) {
         console.error('Error loading canned responses:', e);
+        _agentCannedResponses = [];
     }
+    return _agentCannedResponses;
 }
 
-document.addEventListener('DOMContentLoaded', loadCannedResponses);
+document.addEventListener('DOMContentLoaded', async () => {
+    await getAgentCannedResponses();
+});
 
 // Handle / shortcut in reply editor
 document.getElementById('replyEditor')?.addEventListener('input', function(e) {
@@ -167,9 +172,10 @@ document.getElementById('replyEditor')?.addEventListener('input', function(e) {
     }
 });
 
-function showCannedResponsesDropdown(searchTerm, slashIndex) {
+async function showCannedResponsesDropdown(searchTerm, slashIndex) {
     const dropdown = document.getElementById('cannedResponsesDropdown');
-    const filtered = cannedResponses.filter(r => 
+    const responses = await getAgentCannedResponses();
+    const filtered = responses.filter(r => 
         r.title.toLowerCase().includes(searchTerm) || 
         (r.shortcut && r.shortcut.toLowerCase().includes(searchTerm))
     );
