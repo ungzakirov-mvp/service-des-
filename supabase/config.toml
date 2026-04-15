@@ -1,0 +1,10 @@
+project_id = "nuhvctnhigxjqhasujli"
+
+[functions.submit-contact]
+verify_jwt = false
+
+[functions.seed-admin]
+verify_jwt = false
+
+[functions.track-visit]
+verify_jwt = false
