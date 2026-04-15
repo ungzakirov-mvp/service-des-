@@ -2324,15 +2324,40 @@ function showAddAssetModal() {
         }).catch(() => {});
     }
     
+    // Load users for assigned_to
+    const assignedSelect = document.getElementById('assetAssignedTo');
+    assignedSelect.innerHTML = '<option value="">Не назначено</option>';
+    if (window._allUsers && window._allUsers.length) {
+        window._allUsers.forEach(u => {
+            const opt = document.createElement('option');
+            opt.value = u.id;
+            opt.textContent = u.full_name || u.email;
+            assignedSelect.appendChild(opt);
+        });
+    } else {
+        api.getUsers().then(users => {
+            window._allUsers = users;
+            assignedSelect.innerHTML = '<option value="">Не назначено</option>';
+            users.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = u.full_name || u.email;
+                assignedSelect.appendChild(opt);
+            });
+        }).catch(() => {});
+    }
+    
     document.getElementById('addAssetModal').classList.remove('hidden');
 }
 
 async function handleCreateAsset(e) {
     e.preventDefault();
+    const assignedToEl = document.getElementById('assetAssignedTo');
     const data = {
         name: document.getElementById('assetName').value,
         asset_type: document.getElementById('assetType').value,
         company_id: parseInt(document.getElementById('assetCompanyId').value),
+        assigned_to: assignedToEl && assignedToEl.value ? parseInt(assignedToEl.value) : null,
         model: document.getElementById('assetModel').value || null,
         serial_number: document.getElementById('assetSerialNumber').value || null,
         remote_access_id: document.getElementById('assetRemoteAccessId').value || null,
