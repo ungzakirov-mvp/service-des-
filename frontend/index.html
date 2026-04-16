@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Service Desk - Premium Help Desk System</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%2300d4ff'/><text x='50' y='72' text-anchor='middle' font-size='60' fill='white' font-family='sans-serif' font-weight='bold'>SD</text></svg>">
-    <link rel="stylesheet" href="css/style.css?v=3.13.0">
+    <link rel="stylesheet" href="css/style.css?v=3.14.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -103,12 +103,12 @@
 
         <!-- Main Dashboard Page - Top Navigation -->
         <div class="page hidden" id="dashboardPage">
-            <button class="mobile-menu-btn" style="display:flex !important;position:fixed !important;top:10px !important;left:10px !important;z-index:999999 !important;background:#0a0a14 !important;border:1px solid #00d4ff !important;color:#00d4ff !important;padding:10px !important;" onclick="var s=document.querySelector('.sidebar');if(s){s.style.left='0px';s.style.display='flex';} var o=document.querySelector('.sidebar-overlay');if(o){o.style.display='block';}">
+            <button class="mobile-menu-btn" id="mobileMenuBtn" style="display:flex !important;position:fixed !important;top:10px !important;left:10px !important;z-index:999999 !important;background:#0a0a14 !important;border:1px solid #00d4ff !important;color:#00d4ff !important;padding:10px !important;" onclick="alert('Menu clicked!'); var s=document.getElementById('mobileSidebar');if(s){s.style.left='0px';} var o=document.querySelector('.sidebar-overlay');if(o){o.style.display='block';}">
                 <i class="fas fa-bars"></i>
             </button>
-            <div class="sidebar-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99998;" onclick="var s=document.querySelector('.sidebar');if(s){s.style.left='-100%';s.style.display='none';}this.style.display='none';"></div>
+            <div class="sidebar-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:99998;" onclick="alert('Close!'); var s=document.getElementById('mobileSidebar');if(s){s.style.left='-100%';}this.style.display='none';"></div>
             <div class="app-layout">
-                <aside class="sidebar glass-card" style="display:flex !important;position:fixed !important;left:-100% !important;top:0 !important;bottom:0 !important;width:85% !important;max-width:300px !important;z-index:99999 !important;transition:left 0.3s !important;background:#0a0a14 !important;">
+                <aside id="mobileSidebar" class="sidebar glass-card" style="display:flex !important;position:fixed !important;left:-100% !important;top:0 !important;bottom:0 !important;width:85% !important;max-width:300px !important;z-index:99999 !important;transition:left 0.3s !important;background:#0a0a14 !important;">
                 <div class="sidebar-brand">
                     <div class="sidebar-logo">
                         <span class="logo-icon-small">🎫</span>
