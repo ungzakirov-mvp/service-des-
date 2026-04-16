@@ -6037,11 +6037,26 @@ body {
         grid-template-columns: 1fr !important;
     }
     
-    /* Sidebar cards - 2 columns */
+    /* Dashboard layout - stack vertically */
+    .dashboard-with-sidebar {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 15px !important;
+    }
+    
+    .dashboard-main {
+        width: 100% !important;
+        order: 1 !important;
+    }
+    
+    /* Sidebar - 2 columns */
     .dashboard-sidebar {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
         gap: 10px !important;
+        width: 100% !important;
+        order: 2 !important;
     }
     
     .sidebar-card {
@@ -6051,6 +6066,12 @@ body {
     
     .sidebar-card-header h3 {
         font-size: 0.8rem !important;
+    }
+    
+    /* Dashboard grid */
+    .dashboard-grid {
+        display: flex !important;
+        flex-direction: column !important;
     }
 
     /* CARDS */
