@@ -4359,12 +4359,20 @@ body {
         margin: 0 !important;
     }
     
-    /* COMPLETELY HIDE SIDEBAR */
+    /* Mobile sidebar - slide from left */
     #dashboardPage > .sidebar,
     #dashboardPage > .app-layout > .sidebar,
     .sidebar {
-        display: none !important;
-        visibility: hidden !important;
+        display: flex !important;
+        visibility: visible !important;
+        position: fixed !important;
+        left: -100% !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        width: 85% !important;
+        max-width: 300px !important;
+        z-index: 99999 !important;
+        transition: left 0.3s ease !important;
     }
     
     /* Menu button fixed top-left */
