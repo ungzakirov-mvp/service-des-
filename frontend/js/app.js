@@ -236,9 +236,14 @@ async function showDashboard() {
         const auditLink = document.getElementById('auditNavLink');
         const crmLink = document.querySelector('[data-page="crm"]');
         const usersLink = document.getElementById('usersNavLink');
+        const kbLink = document.querySelector('[data-page="kb"]');
+        const assetsLink = document.querySelector('[data-page="assets"]');
 
         if (auditLink) auditLink.style.display = (role === 'manager' || role === 'admin') ? 'flex' : 'none';
-        if (crmLink) crmLink.style.display = (role !== 'client') ? 'flex' : 'none';
+        if (crmLink) crmLink.style.display = (role === 'admin' || role === 'super_admin') ? 'flex' : 'none';
+        
+        if (kbLink) kbLink.style.display = (role === 'admin' || role === 'super_admin') ? 'flex' : 'none';
+        if (assetsLink) assetsLink.style.display = (role === 'admin' || role === 'super_admin') ? 'flex' : 'none';
 
         if (usersLink) {
             if (role === 'admin' || role === 'super_admin') {
