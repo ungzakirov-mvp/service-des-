@@ -157,7 +157,7 @@ def list_tickets(
         query = query.filter(Ticket.priority == priority)
         
     # User can only see their own tickets unless Agent/Admin
-    if current_user.role == "client": # Assuming string check or UserRole enum
+    if current_user.role == UserRole.CLIENT:
         query = query.filter(Ticket.created_by == current_user.id)
         
     tickets = query.order_by(desc(Ticket.created_at)).offset(skip).limit(limit).all()

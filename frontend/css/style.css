@@ -5945,16 +5945,34 @@ body {
    ULTIMATE MOBILE FIX - MUST BE LAST
    ============================================ */
 @media (max-width: 767px) {
-    /* HIDE SIDEBAR */
-    .sidebar, #dashboardPage .sidebar {
-        display: none !important;
-        visibility: hidden !important;
+    /* Slide-out sidebar */
+    .sidebar {
+        display: flex !important;
+        position: fixed !important;
+        left: -100% !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        width: 85% !important;
+        max-width: 300px !important;
+        z-index: 99999 !important;
+        transition: left 0.3s ease !important;
+        background: var(--bg-sidebar) !important;
+    }
+    
+    /* Show sidebar when active */
+    .sidebar.mobile-visible {
+        left: 0 !important;
     }
     
     /* HIDE MOBILE MENU BUTTON ON LOGIN/REGISTER */
     #loginPage .mobile-menu-btn,
     #registerPage .mobile-menu-btn {
         display: none !important;
+    }
+    
+    /* SHOW MOBILE MENU BUTTON ON DASHBOARD */
+    #dashboardPage .mobile-menu-btn {
+        display: flex !important;
     }
     
     /* MAIN CONTENT FULL WIDTH */
@@ -5964,13 +5982,13 @@ body {
         margin: 0 !important;
         padding: 45px 5px 5px 5px !important;
     }
-    
+
     /* VIEW CONTAINER */
     .view-container {
         width: 100% !important;
         padding: 5px !important;
     }
-    
+
     /* GRIDS TO SINGLE COLUMN */
     .dashboard-stats,
     .dashboard-sidebar,
@@ -5978,36 +5996,36 @@ body {
     .company-cards-grid {
         grid-template-columns: 1fr !important;
     }
-    
+
     /* CARDS */
     .glass-card {
         padding: 8px !important;
         margin: 4px 0 !important;
     }
-    
+
     /* HIDE FAB ON LOGIN/REGISTER */
     #loginPage .floating-action-bar,
     #registerPage .floating-action-bar {
         display: none !important;
     }
-    
+
     /* HEADER */
     .page-header {
         padding: 8px !important;
     }
-    
+
     /* TABLES SCROLLABLE */
     .data-table {
         overflow-x: auto !important;
         font-size: 12px !important;
     }
-    
+
     /* FORMS */
     input, select, textarea, .btn {
         font-size: 14px !important;
         padding: 8px !important;
     }
-    
+
     /* Page header styling for mobile */
     .page-header {
         flex-direction: column !important;
@@ -6200,10 +6218,41 @@ html, body {
         margin: 5px 0 !important;
     }
     
+    /* Dashboard Cards - Mobile */
+    .dashboard-stats .glass-card,
+    .stats-grid .glass-card,
+    .page-header + .stats-grid .glass-card {
+        padding: 10px !important;
+        min-height: auto !important;
+    }
+    
+    .dashboard-stats .glass-card .stat-icon,
+    .stats-grid .glass-card .stat-icon {
+        font-size: 1rem !important;
+        width: 32px !important;
+        height: 32px !important;
+        margin-bottom: 0.25rem !important;
+    }
+    
+    .dashboard-stats .glass-card .stat-content h3,
+    .stats-grid .glass-card .stat-content h3 {
+        font-size: 1.25rem !important;
+        margin: 0 !important;
+    }
+    
+    .dashboard-stats .glass-card .stat-content p,
+    .stats-grid .glass-card .stat-content p {
+        font-size: 0.7rem !important;
+        margin: 0 !important;
+    }
+    
     .dashboard-stats,
+    .stats-grid,
     .dashboard-sidebar,
     .dashboard-with-sidebar {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        margin-bottom: 1rem !important;
     }
     
     /* Hide FAB on login/register */

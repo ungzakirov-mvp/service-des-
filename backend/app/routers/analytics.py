@@ -20,6 +20,22 @@ def get_advanced_analytics(
     """
     tenant_id = current_user.tenant_id
     
+    # For clients, return limited data
+    if current_user.role == UserRole.CLIENT:
+        user_tickets = db.query(Ticket).filter(
+            Ticket.tenant_id == tenant_id,
+            Ticket.created_by == current_user.id
+        ).all()
+        return schemas.AnalyticsResponse(
+            volume_trends=[],
+            agent_performance=[],
+            requester_performance=[],
+            status_distribution=[],
+            upcoming_deadlines=[],
+            total_tickets=len(user_tickets),
+            active_users=1
+        )
+    
     # 1. Volume Trends (Last 7 days)
     seven_days_ago = datetime.now() - timedelta(days=7)
     trends = db.query(

@@ -391,7 +391,10 @@ function showToast(message, type = 'info') {
 // ============================================
 function showFloatingBar() {
     const bar = document.getElementById('floatingActionBar');
-    if (bar) {
+    if (!bar) return;
+    
+    const role = window._currentUser?.role;
+    if (role === 'admin' || role === 'super_admin' || role === 'agent' || role === 'manager') {
         bar.style.display = 'flex';
     }
 }
