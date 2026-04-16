@@ -395,14 +395,14 @@ function showFloatingBar() {
     
     const role = window._currentUser?.role;
     if (role === 'admin' || role === 'super_admin' || role === 'agent' || role === 'manager') {
-        bar.style.display = 'flex';
+        bar.classList.add('visible');
     }
 }
 
 function hideFloatingBar() {
     const bar = document.getElementById('floatingActionBar');
     if (bar) {
-        bar.style.display = 'none';
+        bar.classList.remove('visible');
     }
 }
 
