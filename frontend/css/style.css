@@ -6036,6 +6036,22 @@ body {
     .company-cards-grid {
         grid-template-columns: 1fr !important;
     }
+    
+    /* Sidebar cards - 2 columns */
+    .dashboard-sidebar {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+    
+    .sidebar-card {
+        padding: 10px !important;
+        min-height: 100px !important;
+    }
+    
+    .sidebar-card-header h3 {
+        font-size: 0.8rem !important;
+    }
 
     /* CARDS */
     .glass-card {
