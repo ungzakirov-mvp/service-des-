@@ -355,23 +355,29 @@
             var date = new Date(t.created_at).toLocaleDateString('ru-RU', {day: '2-digit', month: '2-digit', year: 'numeric'});
             var isAwaitingClient = t.status_rel?.name === 'Ожидает клиента';
             var isClosed = t.status_rel?.is_final;
+            
+            var statusText = t.status_rel ? t.status_rel.name : 'Новый';
+            if (statusText === 'Новый') statusText = 'Новая заявка';
+            if (statusText === 'В работе') statusText = 'В работе';
+            if (statusText === 'Ожидает клиента') statusText = 'Требуется ваше подтверждение';
+            if (isClosed) statusText = 'Закрыта';
 
             html += '<div class="ticket-card ' + (isAwaitingClient ? 'awaiting-confirmation' : '') + '" onclick="viewTicket(' + t.id + ')">';
             html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">';
             html += '<span style="font-weight: 600;">' + escapeHtml(t.title) + '</span>';
-            html += '<span class="ticket-status-badge" style="background: ' + statusColor + '22; color: ' + statusColor + ';">' + (t.status_rel ? t.status_rel.name : 'Новый') + '</span>';
+            html += '<span class="ticket-status-badge" style="background: ' + statusColor + '22; color: ' + statusColor + '; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">' + statusText + '</span>';
             html += '</div>';
             html += '<div style="color: var(--text-muted); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">';
             html += '<div>';
-            html += '<span>#' + t.readable_id + '</span> • <span>' + date + '</span>';
+            html += '<span style="font-weight:600;">#' + t.readable_id + '</span> • <span>' + date + '</span>';
             if (t.priority) {
                 html += ' • <span style="color: ' + getPriorityColor(t.priority) + ';">' + t.priority + '</span>';
             }
             html += '</div>';
             if (isAwaitingClient) {
-                html += '<span class="action-hint"><i class="fa-solid fa-hand-pointer"></i> Нажмите для подтверждения</span>';
+                html += '<span class="action-hint" style="background:#8b5cf6;color:white;padding:6px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;"><i class="fa-solid fa-hand-pointer"></i> Подтвердить</span>';
             } else if (isClosed) {
-                html += '<span class="closed-hint"><i class="fa-solid fa-check-circle"></i> Закрыт</span>';
+                html += '<span class="closed-hint"><i class="fa-solid fa-check-circle"></i> Закрыта</span>';
             }
             html += '</div>';
             html += '</div>';
