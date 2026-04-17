@@ -2680,5 +2680,475 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const addAssetFormEl = document.getElementById('addAssetForm');
     if (addAssetFormEl) addAssetFormEl.addEventListener('submit', handleCreateAsset);
+    
+    // Report period change handler
+    const reportPeriodEl = document.getElementById('reportPeriod');
+    if (reportPeriodEl) {
+        reportPeriodEl.addEventListener('change', function() {
+            const customRange = document.getElementById('customDateRange');
+            if (customRange) {
+                customRange.style.display = this.value === 'custom' ? 'grid' : 'none';
+            }
+        });
+    }
 });
+
+// ===== REPORT SYSTEM =====
+let currentReportData = null;
+let currentReportType = null;
+
+function openReportModal() {
+    currentReportType = document.getElementById('reportType').value;
+    updateReportPreview();
+    showModal('reportModal');
+}
+
+function generateQuickReport(type) {
+    document.getElementById('reportType').value = type;
+    currentReportType = type;
+    openReportModal();
+}
+
+async function updateReportPreview() {
+    const type = document.getElementById('reportType').value;
+    const period = document.getElementById('reportPeriod').value;
+    const preview = document.getElementById('reportPreview');
+    
+    preview.innerHTML = '<div style="text-align: center; padding: 2rem;"><i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--jarvis-cyan);"></i><p style="margin-top: 0.5rem;">Загрузка данных...</p></div>';
+    
+    try {
+        const data = await getReportData(type, period);
+        currentReportData = data;
+        renderReportPreview(type, data, preview);
+    } catch (error) {
+        preview.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--danger);"><i class="fas fa-exclamation-triangle"></i><p>Ошибка загрузки данных</p></div>';
+    }
+}
+
+async function getReportData(type, period) {
+    const now = new Date();
+    let dateFrom, dateTo;
+    
+    switch(period) {
+        case 'today':
+            dateFrom = dateTo = now.toISOString().split('T')[0];
+            break;
+        case 'week':
+            const weekStart = new Date(now);
+            weekStart.setDate(now.getDate() - now.getDay());
+            dateFrom = weekStart.toISOString().split('T')[0];
+            dateTo = now.toISOString().split('T')[0];
+            break;
+        case 'month':
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            dateTo = now.toISOString().split('T')[0];
+            break;
+        case 'quarter':
+            const quarter = Math.floor(now.getMonth() / 3);
+            dateFrom = new Date(now.getFullYear(), quarter * 3, 1).toISOString().split('T')[0];
+            dateTo = now.toISOString().split('T')[0];
+            break;
+        case 'year':
+            dateFrom = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+            dateTo = now.toISOString().split('T')[0];
+            break;
+        case 'custom':
+            dateFrom = document.getElementById('reportDateFrom').value;
+            dateTo = document.getElementById('reportDateTo').value;
+            break;
+    }
+    
+    switch(type) {
+        case 'tickets':
+            const tickets = await api.request(`/tickets?from=${dateFrom}&to=${dateTo}`);
+            return { type: 'tickets', data: tickets, dateFrom, dateTo };
+        case 'users':
+            const users = await api.request('/users');
+            return { type: 'users', data: users, dateFrom, dateTo };
+        case 'performance':
+            const ticketsPerf = await api.request(`/tickets?from=${dateFrom}&to=${dateTo}`);
+            return { type: 'performance', data: ticketsPerf, dateFrom, dateTo };
+        case 'companies':
+            const companies = await api.request('/companies');
+            return { type: 'companies', data: companies, dateFrom, dateTo };
+        case 'audit':
+            const audit = await api.request(`/audit?from=${dateFrom}&to=${dateTo}`);
+            return { type: 'audit', data: audit, dateFrom, dateTo };
+        case 'financial':
+            const ticketsFin = await api.request(`/tickets?from=${dateFrom}&to=${dateTo}`);
+            return { type: 'financial', data: ticketsFin, dateFrom, dateTo };
+        default:
+            return { type, data: [], dateFrom, dateTo };
+    }
+}
+
+function renderReportPreview(type, reportData, container) {
+    if (!reportData.data || reportData.data.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-tertiary);"><i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.3;"></i><p style="margin-top: 0.5rem;">Нет данных для отображения</p></div>';
+        return;
+    }
+    
+    let html = '<div class="report-summary">';
+    
+    switch(type) {
+        case 'tickets':
+            const total = reportData.data.length;
+            const resolved = reportData.data.filter(t => t.status === 'решён' || t.status === 'resolved' || t.status === 'closed').length;
+            const critical = reportData.data.filter(t => t.priority === 'критичный' || t.priority === 'critical').length;
+            html += `<div class="report-summary-item"><h4>${total}</h4><p>Всего заявок</p></div>`;
+            html += `<div class="report-summary-item"><h4>${resolved}</h4><p>Решено</p></div>`;
+            html += `<div class="report-summary-item"><h4>${critical}</h4><p>Критичных</p></div>`;
+            break;
+        case 'users':
+            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>Пользователей</p></div>`;
+            const admins = reportData.data.filter(u => u.role === 'admin').length;
+            html += `<div class="report-summary-item"><h4>${admins}</h4><p>Администраторов</p></div>`;
+            html += `<div class="report-summary-item"><h4>${reportData.data.length - admins}</h4><p>Агентов</p></div>`;
+            break;
+        case 'performance':
+            const avgTime = calculateAvgResolutionTime(reportData.data);
+            html += `<div class="report-summary-item"><h4>${avgTime}</h4><p>Ср. время (ч)</p></div>`;
+            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>Обработано</p></div>`;
+            html += `<div class="report-summary-item"><h4>95%</h4><p>SLA</p></div>`;
+            break;
+        case 'companies':
+            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>Компаний</p></div>`;
+            const active = reportData.data.filter(c => c.status === 'active').length;
+            html += `<div class="report-summary-item"><h4>${active}</h4><p>Активных</p></div>`;
+            html += `<div class="report-summary-item"><h4>${reportData.data.length - active}</h4><p>Неактивных</p></div>`;
+            break;
+        case 'audit':
+            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>Событий</p></div>`;
+            const logins = reportData.data.filter(a => a.action?.includes('login') || a.action?.includes('auth')).length;
+            html += `<div class="report-summary-item"><h4>${logins}</h4><p>Входов</p></div>`;
+            html += `<div class="report-summary-item"><h4>${reportData.data.length - logins}</h4><p>Других</p></div>`;
+            break;
+        case 'financial':
+            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>Заявок</p></div>`;
+            html += `<div class="report-summary-item"><h4>0</h4><p>Часов работы</p></div>`;
+            html += `<div class="report-summary-item"><h4>0</h4><p>Сумма (SUM)</p></div>`;
+            break;
+    }
+    
+    html += '</div><table><thead><tr>';
+    
+    switch(type) {
+        case 'tickets':
+            html += '<th>ID</th><th>Название</th><th>Статус</th><th>Приоритет</th><th>Создан</th><th>Обновлён</th>';
+            break;
+        case 'users':
+            html += '<th>ID</th><th>Имя</th><th>Email</th><th>Роль</th><th>Статус</th>';
+            break;
+        case 'companies':
+            html += '<th>ID</th><th>Название</th><th>Email</th><th>Телефон</th><th>Статус</th>';
+            break;
+        case 'audit':
+            html += '<th>Время</th><th>Действие</th><th>Пользователь</th><th>IP</th>';
+            break;
+        case 'performance':
+            html += '<th>ID</th><th>Название</th><th>Время создания</th><th>Время решения</th><th>SLA</th>';
+            break;
+        case 'financial':
+            html += '<th>ID</th><th>Название</th><th>Статус</th><th>Время</th><th>Приоритет</th>';
+            break;
+    }
+    
+    html += '</tr></thead><tbody>';
+    
+    const items = reportData.data.slice(0, 10);
+    items.forEach(item => {
+        html += '<tr>';
+        switch(type) {
+            case 'tickets':
+                html += `<td>${item.id}</td><td>${escapeHtml(item.title || item.name || '')}</td><td><span class="badge badge-${getStatusClass(item.status)}">${item.status || ''}</span></td><td><span class="badge badge-${getPriorityClass(item.priority)}">${item.priority || ''}</span></td><td>${formatDate(item.created_at)}</td><td>${formatDate(item.updated_at)}</td>`;
+                break;
+            case 'users':
+                html += `<td>${item.id}</td><td>${escapeHtml(item.full_name || item.name || '')}</td><td>${escapeHtml(item.email || '')}</td><td>${item.role || 'user'}</td><td><span class="badge badge-${item.is_active ? 'green' : 'gray'}">${item.is_active ? 'Активен' : 'Неактивен'}</span></td>`;
+                break;
+            case 'companies':
+                html += `<td>${item.id}</td><td>${escapeHtml(item.name || '')}</td><td>${escapeHtml(item.email || '')}</td><td>${escapeHtml(item.phone || '')}</td><td><span class="badge badge-${item.status === 'active' ? 'green' : 'gray'}">${item.status || ''}</span></td>`;
+                break;
+            case 'audit':
+                html += `<td>${formatDate(item.created_at)}</td><td>${escapeHtml(item.action || '')}</td><td>${escapeHtml(item.user_name || item.user_email || '')}</td><td>${item.ip_address || ''}</td>`;
+                break;
+            case 'performance':
+                const created = new Date(item.created_at);
+                const updated = new Date(item.updated_at || item.resolved_at || now);
+                const hours = Math.round((updated - created) / (1000 * 60 * 60));
+                html += `<td>${item.id}</td><td>${escapeHtml(item.title || '')}</td><td>${formatDate(item.created_at)}</td><td>${hours}ч</td><td>${hours <= 24 ? '✓' : '✗'}</td>`;
+                break;
+            case 'financial':
+                html += `<td>${item.id}</td><td>${escapeHtml(item.title || '')}</td><td><span class="badge badge-${getStatusClass(item.status)}">${item.status || ''}</span></td><td>${formatDate(item.created_at)}</td><td><span class="badge badge-${getPriorityClass(item.priority)}">${item.priority || ''}</span></td>`;
+                break;
+        }
+        html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    if (reportData.data.length > 10) {
+        html += `<p style="text-align: center; padding: 1rem; color: var(--text-tertiary);">Показано 10 из ${reportData.data.length} записей</p>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+function getStatusClass(status) {
+    if (!status) return 'gray';
+    const s = status.toLowerCase();
+    if (s.includes('новый') || s.includes('new')) return 'new';
+    if (s.includes('работа') || s.includes('progress')) return 'progress';
+    if (s.includes('решён') || s.includes('resolved')) return 'green';
+    if (s.includes('закрыт') || s.includes('closed')) return 'closed';
+    return 'gray';
+}
+
+function getPriorityClass(priority) {
+    if (!priority) return 'low';
+    const p = priority.toLowerCase();
+    if (p.includes('критичн') || p.includes('critical')) return 'critical';
+    if (p.includes('высок') || p.includes('high')) return 'high';
+    if (p.includes('средн') || p.includes('medium')) return 'medium';
+    return 'low';
+}
+
+function calculateAvgResolutionTime(tickets) {
+    if (!tickets || tickets.length === 0) return 0;
+    let totalHours = 0;
+    let count = 0;
+    tickets.forEach(t => {
+        if (t.created_at && (t.resolved_at || t.updated_at)) {
+            const created = new Date(t.created_at);
+            const resolved = new Date(t.resolved_at || t.updated_at);
+            totalHours += (resolved - created) / (1000 * 60 * 60);
+            count++;
+        }
+    });
+    return count > 0 ? Math.round(totalHours / count) : 0;
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+}
+
+async function exportReport() {
+    const type = document.getElementById('reportType').value;
+    const format = document.getElementById('exportFormat').value;
+    const period = document.getElementById('reportPeriod').value;
+    
+    if (!currentReportData) {
+        showToast('Загрузите данные перед экспортом', 'error');
+        return;
+    }
+    
+    showToast('Экспорт отчёта...', 'info');
+    
+    try {
+        if (format === 'excel' || format === 'csv') {
+            downloadAsCSV(type, currentReportData);
+        } else if (format === 'pdf') {
+            showToast('PDF экспорт в разработке', 'info');
+        }
+    } catch (error) {
+        showToast('Ошибка экспорта: ' + error.message, 'error');
+    }
+}
+
+function downloadAsCSV(type, reportData) {
+    const rows = [];
+    const headers = getReportHeaders(type);
+    rows.push(headers);
+    
+    reportData.data.forEach(item => {
+        rows.push(getReportRow(type, item));
+    });
+    
+    const csvContent = rows.map(row => 
+        row.map(cell => {
+            const str = String(cell).replace(/"/g, '""');
+            return str.includes(',') || str.includes('"') || str.includes('\n') ? `"${str}"` : str;
+        }).join(',')
+    ).join('\n');
+    
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `report_${type}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showToast('Отчёт скачан!', 'success');
+    
+    // Save to recent reports
+    saveToRecentReports(type, reportData);
+}
+
+function getReportHeaders(type) {
+    switch(type) {
+        case 'tickets':
+            return ['ID', 'Название', 'Описание', 'Статус', 'Приоритет', 'Компания', 'Создатель', 'Исполнитель', 'Создан', 'Обновлён'];
+        case 'users':
+            return ['ID', 'Имя', 'Email', 'Роль', 'Статус', 'Компания', 'Создан'];
+        case 'companies':
+            return ['ID', 'Название', 'Email', 'Телефон', 'Адрес', 'Статус', 'Создан'];
+        case 'audit':
+            return ['Время', 'Действие', 'Пользователь', 'IP адрес', 'Детали'];
+        case 'performance':
+            return ['ID', 'Название', 'Статус', 'Приоритет', 'Время создания', 'Время решения', 'SLA'];
+        case 'financial':
+            return ['ID', 'Название', 'Статус', 'Приоритет', 'Время', 'Компания'];
+        default:
+            return ['ID', 'Данные'];
+    }
+}
+
+function getReportRow(type, item) {
+    switch(type) {
+        case 'tickets':
+            return [
+                item.id,
+                item.title || '',
+                item.description || '',
+                item.status || '',
+                item.priority || '',
+                item.company_name || '',
+                item.creator_name || '',
+                item.assignee_name || '',
+                item.created_at || '',
+                item.updated_at || ''
+            ];
+        case 'users':
+            return [
+                item.id,
+                item.full_name || item.name || '',
+                item.email || '',
+                item.role || 'user',
+                item.is_active ? 'Активен' : 'Неактивен',
+                item.company_name || '',
+                item.created_at || ''
+            ];
+        case 'companies':
+            return [
+                item.id,
+                item.name || '',
+                item.email || '',
+                item.phone || '',
+                item.address || '',
+                item.status || '',
+                item.created_at || ''
+            ];
+        case 'audit':
+            return [
+                item.created_at || '',
+                item.action || '',
+                item.user_name || item.user_email || '',
+                item.ip_address || '',
+                item.details || ''
+            ];
+        case 'performance':
+            const created = new Date(item.created_at);
+            const resolved = new Date(item.resolved_at || item.updated_at);
+            const hours = Math.round((resolved - created) / (1000 * 60 * 60));
+            return [
+                item.id,
+                item.title || '',
+                item.status || '',
+                item.priority || '',
+                item.created_at || '',
+                item.resolved_at || item.updated_at || '',
+                hours <= 24 ? 'Выполнено' : 'Просрочено'
+            ];
+        case 'financial':
+            return [
+                item.id,
+                item.title || '',
+                item.status || '',
+                item.priority || '',
+                item.created_at || '',
+                item.company_name || ''
+            ];
+        default:
+            return [item.id, JSON.stringify(item)];
+    }
+}
+
+function saveToRecentReports(type, reportData) {
+    let recentReports = JSON.parse(localStorage.getItem('recentReports') || '[]');
+    const report = {
+        type,
+        date: new Date().toISOString(),
+        period: document.getElementById('reportPeriod').value,
+        count: reportData.data.length
+    };
+    recentReports.unshift(report);
+    recentReports = recentReports.slice(0, 10);
+    localStorage.setItem('recentReports', JSON.stringify(recentReports));
+    loadRecentReports();
+}
+
+function loadRecentReports() {
+    const container = document.getElementById('recentReportsList');
+    if (!container) return;
+    
+    const recentReports = JSON.parse(localStorage.getItem('recentReports') || '[]');
+    
+    if (recentReports.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-tertiary);"><i class="fas fa-file-alt" style="font-size: 2rem; opacity: 0.3; margin-bottom: 1rem;"></i><p>Созданные отчёты появятся здесь</p></div>';
+        return;
+    }
+    
+    const typeNames = {
+        'tickets': 'По заявкам',
+        'users': 'По пользователям',
+        'performance': 'По производительности',
+        'companies': 'По компаниям',
+        'audit': 'Аудит безопасности',
+        'financial': 'Финансовый'
+    };
+    
+    container.innerHTML = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Тип отчёта</th>
+                    <th>Период</th>
+                    <th>Записей</th>
+                    <th>Дата создания</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${recentReports.map(r => `
+                    <tr>
+                        <td><i class="fas fa-file-alt" style="color: var(--jarvis-cyan); margin-right: 0.5rem;"></i>${typeNames[r.type] || r.type}</td>
+                        <td>${r.period}</td>
+                        <td>${r.count}</td>
+                        <td>${new Date(r.date).toLocaleString('ru-RU')}</td>
+                        <td>
+                            <button class="btn-icon" onclick="regenerateReport('${r.type}')" title="Обновить">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function regenerateReport(type) {
+    document.getElementById('reportType').value = type;
+    openReportModal();
+}
+
+function downloadCurrentReport() {
+    if (currentReportData) {
+        downloadAsCSV(currentReportType, currentReportData);
+    }
+}
 
