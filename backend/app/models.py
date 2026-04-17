@@ -183,6 +183,8 @@ class Ticket(Base):
     sla_due_at = Column(DateTime(timezone=True), nullable=True)
     scheduled_at = Column(DateTime(timezone=True), nullable=True)
     accepted_at = Column(DateTime(timezone=True), nullable=True)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    resolved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     closed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     rating = Column(Integer, nullable=True)
@@ -196,6 +198,7 @@ class Ticket(Base):
     creator = relationship("User", foreign_keys=[created_by], back_populates="created_tickets")
     assignee = relationship("User", foreign_keys=[assigned_to], back_populates="assigned_tickets")
     closer = relationship("User", foreign_keys=[closed_by])
+    resolver = relationship("User", foreign_keys=[resolved_by])
     company = relationship("Company", back_populates="tickets")
     
     timeline = relationship("TicketTimeline", back_populates="ticket", cascade="all, delete-orphan", order_by="TicketTimeline.created_at")

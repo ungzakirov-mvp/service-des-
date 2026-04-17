@@ -256,6 +256,8 @@ class TicketResponse(BaseModel):
     sla_due_at: Optional[datetime] = None
     scheduled_at: Optional[datetime] = None
     accepted_at: Optional[datetime] = None
+    resolved_at: Optional[datetime] = None
+    resolved_by: Optional[int] = None
     closed_by: Optional[int] = None
     company_id: Optional[int] = None
     
@@ -266,6 +268,7 @@ class TicketResponse(BaseModel):
     creator: Optional[UserResponse] = None
     assignee: Optional[UserResponse] = None
     closer: Optional[UserResponse] = None
+    resolver: Optional[UserResponse] = None
     company: Optional[CompanyResponse] = None
     attachments: Optional[List[AttachmentResponse]] = []
 

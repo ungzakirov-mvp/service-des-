@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 from typing import Optional, List
 from app.database import get_db
-from app.models import Ticket, User, TicketStatus, TicketTimeline, TimelineEventType, TicketPriority, UserRole, Attachment
+from app.models import Ticket, User, TicketStatus, TicketTimeline, TimelineEventType, TicketPriority, UserRole, Attachment, Notification
 from app.dependencies import get_current_user
 from app.exceptions import ticket_not_found, unauthorized
 from app.services.sla_service import SLAService
@@ -369,22 +369,183 @@ async def accept_ticket(ticket_id: int, current_user: User = Depends(get_current
     db.refresh(ticket)
     return ticket
 
-@router.post("/{ticket_id}/close", response_model=schemas.TicketResponse)
-async def close_ticket(ticket_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+@router.post("/{ticket_id}/resolve", response_model=schemas.TicketResponse)
+async def resolve_ticket(
+    ticket_id: int, 
+    resolution_comment: str = "",
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """
+    Агент отмечает тикет как выполненный (требует подтверждения клиента)
+    """
     ticket = db.query(Ticket).filter(Ticket.id == ticket_id, Ticket.tenant_id == current_user.tenant_id).first()
     if not ticket:
         raise ticket_not_found()
-    closed_status = db.query(TicketStatus).filter(TicketStatus.tenant_id == current_user.tenant_id, TicketStatus.is_final == True).first()
-    if not closed_status:
-        closed_status = db.query(TicketStatus).filter(TicketStatus.tenant_id == current_user.tenant_id).order_by(TicketStatus.order.desc()).first()
-    if not closed_status:
-        raise HTTPException(status_code=500, detail="Нет финального статуса")
-    ticket.status_id = closed_status.id
-    ticket.closed_by = current_user.id
-    db.add(TicketTimeline(ticket_id=ticket.id, user_id=current_user.id, event_type="STATUS_CHANGE",
-        content=f"Тикет закрыт: {closed_status.name}", extra_metadata={"new_status": closed_status.name, "closed_by_role": current_user.role}))
+    
+    # Only agent or admin can resolve
+    if current_user.role not in [UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN]:
+        raise HTTPException(status_code=403, detail="Только агент или администратор может завершить работу")
+    
+    # Find "Ожидает клиента" status
+    awaiting_status = db.query(TicketStatus).filter(
+        TicketStatus.tenant_id == current_user.tenant_id,
+        TicketStatus.name == "Ожидает клиента"
+    ).first()
+    
+    if not awaiting_status:
+        raise HTTPException(status_code=500, detail="Статус 'Ожидает клиента' не настроен")
+    
+    from datetime import datetime
+    ticket.status_id = awaiting_status.id
+    ticket.resolved_at = datetime.now()
+    ticket.resolved_by = current_user.id
+    
+    # Log to timeline
+    content = f"Агент {current_user.full_name or current_user.email} завершил работу над тикетом"
+    if resolution_comment:
+        content += f": {resolution_comment}"
+    
+    db.add(TicketTimeline(
+        ticket_id=ticket.id, 
+        user_id=current_user.id, 
+        event_type="STATUS_CHANGE",
+        content=content,
+        extra_metadata={"new_status": awaiting_status.name, "resolved_by": current_user.id}
+    ))
+    
+    # Create notification for client
+    db.add(Notification(
+        tenant_id=ticket.tenant_id,
+        user_id=ticket.created_by,
+        title="Тикет завершён",
+        message=f"Ваш тикет #{ticket.readable_id} '{ticket.title}' выполнен. Пожалуйста, подтвердите закрытие.",
+        link=f"/tickets/{ticket.id}"
+    ))
+    
     db.commit()
     db.refresh(ticket)
+    
+    # Broadcast update
+    await manager.broadcast_to_tenant({
+        "type": "TICKET_RESOLVED",
+        "ticket_id": ticket.id,
+        "readable_id": ticket.readable_id
+    }, tenant_id=ticket.tenant_id)
+    
+    return ticket
+
+@router.post("/{ticket_id}/close", response_model=schemas.TicketResponse)
+async def close_ticket(ticket_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Клиент закрывает тикет после подтверждения выполнения
+    """
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id, Ticket.tenant_id == current_user.tenant_id).first()
+    if not ticket:
+        raise ticket_not_found()
+    
+    # Only creator (client) or admin can close
+    if ticket.created_by != current_user.id and current_user.role not in [UserRole.ADMIN, UserRole.SUPER_ADMIN]:
+        raise HTTPException(status_code=403, detail="Только создатель тикета или администратор может закрыть тикет")
+    
+    closed_status = db.query(TicketStatus).filter(
+        TicketStatus.tenant_id == current_user.tenant_id, 
+        TicketStatus.is_final == True
+    ).first()
+    
+    if not closed_status:
+        closed_status = db.query(TicketStatus).filter(
+            TicketStatus.tenant_id == current_user.tenant_id
+        ).order_by(TicketStatus.order.desc()).first()
+    
+    if not closed_status:
+        raise HTTPException(status_code=500, detail="Нет финального статуса")
+    
+    ticket.status_id = closed_status.id
+    ticket.closed_by = current_user.id
+    
+    db.add(TicketTimeline(ticket_id=ticket.id, user_id=current_user.id, event_type="STATUS_CHANGE",
+        content=f"Тикет закрыт клиентом: {closed_status.name}", 
+        extra_metadata={"new_status": closed_status.name, "closed_by_role": current_user.role}))
+    
+    # Notify agent about closure
+    if ticket.assigned_to:
+        db.add(Notification(
+            tenant_id=ticket.tenant_id,
+            user_id=ticket.assigned_to,
+            title="Тикет закрыт",
+            message=f"Клиент подтвердил закрытие тикета #{ticket.readable_id} '{ticket.title}'",
+            link=f"/tickets/{ticket.id}"
+        ))
+    
+    db.commit()
+    db.refresh(ticket)
+    
+    # Broadcast
+    await manager.broadcast_to_tenant({
+        "type": "TICKET_CLOSED",
+        "ticket_id": ticket.id,
+        "readable_id": ticket.readable_id
+    }, tenant_id=ticket.tenant_id)
+    
+    return ticket
+
+@router.post("/{ticket_id}/reopen", response_model=schemas.TicketResponse)
+async def reopen_ticket(
+    ticket_id: int, 
+    reason: str = "",
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """
+    Клиент или агент могут переоткрыть закрытый тикет
+    """
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id, Ticket.tenant_id == current_user.tenant_id).first()
+    if not ticket:
+        raise ticket_not_found()
+    
+    # Check if ticket is in final status
+    current_status = db.query(TicketStatus).filter(TicketStatus.id == ticket.status_id).first()
+    if not current_status or not current_status.is_final:
+        raise HTTPException(status_code=400, detail="Тикет не находится в закрытом статусе")
+    
+    # Find "В работе" status
+    in_progress_status = db.query(TicketStatus).filter(
+        TicketStatus.tenant_id == current_user.tenant_id,
+        TicketStatus.name == "В работе"
+    ).first()
+    
+    if not in_progress_status:
+        raise HTTPException(status_code=500, detail="Статус 'В работе' не настроен")
+    
+    ticket.status_id = in_progress_status.id
+    ticket.closed_by = None
+    ticket.resolved_at = None
+    ticket.resolved_by = None
+    
+    content = f"Тикет переоткрыт"
+    if reason:
+        content += f": {reason}"
+    content += f" пользователем {current_user.full_name or current_user.email}"
+    
+    db.add(TicketTimeline(
+        ticket_id=ticket.id, 
+        user_id=current_user.id, 
+        event_type="STATUS_CHANGE",
+        content=content,
+        extra_metadata={"reopened_by": current_user.id}
+    ))
+    
+    db.commit()
+    db.refresh(ticket)
+    
+    # Broadcast
+    await manager.broadcast_to_tenant({
+        "type": "TICKET_REOPENED",
+        "ticket_id": ticket.id,
+        "readable_id": ticket.readable_id
+    }, tenant_id=ticket.tenant_id)
+    
     return ticket
 
 @router.post("/{ticket_id}/assign/{agent_id}", response_model=schemas.TicketResponse)

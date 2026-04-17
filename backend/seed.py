@@ -21,15 +21,58 @@ try:
         db.commit()
         db.refresh(tenant)
 
-    # 2. Создаем базовые статусы
-    if db.query(TicketStatus).count() == 0:
+    # 2. Создаем базовые статусы (Workflow: Новый -> В работе -> Ожидает клиента -> Закрыт)
+    existing_statuses = db.query(TicketStatus).filter(TicketStatus.tenant_id == tenant.id).count()
+    if existing_statuses == 0:
+        # Clean slate - create proper workflow statuses
         db.add_all([
             TicketStatus(tenant_id=tenant.id, name="Новый", color="#3b82f6", order=1),
             TicketStatus(tenant_id=tenant.id, name="В работе", color="#f59e0b", order=2),
-            TicketStatus(tenant_id=tenant.id, name="Ожидание", color="#8b5cf6", order=3),
-            TicketStatus(tenant_id=tenant.id, name="Решён", color="#10b981", order=4, is_final=True),
-            TicketStatus(tenant_id=tenant.id, name="Закрыт", color="#6b7280", order=5, is_final=True),
+            TicketStatus(tenant_id=tenant.id, name="Ожидает клиента", color="#8b5cf6", order=3),
+            TicketStatus(tenant_id=tenant.id, name="Закрыт", color="#6b7280", order=4, is_final=True),
         ])
+        db.commit()
+    else:
+        # Update existing statuses to match new workflow
+        new_status = db.query(TicketStatus).filter(
+            TicketStatus.tenant_id == tenant.id,
+            TicketStatus.name == "Новый"
+        ).first()
+        if new_status:
+            new_status.order = 1
+        
+        in_progress = db.query(TicketStatus).filter(
+            TicketStatus.tenant_id == tenant.id,
+            TicketStatus.name == "В работе"
+        ).first()
+        if in_progress:
+            in_progress.order = 2
+        
+        # Check if "Ожидает клиента" exists, if not create it
+        awaiting = db.query(TicketStatus).filter(
+            TicketStatus.tenant_id == tenant.id,
+            TicketStatus.name == "Ожидает клиента"
+        ).first()
+        if not awaiting:
+            awaiting = TicketStatus(tenant_id=tenant.id, name="Ожидает клиента", color="#8b5cf6", order=3)
+            db.add(awaiting)
+        
+        # Delete old statuses if they exist
+        old_resolved = db.query(TicketStatus).filter(
+            TicketStatus.tenant_id == tenant.id,
+            TicketStatus.name == "Решён"
+        ).first()
+        if old_resolved:
+            db.delete(old_resolved)
+        
+        old_closed = db.query(TicketStatus).filter(
+            TicketStatus.tenant_id == tenant.id,
+            TicketStatus.name == "Закрыт"
+        ).first()
+        if old_closed:
+            old_closed.order = 4
+            old_closed.is_final = True
+        
         db.commit()
 
     # 3. Создаем базовую компанию-клиента
