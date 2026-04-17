@@ -153,34 +153,31 @@
                     можно скорее.</p>
 
                 <div class="glass-card new-ticket-form">
-                    <form id="clientCreateForm">
-                        <div class="form-group">
-                            <label>Что случилось?</label>
-                            <input type="text" id="ticketTitle" placeholder="Краткая тема (например: Не работает почта)"
-                                required>
-                        </div>
+                    <div class="form-group">
+                        <label>Что случилось?</label>
+                        <input type="text" id="ticketTitle" placeholder="Краткая тема (например: Не работает почта)">
+                    </div>
 
-                        <div class="form-group">
-                            <label>Подробное описание</label>
-                            <textarea id="ticketDescription" rows="8"
-                                placeholder="Пожалуйста, опишите проблему детально..." required></textarea>
-                        </div>
+                    <div class="form-group">
+                        <label>Подробное описание</label>
+                        <textarea id="ticketDescription" rows="8"
+                            placeholder="Пожалуйста, опишите проблему детально..."></textarea>
+                    </div>
 
-                        <div class="form-group">
-                            <label>Приоритет</label>
-                            <select id="ticketPriority">
-                                <option value="низкий">Низкий (не срочно)</option>
-                                <option value="средний" selected>Средний (обычный)</option>
-                                <option value="высокий">Высокий (нужно сегодня)</option>
-                                <option value="критичный">Критичный (всё стоит!)</option>
-                            </select>
-                        </div>
+                    <div class="form-group">
+                        <label>Приоритет</label>
+                        <select id="ticketPriority">
+                            <option value="низкий">Низкий (не срочно)</option>
+                            <option value="средний" selected>Средний (обычный)</option>
+                            <option value="высокий">Высокий (нужно сегодня)</option>
+                            <option value="критичный">Критичный (всё стоит!)</option>
+                        </select>
+                    </div>
 
-                        <div style="display: flex; gap: 1rem; margin-top: 2rem">
-                            <button type="button" class="btn btn-primary" id="submitTicketBtn" onclick="submitTicket()">Отправить заявку</button>
-                            <button type="button" class="btn btn-secondary" id="cancelBtn" onclick="showDashboard()">Отмена</button>
-                        </div>
-                    </form>
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem">
+                        <button class="btn btn-primary" id="submitTicketBtn" onclick="submitTicket()">Отправить заявку</button>
+                        <button class="btn btn-secondary" id="cancelBtn" onclick="showDashboard()">Отмена</button>
+                    </div>
                 </div>
             </div>
 
