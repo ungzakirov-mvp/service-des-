@@ -615,10 +615,10 @@ class AgentWorkspace {
             await api.createTicket(formData);
             this.closeCreateModal();
             await this.loadTickets(); // Refresh list
-            alert('Тикет успешно создан!');
+            this.showToast('✅ Заявка создана и отправлена на обработку!');
         } catch (error) {
             console.error('Failed to create ticket:', error);
-            alert('Ошибка создания тикета: ' + error.message);
+            this.showToast('Ошибка: ' + error.message);
         } finally {
             btn.disabled = false;
             btn.textContent = originalText;

@@ -668,14 +668,16 @@ async function handleCreateTicket(e) {
     if (assignee) data.assigned_to = parseInt(assignee);
 
     try {
-        await api.createTicket(data);
-        showToast('Заявка успешно создана!', 'success');
+        const result = await api.createTicket(data);
+        showToast('✅ Заявка создана и отправлена на обработку!', 'success');
         e.target.reset();
         resetPriorityCards();
-        showView('tickets');
-        loadTickets();
+        
+        // Перенаправить на список тикетов
         document.querySelectorAll('.side-link').forEach(l => l.classList.remove('active'));
         document.querySelector('[data-page="tickets"]').classList.add('active');
+        showView('tickets');
+        loadTickets();
     } catch (error) {
         showToast(error.message, 'error');
     } finally {
@@ -1622,16 +1624,18 @@ function handleWsEvent(event) {
             break;
 
         case 'TICKET_CREATED':
-            // Не показывать уведомление создателю заявки
-            if (currentUser && event.data && currentUser.id === event.data.created_by_id) {
-                console.log('Skipping notification for ticket creator');
-            } else if (currentUser && currentUser.role === 'client') {
-                console.log('Skipping notification for client');
-            } else {
+            // Показывать всем кроме создателя
+            if (currentUser && event.data && currentUser.id !== event.data.created_by_id) {
                 showNewTicketNotification(event.data);
             }
+            // Всегда обновляем списки
             loadTickets();
-            if (activeView === 'dashboard') loadDashboardData();
+            if (activeView === 'dashboard') {
+                loadDashboardData();
+            }
+            if (activeView === 'tickets') {
+                loadTickets();
+            }
             break;
 
         case 'TICKET_COMMENT_ADDED':
