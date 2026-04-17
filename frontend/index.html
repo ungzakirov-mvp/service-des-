@@ -534,6 +534,25 @@
 
                         <!--Tickets View -->
                         <div class="view hidden" id="ticketsView">
+                            <!-- Quick Actions Bar -->
+                            <div class="quick-actions-bar" id="quickActionsBar">
+                                <button class="quick-action-btn" onclick="openTimerModal()" title="Таймер">
+                                    <i class="fas fa-stopwatch"></i>
+                                    <span>Таймер</span>
+                                </button>
+                                <button class="quick-action-btn" onclick="openChecklistModal()" title="Чек-лист">
+                                    <i class="fas fa-tasks"></i>
+                                    <span>Чек-лист</span>
+                                </button>
+                                <button class="quick-action-btn" onclick="openNoteModal()" title="Заметка">
+                                    <i class="fas fa-sticky-note"></i>
+                                    <span>Заметка</span>
+                                </button>
+                                <button class="quick-action-btn" onclick="openCannedModal()" title="Шаблоны">
+                                    <i class="fas fa-bolt"></i>
+                                    <span>Шаблоны</span>
+                                </button>
+                            </div>
                             <div class="page-header">
                                 <h2 data-i18n="all_tickets">Все тикеты</h2>
                                 <div class="filters">
@@ -1313,46 +1332,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Quick Actions Bar (inside ticket view) -->
-        <div class="quick-actions-bar" id="quickActionsBar">
-            <button class="quick-action-btn" onclick="openTimerModal()" title="Таймер">
-                <i class="fas fa-stopwatch"></i>
-                <span>Таймер</span>
-            </button>
-            <button class="quick-action-btn" onclick="openChecklistModal()" title="Чек-лист">
-                <i class="fas fa-tasks"></i>
-                <span>Чек-лист</span>
-            </button>
-            <button class="quick-action-btn" onclick="openNoteModal()" title="Заметка">
-                <i class="fas fa-sticky-note"></i>
-                <span>Заметка</span>
-            </button>
-            <button class="quick-action-btn" onclick="openCannedModal()" title="Шаблоны">
-                <i class="fas fa-bolt"></i>
-                <span>Шаблоны</span>
-            </button>
-        </div>
-
-        <!-- Floating Action Bar for Features (Desktop only) -->
-        <div class="floating-action-bar desktop-only" id="floatingActionBar">
-            <button class="fab-btn" onclick="openTimerModal()" title="Таймер">
-                <i class="fas fa-stopwatch"></i>
-                <span class="fab-label">Таймер</span>
-            </button>
-            <button class="fab-btn" onclick="openChecklistModal()" title="Чек-лист">
-                <i class="fas fa-tasks"></i>
-                <span class="fab-label">Чек-лист</span>
-            </button>
-            <button class="fab-btn" onclick="openNoteModal()" title="Заметка">
-                <i class="fas fa-sticky-note"></i>
-                <span class="fab-label">Заметка</span>
-            </button>
-            <button class="fab-btn" onclick="openCannedModal()" title="Шаблоны">
-                <i class="fas fa-bolt"></i>
-                <span class="fab-label">Шаблоны</span>
-            </button>
         </div>
 
         <!-- Timer Modal -->

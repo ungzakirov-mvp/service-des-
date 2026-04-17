@@ -5389,15 +5389,21 @@ body {
     }
 }
 
+/* Completely hide floating action bar - moved to ticket view */
+.floating-action-bar {
+    display: none !important;
+}
+
 /* Quick Actions Bar (integrated into ticket view) */
 .quick-actions-bar {
-    display: none;
+    display: flex;
     gap: 0.5rem;
     padding: 0.75rem;
     background: var(--bg-surface);
     border-bottom: 1px solid var(--prism-border);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
 }
 
 .quick-actions-bar::-webkit-scrollbar {
