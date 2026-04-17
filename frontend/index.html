@@ -191,7 +191,7 @@
                         <div class="view" id="dashboardView">
                             <div class="page-header dynamic-header">
                                 <div>
-                                    <h2><i class="fas fa-tasks" style="color: var(--jarvis-cyan);"></i> Мои задачи</h2>
+                                    <h2><i class="fas fa-tasks" style="color: var(--jarvis-cyan);"></i> Система мониторинга заявок</h2>
                                     <p>Активные заявки требующие внимания <span id="lastUpdateTime" style="font-size: 0.85rem; color: var(--text-tertiary); margin-left: 1rem;"></span></p>
                                 </div>
                                 <div class="header-actions">
@@ -1315,8 +1315,28 @@
             </div>
         </div>
 
-        <!-- Floating Action Bar for Features -->
-        <div class="floating-action-bar" id="floatingActionBar">
+        <!-- Quick Actions Bar (inside ticket view) -->
+        <div class="quick-actions-bar" id="quickActionsBar">
+            <button class="quick-action-btn" onclick="openTimerModal()" title="Таймер">
+                <i class="fas fa-stopwatch"></i>
+                <span>Таймер</span>
+            </button>
+            <button class="quick-action-btn" onclick="openChecklistModal()" title="Чек-лист">
+                <i class="fas fa-tasks"></i>
+                <span>Чек-лист</span>
+            </button>
+            <button class="quick-action-btn" onclick="openNoteModal()" title="Заметка">
+                <i class="fas fa-sticky-note"></i>
+                <span>Заметка</span>
+            </button>
+            <button class="quick-action-btn" onclick="openCannedModal()" title="Шаблоны">
+                <i class="fas fa-bolt"></i>
+                <span>Шаблоны</span>
+            </button>
+        </div>
+
+        <!-- Floating Action Bar for Features (Desktop only) -->
+        <div class="floating-action-bar desktop-only" id="floatingActionBar">
             <button class="fab-btn" onclick="openTimerModal()" title="Таймер">
                 <i class="fas fa-stopwatch"></i>
                 <span class="fab-label">Таймер</span>

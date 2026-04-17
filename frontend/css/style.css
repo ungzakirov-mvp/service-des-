@@ -5060,10 +5060,10 @@ body {
         display: flex;
     }
     
-    /* Sidebar becomes mobile drawer */
+    /* Sidebar becomes mobile drawer - completely hidden */
     .sidebar {
         position: fixed;
-        left: -280px;
+        left: -320px;
         top: 0;
         height: 100vh;
         z-index: 9995;
@@ -5386,6 +5386,72 @@ body {
         width: 28px;
         height: 28px;
         font-size: 0.7rem;
+    }
+}
+
+/* Quick Actions Bar (integrated into ticket view) */
+.quick-actions-bar {
+    display: none;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--prism-border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.quick-actions-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 8px;
+    color: var(--jarvis-cyan);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quick-action-btn:hover,
+.quick-action-btn:active {
+    background: rgba(0,212,255,0.2);
+    border-color: var(--jarvis-cyan);
+}
+
+.quick-action-btn i {
+    font-size: 0.9rem;
+}
+
+/* Desktop only - hide floating bar */
+.desktop-only {
+    display: flex !important;
+}
+
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none !important;
+    }
+    
+    .quick-actions-bar {
+        display: flex;
+    }
+}
+
+@media (max-width: 480px) {
+    .quick-action-btn span {
+        display: none;
+    }
+    
+    .quick-action-btn {
+        padding: 0.6rem;
     }
 }
 

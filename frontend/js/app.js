@@ -803,6 +803,14 @@ function showView(viewName) {
     const viewEl = document.getElementById(`${viewName}View`);
     if (viewEl) viewEl.classList.remove('hidden');
 
+    // Toggle quick actions bar visibility
+    const quickActions = document.getElementById('quickActionsBar');
+    if (viewName === 'tickets' || viewName === 'create') {
+        if (quickActions) quickActions.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+    } else {
+        if (quickActions) quickActions.style.display = 'none';
+    }
+
     // Load data for the view
     if (viewName === 'tickets') {
         loadTickets();
@@ -818,7 +826,7 @@ function showView(viewName) {
         loadUsers();
     } else if (viewName === 'assets') {
         loadAssetsView();
-} else if (viewName === 'createView') {
+} else if (viewName === 'create') {
         loadOpenTickets();
     } else if (viewName === 'newTicketsView') {
         showNewTicketsPanel();
@@ -839,7 +847,7 @@ function showNewTicketsPanel() {
     
     listPanel.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;border-bottom:1px solid rgba(0,212,255,0.2);">
-            <h2 style="color:#00d4ff;margin:0;font-size:1.25rem;"><i class="fas fa-ticket-alt"></i> Мои заявки</h2>
+            <h2 style="color:#00d4ff;margin:0;font-size:1.25rem;"><i class="fas fa-ticket-alt"></i> Система мониторинга заявок</h2>
             <button onclick="closeNewTicketsPanel()" style="background:none;border:none;color:#666;font-size:1.5rem;cursor:pointer;">&times;</button>
         </div>
         <div style="display:flex;gap:0.5rem;padding:0.75rem;background:rgba(0,0,0,0.3);">
