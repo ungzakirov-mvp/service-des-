@@ -4987,16 +4987,16 @@ body {
 .mobile-toggle {
     display: none;
     position: fixed;
-    top: 1rem;
-    left: 1rem;
+    top: 0.5rem;
+    left: 0.5rem;
     z-index: 9999;
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     background: var(--bg-surface);
     border: 1px solid var(--prism-border);
     color: var(--text-primary);
-    font-size: 1.25rem;
+    font-size: 1rem;
     cursor: pointer;
     align-items: center;
     justify-content: center;
@@ -5007,17 +5007,6 @@ body {
 .mobile-toggle:hover {
     background: var(--bg-surface-elevated);
     border-color: var(--jarvis-cyan);
-}
-
-/* Page header padding for mobile toggle */
-@media (max-width: 1024px) {
-    .page-header {
-        padding-left: 70px !important;
-    }
-    
-    .dynamic-header > div:first-child {
-        padding-left: 60px;
-    }
 }
 
 /* Mobile Sidebar Overlay */
