@@ -197,10 +197,10 @@
                     <div class="form-group">
                         <label><i class="fa-solid fa-flag" style="color: var(--jarvis-cyan); margin-right: 0.5rem;"></i>Срочность</label>
                         <select id="ticketPriority">
-                            <option value="низкий">🔵 Низкая - не срочно</option>
-                            <option value="средний" selected>🟡 Средняя - обычная</option>
-                            <option value="высокий">🟠 Высокая - нужно сегодня</option>
-                            <option value="критичный">🔴 Критичная - всё стоит!</option>
+                            <option value="low">🔵 Низкая - не срочно</option>
+                            <option value="medium" selected>🟡 Средняя - обычная</option>
+                            <option value="high">🟠 Высокая - нужно сегодня</option>
+                            <option value="critical">🔴 Критичная - всё стоит!</option>
                         </select>
                     </div>
 
@@ -370,7 +370,7 @@
 
             document.getElementById('ticketTitle').value = '';
             document.getElementById('ticketDescription').value = '';
-            document.getElementById('ticketPriority').value = 'средний';
+            document.getElementById('ticketPriority').value = 'medium';
 
             showToast('✅ Заявка #' + result.readable_id + ' отправлена! Мы скоро свяжемся с вами.');
 
