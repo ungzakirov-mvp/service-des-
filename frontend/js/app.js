@@ -2726,59 +2726,59 @@ async function updateReportPreview() {
 }
 
 async function getReportData(type, period) {
-    const now = new Date();
-    let dateFrom, dateTo;
-    
-    switch(period) {
-        case 'today':
-            dateFrom = dateTo = now.toISOString().split('T')[0];
-            break;
-        case 'week':
-            const weekStart = new Date(now);
-            weekStart.setDate(now.getDate() - now.getDay());
-            dateFrom = weekStart.toISOString().split('T')[0];
-            dateTo = now.toISOString().split('T')[0];
-            break;
-        case 'month':
-            dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-            dateTo = now.toISOString().split('T')[0];
-            break;
-        case 'quarter':
-            const quarter = Math.floor(now.getMonth() / 3);
-            dateFrom = new Date(now.getFullYear(), quarter * 3, 1).toISOString().split('T')[0];
-            dateTo = now.toISOString().split('T')[0];
-            break;
-        case 'year':
-            dateFrom = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
-            dateTo = now.toISOString().split('T')[0];
-            break;
-        case 'custom':
-            dateFrom = document.getElementById('reportDateFrom').value;
-            dateTo = document.getElementById('reportDateTo').value;
-            break;
+    try {
+        const response = await api.request(`/reports/${type}?period=${period}`);
+        return { 
+            type, 
+            data: response.data || [], 
+            dateFrom: '', 
+            dateTo: '',
+            summary: response.summary || {},
+            total: response.total || 0,
+            resolved: response.resolved || 0
+        };
+    } catch (error) {
+        console.error('Error fetching report:', error);
+        // Fallback to local data
+        return await getFallbackReportData(type, period);
     }
-    
+}
+
+async function getFallbackReportData(type, period) {
+    // Fallback using existing API endpoints
     switch(type) {
         case 'tickets':
-            const tickets = await api.request(`/tickets?from=${dateFrom}&to=${dateTo}`);
-            return { type: 'tickets', data: tickets, dateFrom, dateTo };
+            try {
+                const tickets = await api.request('/tickets');
+                return { type: 'tickets', data: tickets, dateFrom: '', dateTo: '' };
+            } catch { return { type: 'tickets', data: [], dateFrom: '', dateTo: '' }; }
         case 'users':
-            const users = await api.request('/users');
-            return { type: 'users', data: users, dateFrom, dateTo };
-        case 'performance':
-            const ticketsPerf = await api.request(`/tickets?from=${dateFrom}&to=${dateTo}`);
-            return { type: 'performance', data: ticketsPerf, dateFrom, dateTo };
+            try {
+                const users = await api.request('/users');
+                return { type: 'users', data: users, dateFrom: '', dateTo: '' };
+            } catch { return { type: 'users', data: [], dateFrom: '', dateTo: '' }; }
         case 'companies':
-            const companies = await api.request('/companies');
-            return { type: 'companies', data: companies, dateFrom, dateTo };
+            try {
+                const companies = await api.request('/companies');
+                return { type: 'companies', data: companies, dateFrom: '', dateTo: '' };
+            } catch { return { type: 'companies', data: [], dateFrom: '', dateTo: '' }; }
+        case 'performance':
+            try {
+                const tickets = await api.request('/tickets');
+                return { type: 'performance', data: tickets, dateFrom: '', dateTo: '' };
+            } catch { return { type: 'performance', data: [], dateFrom: '', dateTo: '' }; }
         case 'audit':
-            const audit = await api.request(`/audit?from=${dateFrom}&to=${dateTo}`);
-            return { type: 'audit', data: audit, dateFrom, dateTo };
+            try {
+                const analytics = await api.request('/analytics');
+                return { type: 'audit', data: [], dateFrom: '', dateTo: '' };
+            } catch { return { type: 'audit', data: [], dateFrom: '', dateTo: '' }; }
         case 'financial':
-            const ticketsFin = await api.request(`/tickets?from=${dateFrom}&to=${dateTo}`);
-            return { type: 'financial', data: ticketsFin, dateFrom, dateTo };
+            try {
+                const tickets = await api.request('/tickets');
+                return { type: 'financial', data: tickets, dateFrom: '', dateTo: '' };
+            } catch { return { type: 'financial', data: [], dateFrom: '', dateTo: '' }; }
         default:
-            return { type, data: [], dateFrom, dateTo };
+            return { type, data: [], dateFrom: '', dateTo: '' };
     }
 }
 
@@ -2937,21 +2937,47 @@ async function exportReport() {
     const format = document.getElementById('exportFormat').value;
     const period = document.getElementById('reportPeriod').value;
     
-    if (!currentReportData) {
-        showToast('Загрузите данные перед экспортом', 'error');
-        return;
-    }
-    
     showToast('Экспорт отчёта...', 'info');
     
     try {
-        if (format === 'excel' || format === 'csv') {
+        // Use API export endpoint
+        const token = localStorage.getItem('access_token');
+        const response = await fetch(`${API_BASE_URL}/reports/export/${type}?period=${period}&format=${format}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `report_${type}_${period}_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showToast('Отчёт скачан!', 'success');
+        } else {
+            // Fallback to local CSV generation
+            if (!currentReportData) {
+                currentReportData = await getReportData(type, period);
+            }
             downloadAsCSV(type, currentReportData);
-        } else if (format === 'pdf') {
-            showToast('PDF экспорт в разработке', 'info');
         }
     } catch (error) {
-        showToast('Ошибка экспорта: ' + error.message, 'error');
+        console.error('Export error:', error);
+        // Fallback to local CSV generation
+        if (!currentReportData) {
+            currentReportData = await getReportData(type, period);
+        }
+        downloadAsCSV(type, currentReportData);
+    }
+    
+    // Save to recent reports
+    if (currentReportData) {
+        saveToRecentReports(type, { data: currentReportData.data || [] });
     }
 }
 

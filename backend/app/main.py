@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, tickets, comments, notifications, webhooks, analytics, users, crm, timetracking, knowledgebase, audit, features
+from app.routers import auth, tickets, comments, notifications, webhooks, analytics, users, crm, timetracking, knowledgebase, audit, features, reports
 from app.config import settings
 from app.logger import log_request, setup_logging
 from app.services.websocket_manager import manager
@@ -138,6 +138,7 @@ app.include_router(timetracking.router, prefix="/api")
 app.include_router(knowledgebase.router, prefix="/api")
 app.include_router(audit.router, prefix="/api")
 app.include_router(features.router, prefix="")
+app.include_router(reports.router, prefix="/api")
 
 
 # Эндпоинт проверки здоровья

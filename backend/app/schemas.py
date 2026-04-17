@@ -691,3 +691,15 @@ class CustomerAssetResponse(CustomerAssetBase):
     
     class Config:
         from_attributes = True
+
+# --- Reports ---
+class ReportResponse(BaseModel):
+    type: str
+    period: str
+    total: int
+    resolved: int
+    data: List[Dict[str, Any]] = []
+    summary: Dict[str, Any] = {}
+    
+    class Config:
+        from_attributes = True
