@@ -82,9 +82,10 @@ def find_best_agent(db: Session, tenant_id: int, category: str = None) -> Option
         })
 
     # 4. Sort: primary by ticket count (asc), secondary by latest assignment (asc = oldest first)
+    from datetime import datetime
     agent_scores.sort(key=lambda x: (
         x["active_tickets"],
-        x["latest_assignment"] or ""  # None → earliest
+        x["latest_assignment"] if x["latest_assignment"] else datetime.min
     ))
     
     best = agent_scores[0]
