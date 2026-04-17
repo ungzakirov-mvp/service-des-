@@ -1578,6 +1578,17 @@ initializeApp = async function () {
     }
 };
 
+// Auto-refresh tickets every 10 seconds
+setInterval(async function() {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+    
+    // Only refresh if on tickets or dashboard view
+    if (activeView === 'tickets' || activeView === 'dashboard') {
+        loadTickets();
+    }
+}, 10000);
+
 // --- Real-time WebSocket Logic ---
 let ws = null;
 
