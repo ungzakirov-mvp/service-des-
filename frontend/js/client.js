@@ -120,26 +120,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async handleCreate(e) {
             e.preventDefault();
-            const btn = this.elements.createForm.querySelector('button[type="submit"]');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Отправка...';
+            
+            const titleEl = document.getElementById('ticketTitle');
+            const descEl = document.getElementById('ticketDescription');
+            const priorityEl = document.getElementById('ticketPriority');
+            const btn = e.target.querySelector('button[type="submit"]');
+            
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Отправка...';
+            }
 
             const data = {
-                title: document.getElementById('ticketTitle').value,
-                description: document.getElementById('ticketDescription').value,
-                priority: document.getElementById('ticketPriority').value
+                title: titleEl ? titleEl.value : '',
+                description: descEl ? descEl.value : '',
+                priority: priorityEl ? priorityEl.value : 'medium'
             };
 
+            console.log('Creating ticket:', data);
+
             try {
-                await api.createTicket(data);
-                this.elements.createForm.reset();
-                this.showToast('✅ Заявка создана успешно!');
+                const result = await api.createTicket(data);
+                console.log('Ticket created:', result);
+                
+                if (titleEl) titleEl.value = '';
+                if (descEl) descEl.value = '';
+                if (priorityEl) priorityEl.value = 'medium';
+                
+                this.showToast('✅ Заявка создана и отправлена на обработку!');
+                this.loadTickets();
                 this.switchView('dashboard');
             } catch (error) {
-                alert('Ошибка: ' + error.message);
+                console.error('Create ticket error:', error);
+                this.showToast('❌ Ошибка: ' + (error.message || 'Не удалось создать заявку'));
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = 'Отправить заявку';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Отправить заявку';
+                }
             }
         }
 
