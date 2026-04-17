@@ -1,206 +1,195 @@
-// Client Portal Logic
-document.addEventListener('DOMContentLoaded', () => {
-    const api = window.api;
+// Client Portal - Simple and Working
+let api = null;
+let portal = null;
+
+document.addEventListener('DOMContentLoaded', async function() {
+    // Wait for api to be available
+    api = window.api;
+    
     if (!api || !api.token) {
+        console.error('No API token found');
         window.location.href = 'index.html';
         return;
     }
 
-    class ClientPortal {
-        constructor() {
-            this.elements = {
-                clientName: document.getElementById('clientName'),
-                dashboardView: document.getElementById('dashboardView'),
-                newTicketView: document.getElementById('newTicketView'),
-                ticketDetailView: document.getElementById('ticketDetailView'),
-                ticketsList: document.getElementById('clientTicketsList'),
-                navItems: document.querySelectorAll('.client-nav-item'),
-                createForm: document.getElementById('clientCreateForm'),
-                createNewBtn: document.getElementById('createNewBtn'),
-                logoutBtn: document.getElementById('logoutBtn')
-            };
-
-            this.init();
-        }
-
-        // Global function for button onclick
-        window.submitTicketForm = () => {
-            this.doCreateTicket();
-        };
-
-        async init() {
-            // Load Profile
-            try {
-                this.user = await api.getMe();
-                this.elements.clientName.textContent = this.user.full_name || this.user.email;
-            } catch (e) {
-                console.error('Failed to load profile:', e);
-                api.clearToken();
-                window.location.href = 'index.html';
-            }
-
-            // Listeners
-            this.elements.navItems.forEach(item => {
-                item.addEventListener('click', () => this.switchView(item.dataset.view));
-            });
-
-            this.elements.createNewBtn.addEventListener('click', () => this.switchView('new-ticket'));
-
-            this.elements.createForm.addEventListener('submit', (e) => this.handleCreate(e));
-
-            this.elements.logoutBtn.addEventListener('click', () => {
-                api.clearToken();
-                window.location.href = 'index.html';
-            });
-
-            // Initial Load
-            this.loadTickets();
-        }
-
-        switchView(viewId) {
-            this.elements.dashboardView.classList.add('hidden');
-            this.elements.newTicketView.classList.add('hidden');
-            this.elements.ticketDetailView.classList.add('hidden');
-
-            this.elements.navItems.forEach(i => i.classList.remove('active'));
-
-            if (viewId === 'dashboard') {
-                this.elements.dashboardView.classList.remove('hidden');
-                document.querySelector('[data-view="dashboard"]').classList.add('active');
-                this.loadTickets();
-            } else if (viewId === 'new-ticket') {
-                this.elements.newTicketView.classList.remove('hidden');
-                document.querySelector('[data-view="new-ticket"]').classList.add('active');
-            }
-        }
-
-        async loadTickets() {
-            try {
-                // Backend automatically filters by tenant and user if they are a client 
-                // (or returns all if admin, but here we are in client portal so we expect own)
-                // Note: The /tickets/ endpoint returns all for now, but in a real app 
-                // it should filter by owner. I'll make sure it looks right.
-                const tickets = await api.getTickets();
-                this.renderTickets(tickets);
-            } catch (error) {
-                console.error('Load Error:', error);
-                this.elements.ticketsList.innerHTML = '<div style="color:red">Ошибка загрузки заявок</div>';
-            }
-        }
-
-        renderTickets(tickets) {
-            if (tickets.length === 0) {
-                this.elements.ticketsList.innerHTML = `
-                    <div style="text-align: center; color: var(--text-muted); padding: 5rem;">
-                        <p>У вас пока нет активных обращений.</p>
-                        <button class="btn btn-secondary btn-small" onclick="document.getElementById('createNewBtn').click()">
-                            Создать первое обращение
-                        </button>
-                    </div>`;
-                return;
-            }
-
-            this.elements.ticketsList.innerHTML = '';
-            tickets.forEach(ticket => {
-                const card = document.createElement('div');
-                card.className = 'ticket-card';
-
-                const statusColor = this.getStatusColor(ticket.status_name);
-                const date = new Date(ticket.created_at).toLocaleDateString();
-
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem">
-                        <span style="font-weight: 600; font-size: 1.1rem">${ticket.title}</span>
-                        <span class="ticket-status-badge" style="background: ${statusColor}22; color: ${statusColor}; border: 1px solid ${statusColor}44">
-                            ${ticket.status_name}
-                        </span>
-                    </div>
-                    <div style="color: var(--text-muted); font-size: 0.85rem">
-                        <span>#${ticket.readable_id}</span> • <span>Создано: ${date}</span>
-                    </div>
-                `;
-                this.elements.ticketsList.appendChild(card);
-            });
-        }
-
-        async handleCreate(e) {
-            e.preventDefault();
-            await this.doCreateTicket();
-        }
-
-        async doCreateTicket() {
-            const titleEl = document.getElementById('ticketTitle');
-            const descEl = document.getElementById('ticketDescription');
-            const priorityEl = document.getElementById('ticketPriority');
-            const btn = document.getElementById('submitTicketBtn');
-            
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Отправка...';
-            }
-
-            const data = {
-                title: titleEl ? titleEl.value : '',
-                description: descEl ? descEl.value : '',
-                priority: priorityEl ? priorityEl.value : 'medium'
-            };
-
-            if (!data.title.trim()) {
-                this.showToast('❌ Укажите тему заявки');
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = 'Отправить заявку';
-                }
-                return;
-            }
-
-            console.log('Creating ticket:', data);
-
-            try {
-                const result = await api.createTicket(data);
-                console.log('Ticket created:', result);
-                
-                if (titleEl) titleEl.value = '';
-                if (descEl) descEl.value = '';
-                if (priorityEl) priorityEl.value = 'medium';
-                
-                this.showToast('✅ Заявка создана и отправлена на обработку!');
-                this.loadTickets();
-                this.switchView('dashboard');
-            } catch (error) {
-                console.error('Create ticket error:', error);
-                this.showToast('❌ Ошибка: ' + (error.message || 'Не удалось создать заявку'));
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = 'Отправить заявку';
-                }
-            }
-        }
-
-        getStatusColor(status) {
-            const s = status.toLowerCase();
-            if (s.includes('нов')) return '#667eea';
-            if (s.includes('раб')) return '#f59e0b';
-            if (s.includes('реш') || s.includes('зак')) return '#10b981';
-            return '#94a3b8';
-        }
-
-        showToast(msg) {
-            const toast = document.getElementById('toast');
-            if (toast) {
-                toast.textContent = msg;
-                toast.classList.remove('hidden', 'fade-out');
-                setTimeout(() => {
-                    toast.classList.add('fade-out');
-                    setTimeout(() => toast.classList.add('hidden'), 500);
-                }, 3000);
-            }
-        }
+    // Get user info
+    try {
+        const user = await api.getMe();
+        document.getElementById('clientName').textContent = user.full_name || user.email;
+        console.log('Logged in as:', user.email, 'Role:', user.role);
+    } catch (e) {
+        console.error('Auth error:', e);
+        window.location.href = 'index.html';
+        return;
     }
 
-    const portal = new ClientPortal();
-    window.clientPortal = portal;
-    window.submitTicketForm = () => portal.doCreateTicket();
-    window.clientShowToast = (msg) => portal.showToast(msg);
+    // Load initial tickets
+    loadClientTickets();
+
+    // Event listeners
+    document.getElementById('createNewBtn').addEventListener('click', () => showNewTicket());
+    document.getElementById('cancelBtn').addEventListener('click', () => showDashboard());
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    // Navigation
+    document.querySelectorAll('.client-nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const view = item.dataset.view;
+            switchView(view);
+        });
+    });
 });
+
+async function loadClientTickets() {
+    const list = document.getElementById('clientTicketsList');
+    list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Загрузка...</div>';
+    
+    try {
+        const tickets = await api.getTickets();
+        renderClientTickets(tickets);
+    } catch (e) {
+        console.error('Load tickets error:', e);
+        list.innerHTML = '<div style="color:red;padding:2rem">Ошибка загрузки: ' + e.message + '</div>';
+    }
+}
+
+function renderClientTickets(tickets) {
+    const list = document.getElementById('clientTicketsList');
+    
+    if (!tickets || tickets.length === 0) {
+        list.innerHTML = `
+            <div style="text-align:center;padding:3rem;color:var(--text-muted)">
+                <i class="fas fa-inbox" style="font-size:3rem;opacity:0.3"></i>
+                <p style="margin-top:1rem">У вас пока нет обращений</p>
+                <button class="btn btn-primary" onclick="showNewTicket()" style="margin-top:1rem">
+                    <i class="fas fa-plus"></i> Создать первое обращение
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = tickets.map(ticket => {
+        const statusColor = getStatusColor(ticket.status_rel?.name || 'новый');
+        const date = new Date(ticket.created_at).toLocaleDateString('ru-RU');
+        return `
+            <div class="ticket-card" onclick="alert('Просмотр тикета #${ticket.readable_id}')">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+                    <span style="font-weight:600;font-size:1.1rem">${escapeHtml(ticket.title)}</span>
+                    <span class="ticket-status-badge" style="background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44">
+                        ${ticket.status_rel?.name || 'Новый'}
+                    </span>
+                </div>
+                <div style="color:var(--text-muted);font-size:0.85rem">
+                    <span>#${ticket.readable_id}</span> • <span>${date}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function getStatusColor(status) {
+    const s = (status || '').toLowerCase();
+    if (s.includes('нов')) return '#3b82f6';
+    if (s.includes('раб') || s.includes('ожидан')) return '#f59e0b';
+    if (s.includes('реш') || s.includes('закрыт')) return '#10b981';
+    return '#8b5cf6';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function switchView(view) {
+    document.getElementById('dashboardView').classList.add('hidden');
+    document.getElementById('newTicketView').classList.add('hidden');
+    document.getElementById('ticketDetailView').classList.add('hidden');
+    document.getElementById('assetsView').classList.add('hidden');
+    
+    document.querySelectorAll('.client-nav-item').forEach(i => i.classList.remove('active'));
+    
+    if (view === 'dashboard') {
+        document.getElementById('dashboardView').classList.remove('hidden');
+        document.querySelector('[data-view="dashboard"]').classList.add('active');
+        loadClientTickets();
+    } else if (view === 'new-ticket') {
+        document.getElementById('newTicketView').classList.remove('hidden');
+        document.querySelector('[data-view="new-ticket"]').classList.add('active');
+    } else if (view === 'assets') {
+        document.getElementById('assetsView').classList.remove('hidden');
+        document.querySelector('[data-view="assets"]').classList.add('active');
+    }
+}
+
+function showDashboard() {
+    switchView('dashboard');
+}
+
+function showNewTicket() {
+    switchView('new-ticket');
+}
+
+async function submitTicket() {
+    const btn = document.getElementById('submitTicketBtn');
+    const titleEl = document.getElementById('ticketTitle');
+    const descEl = document.getElementById('ticketDescription');
+    const priorityEl = document.getElementById('ticketPriority');
+    
+    const title = titleEl.value.trim();
+    const description = descEl.value.trim();
+    const priority = priorityEl.value;
+    
+    if (!title) {
+        showToast('❌ Укажите тему обращения');
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
+    
+    try {
+        console.log('Creating ticket:', { title, description, priority });
+        const result = await api.createTicket({
+            title: title,
+            description: description,
+            priority: priority
+        });
+        console.log('Ticket created:', result);
+        
+        // Clear form
+        titleEl.value = '';
+        descEl.value = '';
+        priorityEl.value = 'средний';
+        
+        showToast('✅ Заявка #' + result.readable_id + ' создана и отправлена на обработку!');
+        
+        // Go to dashboard and reload
+        switchView('dashboard');
+        
+    } catch (e) {
+        console.error('Create ticket error:', e);
+        showToast('❌ Ошибка: ' + (e.message || 'Не удалось создать заявку'));
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Отправить заявку';
+    }
+}
+
+function logout() {
+    api.clearToken();
+    window.location.href = 'index.html';
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    if (toast) {
+        toast.textContent = msg;
+        toast.classList.remove('hidden', 'fade-out');
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.classList.add('hidden'), 500);
+        }, 4000);
+    }
+}
