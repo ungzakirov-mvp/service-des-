@@ -23,6 +23,11 @@ document.addEventListener('DOMContentLoaded', () => {
             this.init();
         }
 
+        // Global function for button onclick
+        window.submitTicketForm = () => {
+            this.doCreateTicket();
+        };
+
         async init() {
             // Load Profile
             try {
@@ -120,11 +125,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async handleCreate(e) {
             e.preventDefault();
-            
+            await this.doCreateTicket();
+        }
+
+        async doCreateTicket() {
             const titleEl = document.getElementById('ticketTitle');
             const descEl = document.getElementById('ticketDescription');
             const priorityEl = document.getElementById('ticketPriority');
-            const btn = e.target.querySelector('button[type="submit"]');
+            const btn = document.getElementById('submitTicketBtn');
             
             if (btn) {
                 btn.disabled = true;
@@ -136,6 +144,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 description: descEl ? descEl.value : '',
                 priority: priorityEl ? priorityEl.value : 'medium'
             };
+
+            if (!data.title.trim()) {
+                this.showToast('❌ Укажите тему заявки');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Отправить заявку';
+                }
+                return;
+            }
 
             console.log('Creating ticket:', data);
 
@@ -171,14 +188,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         showToast(msg) {
             const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.remove('hidden', 'fade-out');
-            setTimeout(() => {
-                toast.classList.add('fade-out');
-                setTimeout(() => toast.classList.add('hidden'), 500);
-            }, 3000);
+            if (toast) {
+                toast.textContent = msg;
+                toast.classList.remove('hidden', 'fade-out');
+                setTimeout(() => {
+                    toast.classList.add('fade-out');
+                    setTimeout(() => toast.classList.add('hidden'), 500);
+                }, 3000);
+            }
         }
     }
 
-    new ClientPortal();
+    const portal = new ClientPortal();
+    window.clientPortal = portal;
+    window.submitTicketForm = () => portal.doCreateTicket();
+    window.clientShowToast = (msg) => portal.showToast(msg);
 });
