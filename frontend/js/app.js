@@ -1249,6 +1249,18 @@ async function openTicketModal(ticketId) {
             document.getElementById('modalSlaDeadline').classList.remove('sla-urgent');
         }
 
+        // Close button visibility
+        const isResolved = ['решён', 'закрыт', 'resolved', 'closed'].includes(ticket.status_rel?.name?.toLowerCase());
+        const closeSection = document.getElementById('closeTicketSection');
+        const closeBtn = document.getElementById('btnCloseTicket');
+        if (closeSection && closeBtn) {
+            if (isResolved || currentUser?.role === 'client') {
+                closeSection.classList.add('hidden');
+            } else {
+                closeSection.classList.remove('hidden');
+            }
+        }
+
         // Timeline - уже загружен выше
         renderModalTimeline(timeline);
 
@@ -3191,6 +3203,43 @@ function regenerateReport(type) {
 function downloadCurrentReport() {
     if (currentReportData) {
         downloadAsCSV(currentReportType, currentReportData);
+    }
+}
+
+// ===== CLOSE TICKET =====
+async function closeTicket() {
+    if (!currentTicketId) {
+        showToast('Ошибка: тикет не выбран', 'error');
+        return;
+    }
+    
+    try {
+        showToast('Закрытие тикета...', 'info');
+        
+        await api.request(`/tickets/${currentTicketId}/close`, {
+            method: 'POST'
+        });
+        
+        showToast('Тикет закрыт!', 'success');
+        
+        // Reload ticket details
+        loadTicketDetails(currentTicketId);
+        
+        // Reload tickets list
+        if (typeof loadTickets === 'function') {
+            loadTickets();
+        }
+        
+        // Close modal if status is final
+        const closeBtn = document.getElementById('btnCloseTicket');
+        const closeSection = document.getElementById('closeTicketSection');
+        if (closeSection) {
+            closeSection.classList.add('hidden');
+        }
+        
+    } catch (error) {
+        console.error('Close ticket error:', error);
+        showToast('Ошибка закрытия тикета: ' + error.message, 'error');
     }
 }
 
