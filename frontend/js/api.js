@@ -125,8 +125,22 @@ class APIClient {
         return await this.request(`/tickets/${id}/accept`, { method: 'POST' });
     }
 
+    async resolveTicket(id, resolutionComment = '') {
+        return await this.request(`/tickets/${id}/resolve`, {
+            method: 'POST',
+            body: JSON.stringify({ resolution_comment: resolutionComment })
+        });
+    }
+
     async closeTicket(id) {
         return await this.request(`/tickets/${id}/close`, { method: 'POST' });
+    }
+
+    async reopenTicket(id, reason = '') {
+        return await this.request(`/tickets/${id}/reopen`, {
+            method: 'POST',
+            body: JSON.stringify({ reason })
+        });
     }
 
     async assignTicket(id, agentId) {

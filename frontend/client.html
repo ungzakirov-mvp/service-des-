@@ -127,6 +127,53 @@
             opacity: 0.3;
             margin-bottom: 1rem;
         }
+        .ticket-card.awaiting-confirmation {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.08);
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(139, 92, 246, 0); }
+        }
+        .action-hint {
+            color: #8b5cf6;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .action-hint i {
+            margin-right: 0.25rem;
+        }
+        .closed-hint {
+            color: #10b981;
+            font-size: 0.75rem;
+        }
+        .closed-hint i {
+            margin-right: 0.25rem;
+        }
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--jarvis-cyan), #0099cc);
+            color: white;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        .btn-small {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
@@ -306,16 +353,25 @@
             var t = tickets[i];
             var statusColor = getStatusColor(t.status_rel ? t.status_rel.name : 'новый');
             var date = new Date(t.created_at).toLocaleDateString('ru-RU', {day: '2-digit', month: '2-digit', year: 'numeric'});
+            var isAwaitingClient = t.status_rel?.name === 'Ожидает клиента';
+            var isClosed = t.status_rel?.is_final;
 
-            html += '<div class="ticket-card" onclick="viewTicket(' + t.id + ')">';
+            html += '<div class="ticket-card ' + (isAwaitingClient ? 'awaiting-confirmation' : '') + '" onclick="viewTicket(' + t.id + ')">';
             html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">';
             html += '<span style="font-weight: 600;">' + escapeHtml(t.title) + '</span>';
             html += '<span class="ticket-status-badge" style="background: ' + statusColor + '22; color: ' + statusColor + ';">' + (t.status_rel ? t.status_rel.name : 'Новый') + '</span>';
             html += '</div>';
-            html += '<div style="color: var(--text-muted); font-size: 0.85rem;">';
+            html += '<div style="color: var(--text-muted); font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">';
+            html += '<div>';
             html += '<span>#' + t.readable_id + '</span> • <span>' + date + '</span>';
             if (t.priority) {
                 html += ' • <span style="color: ' + getPriorityColor(t.priority) + ';">' + t.priority + '</span>';
+            }
+            html += '</div>';
+            if (isAwaitingClient) {
+                html += '<span class="action-hint"><i class="fa-solid fa-hand-pointer"></i> Нажмите для подтверждения</span>';
+            } else if (isClosed) {
+                html += '<span class="closed-hint"><i class="fa-solid fa-check-circle"></i> Закрыт</span>';
             }
             html += '</div>';
             html += '</div>';
@@ -385,8 +441,175 @@
         }
     }
 
-    function viewTicket(id) {
-        showToast('Просмотр тикета #' + id + ' - в разработке');
+    async function viewTicket(id) {
+        try {
+            var ticket = await api.getTicket(id);
+            showTicketModal(ticket);
+        } catch (e) {
+            showToast('❌ Ошибка загрузки тикета');
+        }
+    }
+
+    function showTicketModal(ticket) {
+        var modal = document.getElementById('ticketModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'ticketModal';
+            modal.className = 'modal-overlay';
+            document.body.appendChild(modal);
+        }
+        
+        var statusColor = getStatusColor(ticket.status_rel?.name || 'новый');
+        var priorityColor = getPriorityColor(ticket.priority);
+        var isAwaitingClient = ticket.status_rel?.name === 'Ожидает клиента';
+        var isClosed = ticket.status_rel?.is_final;
+        
+        var html = '<div class="modal-content ticket-detail-modal">';
+        html += '<button class="modal-close" onclick="closeTicketModal()"><i class="fa-solid fa-times"></i></button>';
+        
+        // Header
+        html += '<div class="ticket-modal-header">';
+        html += '<div class="ticket-id-badge">#' + ticket.readable_id + '</div>';
+        html += '<h2>' + escapeHtml(ticket.title) + '</h2>';
+        html += '</div>';
+        
+        // Status and Priority badges
+        html += '<div class="ticket-meta-row">';
+        html += '<span class="status-badge" style="background:' + statusColor + '22;color:' + statusColor + ';border:1px solid ' + statusColor + '44;">' + (ticket.status_rel?.name || 'Новый') + '</span>';
+        html += '<span class="priority-badge" style="background:' + priorityColor + '22;color:' + priorityColor + ';">' + (ticket.priority || 'medium') + '</span>';
+        html += '</div>';
+        
+        // SLA Info
+        if (ticket.sla_due_at) {
+            var slaDate = new Date(ticket.sla_due_at);
+            html += '<div class="sla-info">';
+            html += '<i class="fa-solid fa-clock"></i> Дедлайн: ' + slaDate.toLocaleString('ru-RU');
+            html += '</div>';
+        }
+        
+        // Resolved info
+        if (ticket.resolved_at) {
+            var resolvedDate = new Date(ticket.resolved_at);
+            html += '<div class="resolved-info">';
+            html += '<i class="fa-solid fa-check-circle" style="color:#10b981;"></i> Завершено: ' + resolvedDate.toLocaleString('ru-RU');
+            html += '</div>';
+        }
+        
+        // Description
+        html += '<div class="ticket-description">';
+        html += '<h4>Описание</h4>';
+        html += '<p>' + escapeHtml(ticket.description || 'Без описания') + '</p>';
+        html += '</div>';
+        
+        // Workflow buttons for client
+        html += '<div class="ticket-actions">';
+        
+        if (isAwaitingClient) {
+            html += '<button class="btn btn-success btn-large" onclick="closeTicketByClient(' + ticket.id + ')">';
+            html += '<i class="fa-solid fa-check"></i> Подтвердить и закрыть';
+            html += '</button>';
+            html += '<button class="btn btn-warning" onclick="reopenTicketByClient(' + ticket.id + ')">';
+            html += '<i class="fa-solid fa-undo"></i> Переоткрыть';
+            html += '</button>';
+        }
+        
+        if (isClosed) {
+            html += '<button class="btn btn-secondary" onclick="reopenTicketByClient(' + ticket.id + ')">';
+            html += '<i class="fa-solid fa-undo"></i> Переоткрыть тикет';
+            html += '</button>';
+        }
+        
+        html += '</div>';
+        
+        // Rating section (only for closed tickets without rating)
+        if (isClosed && !ticket.rating) {
+            html += '<div class="rating-section">';
+            html += '<h4><i class="fa-solid fa-star" style="color:#f59e0b;"></i> Оцените качество работы</h4>';
+            html += '<div class="star-rating" id="starRating">';
+            for (var i = 1; i <= 5; i++) {
+                html += '<span class="star" data-rating="' + i + '" onclick="selectRating(' + i + ')">☆</span>';
+            }
+            html += '</div>';
+            html += '<textarea id="ratingComment" placeholder="Комментарий (необязательно)"></textarea>';
+            html += '<button class="btn btn-primary" onclick="submitRating(' + ticket.id + ')">Отправить оценку</button>';
+            html += '</div>';
+        }
+        
+        // Show existing rating
+        if (ticket.rating) {
+            html += '<div class="existing-rating">';
+            html += '<h4>Ваша оценка</h4>';
+            html += '<div class="stars-display">';
+            for (var i = 1; i <= 5; i++) {
+                html += '<span class="star ' + (i <= ticket.rating ? 'filled' : '') + '">★</span>';
+            }
+            html += '</div>';
+            if (ticket.rating_comment) {
+                html += '<p class="rating-comment">' + escapeHtml(ticket.rating_comment) + '</p>';
+            }
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        
+        modal.innerHTML = html;
+        modal.classList.add('active');
+    }
+    
+    function closeTicketModal() {
+        var modal = document.getElementById('ticketModal');
+        if (modal) modal.classList.remove('active');
+        loadTickets();
+    }
+    
+    async function closeTicketByClient(id) {
+        if (!confirm('Подтвердить закрытие тикета?')) return;
+        try {
+            await api.closeTicket(id);
+            showToast('✅ Тикет закрыт! Спасибо за обращение.');
+            closeTicketModal();
+        } catch (e) {
+            showToast('❌ Ошибка: ' + (e.message || 'Не удалось закрыть тикет'));
+        }
+    }
+    
+    async function reopenTicketByClient(id) {
+        var reason = prompt('Укажите причину переоткрытия тикета:');
+        if (reason === null) return;
+        try {
+            await api.reopenTicket(id, reason || 'Клиент переоткрыл тикет');
+            showToast('✅ Тикет переоткрыт');
+            loadTickets();
+            viewTicket(id);
+        } catch (e) {
+            showToast('❌ Ошибка: ' + (e.message || 'Не удалось переоткрыть тикет'));
+        }
+    }
+    
+    var selectedRating = 0;
+    
+    function selectRating(rating) {
+        selectedRating = rating;
+        var stars = document.querySelectorAll('#starRating .star');
+        stars.forEach(function(star, index) {
+            star.textContent = index < rating ? '★' : '☆';
+            star.classList.toggle('filled', index < rating);
+        });
+    }
+    
+    async function submitRating(id) {
+        if (selectedRating === 0) {
+            showToast('Пожалуйста, выберите оценку');
+            return;
+        }
+        var comment = document.getElementById('ratingComment').value.trim();
+        try {
+            await api.rateTicket(id, selectedRating, comment);
+            showToast('✅ Спасибо за оценку!');
+            closeTicketModal();
+        } catch (e) {
+            showToast('❌ Ошибка: ' + (e.message || 'Не удалось отправить оценку'));
+        }
     }
 
     function showToast(msg) {
@@ -401,5 +624,179 @@
         }, 4000);
     }
     </script>
+    <style>
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .ticket-detail-modal {
+            background: var(--bg-secondary, #1a1a2e);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .modal-close:hover { color: white; }
+        .ticket-modal-header {
+            margin-bottom: 1.5rem;
+        }
+        .ticket-id-badge {
+            background: var(--jarvis-cyan, #00d4ff);
+            color: #000;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+        .ticket-modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: white;
+        }
+        .ticket-meta-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .status-badge, .priority-badge {
+            padding: 0.35rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .sla-info, .resolved-info {
+            background: rgba(255,255,255,0.05);
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .sla-info i, .resolved-info i {
+            margin-right: 0.5rem;
+        }
+        .ticket-description {
+            margin-bottom: 1.5rem;
+        }
+        .ticket-description h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        .ticket-description p {
+            margin: 0;
+            color: white;
+            line-height: 1.6;
+        }
+        .ticket-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .btn-large {
+            padding: 1rem 2rem;
+            font-size: 1rem;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            border: none;
+        }
+        .rating-section {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        .rating-section h4 {
+            margin: 0 0 1rem 0;
+            color: white;
+        }
+        .star-rating {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+        }
+        .star-rating .star {
+            color: #444;
+            transition: all 0.2s;
+        }
+        .star-rating .star:hover {
+            color: #f59e0b;
+            transform: scale(1.2);
+        }
+        .star-rating .star.filled {
+            color: #f59e0b;
+        }
+        .rating-section textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: white;
+            margin-bottom: 1rem;
+            min-height: 80px;
+            resize: vertical;
+        }
+        .existing-rating {
+            background: rgba(245,158,11,0.1);
+            border: 1px solid rgba(245,158,11,0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        .existing-rating h4 {
+            margin: 0 0 0.75rem 0;
+            color: #f59e0b;
+        }
+        .stars-display {
+            font-size: 1.5rem;
+            color: #f59e0b;
+            margin-bottom: 0.5rem;
+        }
+        .stars-display .star.filled {
+            color: #f59e0b;
+        }
+        .stars-display .star:not(.filled) {
+            color: #444;
+        }
+        .rating-comment {
+            margin: 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+    </style>
 </body>
 </html>
