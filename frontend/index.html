@@ -103,8 +103,16 @@
 
         <!-- Main Dashboard Page (Refactored to Sidebar) -->
         <div class="page hidden" id="dashboardPage">
+            <!-- Mobile Toggle Button -->
+            <button class="mobile-toggle" id="mobileToggle" onclick="toggleMobileSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+            
             <div class="app-layout">
-                <aside class="sidebar glass-card">
+                <aside class="sidebar glass-card" id="mainSidebar">
                     <div class="sidebar-brand">
                         <div class="sidebar-logo">
                             <span class="logo-icon-small">🎫</span>
@@ -197,7 +205,7 @@
                             </div>
                             
                             <!-- Dashboard Stats Row (for app.js) -->
-                            <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 1.5rem;">
+                            <div class="stats-grid" style="margin-bottom: 1.5rem;">
                                 <div class="glass-card stat-card" style="background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(124,58,237,0.1));">
                                     <div class="stat-icon" style="background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(124,58,237,0.2)); color: var(--jarvis-cyan);">
                                         <i class="fas fa-ticket-alt"></i>
@@ -237,7 +245,7 @@
                             </div>
 
                             <!-- Quick Stats Row -->
-                            <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 1.5rem;">
+                            <div class="stats-grid" style="margin-bottom: 1.5rem;">
                                 <div class="glass-card stat-card accent-rose" style="cursor: pointer;" onclick="filterMyTickets('critical')">
                                     <div class="stat-icon"><i class="fas fa-fire"></i></div>
                                     <div class="stat-content">

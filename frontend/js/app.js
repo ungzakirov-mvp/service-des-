@@ -144,6 +144,51 @@ function toggleSidebar() {
     document.body.classList.toggle('sidebar-collapsed');
 }
 
+// Mobile Sidebar Toggle
+function toggleMobileSidebar() {
+    const sidebar = document.getElementById('mainSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle = document.getElementById('mobileToggle');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+        
+        // Toggle icon between bars and times
+        if (toggle) {
+            const icon = toggle.querySelector('i');
+            if (sidebar.classList.contains('mobile-open')) {
+                icon.className = 'fas fa-times';
+            } else {
+                icon.className = 'fas fa-bars';
+            }
+        }
+    }
+}
+
+// Close mobile sidebar on navigation
+document.addEventListener('click', function(e) {
+    const sidebar = document.getElementById('mainSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar && overlay && sidebar.classList.contains('mobile-open')) {
+        // Check if clicked on a nav link
+        if (e.target.closest('.side-link')) {
+            toggleMobileSidebar();
+        }
+    }
+});
+
+// Handle resize - close sidebar on desktop
+window.addEventListener('resize', function() {
+    if (window.innerWidth > 1024) {
+        const sidebar = document.getElementById('mainSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar) sidebar.classList.remove('mobile-open');
+        if (overlay) overlay.classList.remove('active');
+    }
+});
+
 function checkAuth() {
     const token = localStorage.getItem('access_token');
     return !!token;
