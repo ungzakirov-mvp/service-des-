@@ -563,27 +563,34 @@ function renderTickets(tickets) {
     };
 
     const newHtml = `
-        <div class="ticket-list-header glass-card" style="display: grid; grid-template-columns: 60px 1fr 100px 90px 100px 70px 80px; padding: 0.5rem 1rem; font-size: 0.7rem; color: var(--text-low); border-bottom: 2px solid var(--prism-border); border-radius: 0;">
-            <span>ID</span><span>ТИТУЛ</span><span>СТАТУС</span><span>ПРИОРИТЕТ</span><span>SLA</span><span>ИСПОЛНИТЕЛЬ</span><span>ДЕЙСТВИЯ</span>
+        <div class="ticket-list-header glass-card" style="display: grid; grid-template-columns: 60px 1fr 100px 90px 100px 70px 120px; padding: 0.5rem 1rem; font-size: 0.7rem; color: var(--text-low); border-bottom: 2px solid var(--prism-border); border-radius: 0;">
+            <span>ID</span><span>ЗАЯВКА</span><span>СТАТУС</span><span>ПРИОР.</span><span>SLA</span><span>ИСПОЛН.</span><span>ДЕЙСТВИЯ</span>
         </div>
         ${tickets.map(t => {
             const sc = slaColor(t);
             const sl = fmtSla(t.sla_due_at);
             const sBg = statusBg(t.status_rel?.name);
             const assigned = t.assignee ? (t.assignee.full_name || t.assignee.email.split('@')[0]) : '—';
-            return `<div class="ticket-card ${sc}" onclick="openTicketModal(${t.id})" style="display:grid;grid-template-columns:60px 1fr 100px 90px 100px 70px 80px;align-items:center;gap:4px;cursor:pointer;padding:0.75rem 1rem;border-bottom:1px solid var(--prism-border);">
+            const statusName = t.status_rel?.name || '?';
+            let statusText = statusName;
+            if (statusName === 'Новый') statusText = 'Новая';
+            if (statusName === 'В работе') statusText = 'В работе';
+            if (statusName === 'Ожидает клиента') statusText = 'Ждёт клиента';
+            if (t.status_rel?.is_final) statusText = 'Закрыта';
+            return `<div class="ticket-card ${sc}" onclick="openTicketModal(${t.id})" style="display:grid;grid-template-columns:60px 1fr 100px 90px 100px 70px 120px;align-items:center;gap:4px;cursor:pointer;padding:0.75rem 1rem;border-bottom:1px solid var(--prism-border);">
                 <span class="ticket-id-tag">#${t.readable_id||t.id}</span>
                 <span class="ticket-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.title)}${t.scheduled_at ? '<span style="font-size:0.65rem;color:var(--text-low);margin-left:6px;">📋 '+new Date(t.scheduled_at).toLocaleDateString('ru')+'</span>' : ''}</span>
-                <span class="badge" style="background:${sBg}22;color:${sBg};border:1px solid ${sBg}44;font-size:0.7rem;">${t.status_rel?.name||'?'}</span>
+                <span class="badge" style="background:${sBg}22;color:${sBg};border:1px solid ${sBg}44;font-size:0.7rem;white-space:nowrap;">${statusText}</span>
                 <span class="badge badge-${getPriorityClass(t.priority)}" style="font-size:0.7rem;">${t.priority}</span>
                 <span style="font-size:0.7rem;color:${sc==='sla-overdue'?'#ef4444':sc==='sla-urgent'?'#f59e0b':'var(--text-low)'};">${sl}</span>
                 <span style="font-size:0.7rem;color:var(--text-med);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(assigned)}</span>
-                <span style="display:flex;gap:4px;" onclick="event.stopPropagation();">
-                    ${!t.accepted_at && window._currentUser?.role !== 'client' ? `<button onclick="acceptTicket(${t.id})" title="Принять" style="background:#3b82f622;color:#3b82f6;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.7rem;">✓</button>` : ''}
-                    ${t.accepted_at && t.status_rel?.name !== 'Ожидает клиента' && t.status_rel?.name !== 'Закрыт' && window._currentUser?.role !== 'client' ? `<button onclick="resolveTicketAction(${t.id})" title="Завершить" style="background:#8b5cf622;color:#8b5cf6;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.7rem;">✓</button>` : ''}
-                    ${t.status_rel?.is_final && window._currentUser?.role !== 'client' ? `<button onclick="reopenTicketAction(${t.id})" title="Переоткрыть" style="background:#f59e0b22;color:#f59e0b;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.7rem;">↻</button>` : ''}
-                    ${window._currentUser?.role === 'admin' || window._currentUser?.role === 'super_admin' ? `<button onclick="showAssignModal(${t.id})" title="Назначить" style="background:#8b5cf622;color:#8b5cf6;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.7rem;">↻</button>` : ''}
-                    ${t.rating ? `<span style="color:#f59e0b;font-size:0.7rem;">★${t.rating}</span>` : ''}
+                <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;" onclick="event.stopPropagation();">
+                    ${!t.accepted_at && window._currentUser?.role !== 'client' ? `<button class="ticket-action-btn accept-btn" onclick="acceptTicket(${t.id})">Принять</button>` : ''}
+                    ${t.accepted_at && t.status_rel?.name === 'В работе' && window._currentUser?.role !== 'client' ? `<button class="ticket-action-btn resolve-btn" onclick="resolveTicketAction(${t.id})">Завершить</button>` : ''}
+                    ${t.status_rel?.name === 'Ожидает клиента' ? `<span class="awaiting-text"><i class="fas fa-clock"></i> Ждём</span>` : ''}
+                    ${t.status_rel?.is_final ? `<button class="ticket-action-btn reopen-btn" onclick="reopenTicketAction(${t.id})">Открыть</button>` : ''}
+                    ${window._currentUser?.role === 'admin' || window._currentUser?.role === 'super_admin' ? `<button class="ticket-action-btn assign-btn" onclick="showAssignModal(${t.id})">↻</button>` : ''}
+                    ${t.rating ? `<span style="color:#f59e0b;">★${t.rating}</span>` : ''}
                 </span>
             </div>`;
         }).join('')}
