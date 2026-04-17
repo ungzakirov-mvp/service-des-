@@ -580,7 +580,8 @@ function renderTickets(tickets) {
                 <span style="font-size:0.7rem;color:var(--text-med);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(assigned)}</span>
                 <span style="display:flex;gap:4px;" onclick="event.stopPropagation();">
                     ${!t.accepted_at && window._currentUser?.role !== 'client' ? `<button onclick="acceptTicket(${t.id})" title="Принять" style="background:#3b82f622;color:#3b82f6;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.7rem;">✓</button>` : ''}
-                    ${!t.status_rel?.is_final && window._currentUser?.role !== 'client' ? `<button onclick="closeTicketAction(${t.id})" title="Закрыть" style="background:#10b98122;color:#10b981;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.7rem;">✕</button>` : ''}
+                    ${t.accepted_at && t.status_rel?.name !== 'Ожидает клиента' && t.status_rel?.name !== 'Закрыт' && window._currentUser?.role !== 'client' ? `<button onclick="resolveTicketAction(${t.id})" title="Завершить" style="background:#8b5cf622;color:#8b5cf6;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.7rem;">✓</button>` : ''}
+                    ${t.status_rel?.is_final && window._currentUser?.role !== 'client' ? `<button onclick="reopenTicketAction(${t.id})" title="Переоткрыть" style="background:#f59e0b22;color:#f59e0b;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.7rem;">↻</button>` : ''}
                     ${window._currentUser?.role === 'admin' || window._currentUser?.role === 'super_admin' ? `<button onclick="showAssignModal(${t.id})" title="Назначить" style="background:#8b5cf622;color:#8b5cf6;border:none;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:0.7rem;">↻</button>` : ''}
                     ${t.rating ? `<span style="color:#f59e0b;font-size:0.7rem;">★${t.rating}</span>` : ''}
                 </span>
@@ -607,6 +608,26 @@ async function closeTicketAction(ticketId) {
     try {
         await api.closeTicket(ticketId);
         showToast('Тикет закрыт', 'success');
+        loadTickets();
+    } catch (e) { showToast(e.message || 'Ошибка', 'error'); }
+}
+
+async function resolveTicketAction(ticketId) {
+    var comment = prompt('Комментарий о выполненной работе (необязательно):');
+    if (comment === null) return;
+    try {
+        await api.resolveTicket(ticketId, comment);
+        showToast('Тикет завершён! Клиент уведомлён.', 'success');
+        loadTickets();
+    } catch (e) { showToast(e.message || 'Ошибка', 'error'); }
+}
+
+async function reopenTicketAction(ticketId) {
+    var reason = prompt('Причина переоткрытия:');
+    if (reason === null) return;
+    try {
+        await api.reopenTicket(ticketId, reason || 'Агент переоткрыл');
+        showToast('Тикет переоткрыт', 'success');
         loadTickets();
     } catch (e) { showToast(e.message || 'Ошибка', 'error'); }
 }
@@ -1251,15 +1272,31 @@ async function openTicketModal(ticketId) {
             document.getElementById('modalSlaDeadline').classList.remove('sla-urgent');
         }
 
-        // Close button visibility
-        const isResolved = ['решён', 'закрыт', 'resolved', 'closed'].includes(ticket.status_rel?.name?.toLowerCase());
-        const closeSection = document.getElementById('closeTicketSection');
+        // Workflow button visibility
+        const statusName = ticket.status_rel?.name || '';
+        const isNew = statusName === 'Новый';
+        const isInProgress = statusName === 'В работе';
+        const isAwaitingClient = statusName === 'Ожидает клиента';
+        const isClosed = ticket.status_rel?.is_final;
+        const isAgent = currentUser?.role !== 'client';
+        
+        const agentActions = document.getElementById('agentActions');
+        const resolveBtn = document.getElementById('btnResolveTicket');
         const closeBtn = document.getElementById('btnCloseTicket');
-        if (closeSection && closeBtn) {
-            if (isResolved || currentUser?.role === 'client') {
-                closeSection.classList.add('hidden');
+        
+        if (agentActions) {
+            if (isAgent) {
+                agentActions.classList.remove('hidden');
+                // Show resolve button only if ticket is in progress
+                if (resolveBtn) {
+                    resolveBtn.classList.toggle('hidden', !isInProgress);
+                }
+                // Show close button only if not closed
+                if (closeBtn) {
+                    closeBtn.classList.toggle('hidden', isClosed);
+                }
             } else {
-                closeSection.classList.remove('hidden');
+                agentActions.classList.add('hidden');
             }
         }
 
@@ -3247,14 +3284,45 @@ async function closeTicket() {
         
         // Close modal if status is final
         const closeBtn = document.getElementById('btnCloseTicket');
-        const closeSection = document.getElementById('closeTicketSection');
-        if (closeSection) {
-            closeSection.classList.add('hidden');
+        const agentActions = document.getElementById('agentActions');
+        if (agentActions) {
+            agentActions.classList.add('hidden');
         }
         
     } catch (error) {
         console.error('Close ticket error:', error);
         showToast('Ошибка закрытия тикета: ' + error.message, 'error');
+    }
+}
+
+// ===== RESOLVE TICKET =====
+async function resolveTicket() {
+    if (!currentTicketId) {
+        showToast('Ошибка: тикет не выбран', 'error');
+        return;
+    }
+    
+    var comment = prompt('Комментарий о выполненной работе (необязательно):');
+    if (comment === null) return;
+    
+    try {
+        showToast('Завершение работы...', 'info');
+        
+        await api.resolveTicket(currentTicketId, comment);
+        
+        showToast('Тикет завершён! Клиент уведомлён о выполнении.', 'success');
+        
+        // Reload ticket details
+        loadTicketDetails(currentTicketId);
+        
+        // Reload tickets list
+        if (typeof loadTickets === 'function') {
+            loadTickets();
+        }
+        
+    } catch (error) {
+        console.error('Resolve ticket error:', error);
+        showToast('Ошибка завершения тикета: ' + error.message, 'error');
     }
 }
 
