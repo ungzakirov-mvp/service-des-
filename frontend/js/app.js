@@ -2697,14 +2697,30 @@ document.addEventListener('DOMContentLoaded', () => {
 let currentReportData = null;
 let currentReportType = null;
 
+function showModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+}
+
 function openReportModal() {
-    currentReportType = document.getElementById('reportType').value;
     updateReportPreview();
     showModal('reportModal');
 }
 
 function generateQuickReport(type) {
-    document.getElementById('reportType').value = type;
+    const reportType = document.getElementById('reportType');
+    if (reportType) reportType.value = type;
     currentReportType = type;
     openReportModal();
 }
