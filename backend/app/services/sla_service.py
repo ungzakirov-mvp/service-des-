@@ -18,10 +18,10 @@ class SLAService:
 
         # Default resolution times (in minutes) if no policy is found
         default_times = {
-            TicketPriority.LOW: 48 * 60,      # 48 hours
-            TicketPriority.MEDIUM: 24 * 60,   # 24 hours
-            TicketPriority.HIGH: 4 * 60,      # 4 hours
-            TicketPriority.CRITICAL: 2 * 60   # 2 hours
+            TicketPriority.LOW: 72 * 60,      # 72 hours = 3 days
+            TicketPriority.MEDIUM: 48 * 60,   # 48 hours = 2 days
+            TicketPriority.HIGH: 24 * 60,     # 24 hours = 1 day
+            TicketPriority.CRITICAL: 8 * 60   # 8 hours = рабочий день
         }
 
         minutes_to_add = policy.resolution_time_minutes if policy else default_times.get(priority, 24 * 60)
