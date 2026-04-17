@@ -5009,6 +5009,17 @@ body {
     border-color: var(--jarvis-cyan);
 }
 
+/* Page header padding for mobile toggle */
+@media (max-width: 1024px) {
+    .page-header {
+        padding-left: 70px !important;
+    }
+    
+    .dynamic-header > div:first-child {
+        padding-left: 60px;
+    }
+}
+
 /* Mobile Sidebar Overlay */
 .sidebar-overlay {
     display: none;
