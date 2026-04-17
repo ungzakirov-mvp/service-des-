@@ -161,7 +161,7 @@ async function submitTicket() {
         // Clear form
         titleEl.value = '';
         descEl.value = '';
-        priorityEl.value = 'средний';
+        priorityEl.value = 'medium';
         
         showToast('✅ Заявка #' + result.readable_id + ' создана и отправлена на обработку!');
         
