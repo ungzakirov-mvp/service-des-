@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local check scripts
+scripts/check_*.py
+sync_check.bat
