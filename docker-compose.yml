@@ -7,6 +7,8 @@ services:
     environment:
       - DATABASE_URL=sqlite:///./servicedesk.db
       - SECRET_KEY=servicedesk12345678901234567890
+    volumes:
+      - db-data:/code
     networks:
       - app-network
 
@@ -22,6 +24,9 @@ services:
       - backend
     networks:
       - app-network
+
+volumes:
+  db-data:
 
 networks:
   app-network:
