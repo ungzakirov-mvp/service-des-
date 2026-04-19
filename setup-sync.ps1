@@ -1,134 +1,109 @@
-# ===== Service Desk - Автонастройка синхронизации =====
+# Service Desk - Auto Sync Setup
+# Запустить: .\setup-sync.ps1
 
 $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "   Service Desk - Настройка синхронизации" -ForegroundColor Cyan
+Write-Host "   Service Desk - Auto Sync Setup" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Цвета
+# Colors
 $GREEN = [ConsoleColor]::Green
 $RED = [ConsoleColor]::Red
 $YELLOW = [ConsoleColor]::Yellow
 $CYAN = [ConsoleColor]::Cyan
 
-function Git-Command {
-    param($args)
-    & git @args 2>&1
-}
-
-# 1. Проверяем текущую директорию
-Write-Host "[1/5] Проверка директории проекта..." -ForegroundColor $YELLOW
-$projectPath = $PSScriptRoot
+# 1. Go to project folder
+Write-Host "[1/4] Checking project folder..." -ForegroundColor $YELLOW
+$projectPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 if (-not $projectPath) { $projectPath = Get-Location }
-Write-Host "   Путь: $projectPath" -ForegroundColor Gray
-
+Write-Host "   Path: $projectPath" -ForegroundColor Gray
 Set-Location $projectPath
 
-# 2. Проверяем/устанавливаем правильный remote
+# 2. Check/fix remote
 Write-Host ""
-Write-Host "[2/5] Настройка Git remote..." -ForegroundColor $YELLOW
+Write-Host "[2/4] Setting up Git remote..." -ForegroundColor $YELLOW
 
-$currentRemote = Git-Command remote get-url origin 2>$null
-
-if ($currentRemote -ne "https://github.com/ungzakirov-mvp/service-des-.git") {
-    Write-Host "   Текущий remote: $currentRemote" -ForegroundColor Gray
-    
-    if ($currentRemote) {
-        Write-Host "   Удаляю старый remote..." -ForegroundColor Gray
-        Git-Command remote remove origin
-    }
-    
-    Write-Host "   Устанавливаю правильный remote..." -ForegroundColor $GREEN
-    Git-Command remote add origin "https://github.com/ungzakirov-mvp/service-des-.git"
-    Write-Host "   ✓ Remote установлен" -ForegroundColor $GREEN
-} else {
-    Write-Host "   ✓ Remote уже правильный" -ForegroundColor $GREEN
+try {
+    $currentRemote = git remote get-url origin 2>$null
+} catch {
+    $currentRemote = ""
 }
 
-# 3. Fetch и проверка изменений
-Write-Host ""
-Write-Host "[3/5] Синхронизация с GitHub..." -ForegroundColor $YELLOW
-Git-Command fetch origin
+if ($currentRemote -ne "https://github.com/ungzakirov-mvp/service-des-.git") {
+    if ($currentRemote) {
+        Write-Host "   Removing old remote: $currentRemote" -ForegroundColor Gray
+        git remote remove origin
+    }
+    Write-Host "   Setting correct remote..." -ForegroundColor $GREEN
+    git remote add origin "https://github.com/ungzakirov-mvp/service-des-.git"
+    Write-Host "   Done!" -ForegroundColor $GREEN
+} else {
+    Write-Host "   Remote OK" -ForegroundColor $GREEN
+}
 
-$behind = (Git-Command rev-list HEAD..origin/master --count 2>$null)
-$ahead = (Git-Command rev-list origin/master..HEAD --count 2>$null)
+# 3. Sync with GitHub
+Write-Host ""
+Write-Host "[3/4] Syncing with GitHub..." -ForegroundColor $YELLOW
+git fetch origin
+
+$behind = [int](git rev-list HEAD..origin/master --count 2>$null)
+$ahead = [int](git rev-list origin.master..HEAD --count 2>$null)
 
 if ($behind -gt 0) {
-    Write-Host "   На GitHub есть $behind новых коммитов" -ForegroundColor $YELLOW
-    Write-Host "   Выполняю pull..." -ForegroundColor $GREEN
-    Git-Command pull origin master
-    Write-Host "   ✓ Синхронизировано" -ForegroundColor $GREEN
+    Write-Host "   GitHub has $behind new commits" -ForegroundColor $YELLOW
+    Write-Host "   Pulling..." -ForegroundColor $GREEN
+    git pull origin master
+    Write-Host "   Done!" -ForegroundColor $GREEN
 } else {
-    Write-Host "   ✓ Всё актуально" -ForegroundColor $GREEN
+    Write-Host "   Already up to date" -ForegroundColor $GREEN
 }
 
 if ($ahead -gt 0) {
-    Write-Host "   У вас есть $ahead локальных коммитов" -ForegroundColor $CYAN
+    Write-Host "   You have $ahead local commits to push" -ForegroundColor $CYAN
 }
 
-# 4. Проверка статуса
+# 4. Check status
 Write-Host ""
-Write-Host "[4/5] Статус проекта..." -ForegroundColor $YELLOW
-$status = Git-Command status --short 2>$null
+Write-Host "[4/4] Project status..." -ForegroundColor $YELLOW
+$status = git status --short 2>$null
 if ($status) {
-    Write-Host "   Есть несохранённые изменения:" -ForegroundColor $YELLOW
-    $status | ForEach-Object { Write-Host "      $_" -ForegroundColor Gray }
+    Write-Host "   Uncommitted changes: $status" -ForegroundColor YELLOW
 } else {
-    Write-Host "   ✓ Нет несохранённых изменений" -ForegroundColor $GREEN
+    Write-Host "   No uncommitted changes" -ForegroundColor $GREEN
 }
 
-# 5. Проверка конфигурации
-Write-Host ""
-Write-Host "[5/5] Git конфигурация..." -ForegroundColor $YELLOW
-$userName = Git-Command config user.name 2>$null
-$userEmail = Git-Command config user.email 2>$null
-
-if ($userName -and $userEmail) {
-    Write-Host "   User: $userName <$userEmail>" -ForegroundColor Gray
-    Write-Host "   ✓ Git настроен" -ForegroundColor $GREEN
-} else {
-    Write-Host "   ⚠ Git user не настроен!" -ForegroundColor $RED
-    Write-Host "   Настройте: git config user.name 'Ваше Имя'" -ForegroundColor Gray
-    Write-Host "   Настройте: git config user.email 'email@example.com'" -ForegroundColor Gray
-}
-
-# Итог
-Write-Host ""
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "   Готово! Синхронизация настроена." -ForegroundColor $GREEN
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "Команды для работы:" -ForegroundColor $YELLOW
-Write-Host "  git pull origin master  - скачать обновления" -ForegroundColor Gray
-Write-Host "  git add .              - сохранить изменения" -ForegroundColor Gray
-Write-Host "  git commit -m 'описание' - закоммитить" -ForegroundColor Gray
-Write-Host "  git push origin master - загрузить на GitHub" -ForegroundColor Gray
-Write-Host ""
-Write-Host "На VPS для обновления:" -ForegroundColor $YELLOW
-Write-Host "  cd /home/admin/servicedesk && git pull" -ForegroundColor Gray
-Write-Host ""
-
-# Создаём скрипт автопуша
-$autoPushScript = @"
-@echo off
-REM ===== Auto Push для Service Desk =====
-cd /d "%~dp0"
-echo Pull latest changes...
+# Create auto-sync.bat
+$batchContent = "@echo off
+echo Pull latest...
 git pull origin master
 echo.
-echo Push to GitHub...
+echo Type your commit message and press Enter:
+set /p msg=
+if ""=="%msg%" set msg=Auto update
+echo Committing: %msg%
 git add .
-git commit -m "Auto update from second PC" 
+git commit -m "%msg%"
 git push origin master
 echo.
 echo Done!
-pause
-"@
+pause"
 
-$autoPushScript | Out-File -FilePath "auto-sync.bat" -Encoding UTF8
-Write-Host "Создан скрипт auto-sync.bat для быстрой синхронизации" -ForegroundColor $CYAN
+$batchContent | Out-File -FilePath "auto-sync.bat" -Encoding ASCII
+Write-Host ""
+Write-Host "Created auto-sync.bat" -ForegroundColor $CYAN
+
+# Result
+Write-Host ""
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "   Done! Sync is ready." -ForegroundColor $GREEN
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Commands:" -ForegroundColor YELLOW
+Write-Host "  pull:   git pull origin master" -ForegroundColor Gray
+Write-Host "  push:   Run auto-sync.bat" -ForegroundColor Gray
+Write-Host "  VPS:    cd /home/admin/servicedesk && git pull" -ForegroundColor Gray
 Write-Host ""
 
 pause
