@@ -31,10 +31,10 @@ class APIClient {
                 const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/register');
 
                 if (!isAuthEndpoint) {
-                    console.warn('Unauthorized request - clearing token and redirecting');
+                    console.warn('Unauthorized request - clearing token');
                     this.clearToken();
-                    if (!window.location.pathname.includes('index.html')) {
-                        window.location.href = 'index.html';
+                    if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
+                        window.location.href = '/';
                     }
                     throw new Error('Сессия истекла. Пожалуйста, войдите снова.');
                 }
@@ -60,6 +60,7 @@ class APIClient {
                 throw new Error(errorMessage);
             }
 
+            if (response.status === 204) return null;
             return await response.json();
         } catch (error) {
             console.error('API Request Error:', error);
@@ -102,7 +103,7 @@ class APIClient {
     }
 
     async getAnalytics() {
-        return await this.request('/analytics');
+        return await this.request('/analytics/');
     }
 
     async getTickets(filters = {}) {
@@ -224,6 +225,21 @@ class APIClient {
         return await this.request(`/crm/companies/${id}`, {
             method: 'DELETE'
         });
+    }
+
+    async uploadCompanyLogo(id, formData) {
+        const headers = {};
+        if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+        const res = await fetch(`${API_BASE_URL}/crm/companies/${id}/logo`, {
+            method: 'POST',
+            headers,
+            body: formData
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ detail: res.statusText }));
+            throw new Error(err.detail || 'Ошибка загрузки');
+        }
+        return await res.json();
     }
 
     async editUser(id, data) {

@@ -81,14 +81,14 @@ def find_best_agent(db: Session, tenant_id: int, category: str = None) -> Option
             "latest_assignment": latest_assignment
         })
 
-    # 4. Sort by ticket count first, then by latest assignment
-    # Convert all values to comparable format to avoid type errors
+    # 4. Strict round-robin: sort by active tickets ASC, then last assignment ASC, then id ASC
+    # This ensures truly even distribution: agent with fewest tickets and oldest assignment gets next
     def sort_key(x):
         from datetime import datetime
         ts = x["latest_assignment"]
         if ts is None:
             ts = datetime.min
-        return (x["active_tickets"], ts)
+        return (x["active_tickets"], ts, x["id"])
     
     agent_scores.sort(key=sort_key)
     

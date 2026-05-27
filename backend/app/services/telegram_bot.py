@@ -4,7 +4,7 @@ from app.logger import logger
 
 class TelegramBot:
     def __init__(self):
-        self.token = settings.TELEGRAM_BOT_TOKEN
+        self.token = settings.TELEGRAM_AGENT_BOT_TOKEN
         self.api_url = f"https://api.telegram.org/bot{self.token}" if self.token else None
 
     async def send_message(self, chat_id: int, text: str):

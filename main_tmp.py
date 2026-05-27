@@ -1,8 +1,6 @@
-import os
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from app.routers import auth, tickets, comments, notifications, webhooks, analytics, users, crm, timetracking, audit, features, reports, assets, company_dashboard, monitoring
+from app.routers import auth, tickets, comments, notifications, webhooks, analytics, users, crm, timetracking, knowledgebase, audit, features, reports
 from app.config import settings
 from app.logger import log_request, setup_logging
 from app.services.websocket_manager import manager
@@ -43,9 +41,6 @@ async def lifespan(app: FastAPI):
                     if col_name not in existing_cols:
                         conn.execute(text(f'ALTER TABLE companies ADD COLUMN {col_name} {col_type}'))
                         print(f"Added '{col_name}' column to companies")
-                if 'color' not in existing_cols:
-                    conn.execute(text("ALTER TABLE companies ADD COLUMN color VARCHAR DEFAULT '#0066CC'"))
-                    print("Added 'color' column to companies")
                 conn.commit()
             
             if 'tickets' in insp.get_table_names():
@@ -61,13 +56,6 @@ async def lifespan(app: FastAPI):
                         print(f"Added '{col_name}' column to tickets")
                 conn.commit()
             
-            if 'users' in insp.get_table_names():
-                user_cols = [c['name'] for c in insp.get_columns('users')]
-                if 'anudesk_email' not in user_cols:
-                    conn.execute(text('ALTER TABLE users ADD COLUMN anudesk_email VARCHAR'))
-                    print("Added 'anudesk_email' column to users")
-                conn.commit()
-
             # Migration for time_entries table - add new columns
             if 'time_entries' in insp.get_table_names():
                 time_cols = [c['name'] for c in insp.get_columns('time_entries')]
@@ -121,11 +109,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Static files for uploads (logos, etc)
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
-os.makedirs(os.path.join(STATIC_DIR, "logos"), exist_ok=True)
-app.mount("/api/static", StaticFiles(directory=STATIC_DIR), name="static")
-
 # Logging middleware
 @app.middleware("http")
 async def logging_middleware(request: Request, call_next):
@@ -152,11 +135,9 @@ app.include_router(analytics.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 app.include_router(crm.router, prefix="/api")
 app.include_router(timetracking.router, prefix="/api")
+app.include_router(knowledgebase.router, prefix="/api")
 app.include_router(audit.router, prefix="/api")
-app.include_router(company_dashboard.router, prefix="/api")
-app.include_router(monitoring.router, prefix="/api")
 app.include_router(features.router, prefix="")
-app.include_router(assets.router, prefix="")
 app.include_router(reports.router, prefix="/api")
 
 
@@ -200,7 +181,7 @@ def get_stats(
         
     new_tickets = count_by_status("Новый")
     in_progress = count_by_status("В работе")
-    resolved = count_by_status("Ожидает клиента")
+    resolved = count_by_status("Решён")
     closed = count_by_status("Закрыт")
     
     my_tickets = base_query.filter(Ticket.assigned_to == current_user.id).count()

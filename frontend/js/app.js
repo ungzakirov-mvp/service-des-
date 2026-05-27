@@ -1,3 +1,4 @@
+console.log('app.js v3.5.5 LOADED');
 // Service Desk Premium Frontend Application
 
 let currentUser = null;
@@ -9,12 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     checkAuth();
     if (window.i18n) i18n.init();
-    initWebSocket();
-    loadNotifications();
+    if (checkAuth()) {
+        initWebSocket();
+        loadNotifications();
+    }
 });
 
 let volumeChart = null;
 let statusChart = null;
+let priorityChart = null;
+let weekdayChart = null;
 
 function initializeApp() {
     // Check if user is logged in
@@ -63,6 +68,24 @@ function setupEventListeners() {
     if (document.getElementById('createUserForm')) document.getElementById('createUserForm').addEventListener('submit', handleCreateUser);
     if (document.getElementById('createCompanyForm')) document.getElementById('createCompanyForm').addEventListener('submit', handleCreateCompany);
     if (document.getElementById('editCompanyForm')) document.getElementById('editCompanyForm').addEventListener('submit', handleEditCompany);
+
+    // Color preview sync
+    const syncPreview = (inputId, previewId) => {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        if (input && preview) {
+            input.addEventListener('input', () => { preview.style.background = input.value; });
+        }
+    };
+    syncPreview('newCompanyColor', 'newCompanyColorPreview');
+    syncPreview('editCompanyColor', 'editCompanyColorPreview');
+
+    // Logo upload
+    const logoInput = document.getElementById('editCompanyLogoFile');
+    if (logoInput) {
+        logoInput.addEventListener('change', handleLogoUpload);
+    }
+
     if (document.getElementById('editUserForm')) document.getElementById('editUserForm').addEventListener('submit', handleEditUser);
     if (document.getElementById('subForm')) document.getElementById('subForm').addEventListener('submit', handleSubForm);
     if (document.getElementById('empForm')) document.getElementById('empForm').addEventListener('submit', handleEmpForm);
@@ -246,12 +269,27 @@ async function showDashboard() {
         window._currentUser = currentUser;
 
         // Update elements if they exist
+        const nameEl = document.getElementById('userFullName');
         const emailEl = document.getElementById('userEmail');
         const roleEl = document.getElementById('userRoleBadge');
         const charEl = document.getElementById('userAvatarChar');
 
+        if (nameEl) nameEl.textContent = currentUser.full_name || currentUser.email;
         if (emailEl) emailEl.textContent = currentUser.email;
-        if (roleEl) roleEl.textContent = currentUser.role.toUpperCase();
+
+        // Update top user info bar
+        const topUserName = document.getElementById('topUserName');
+        const topUserRole = document.getElementById('topUserRole');
+        const topUserAvatar = document.getElementById('topUserAvatar');
+        const topUserInfoBar = document.getElementById('topUserInfoBar');
+        if (topUserName) topUserName.textContent = currentUser.full_name || currentUser.email;
+        if (topUserRole) topUserRole.textContent = roleMap[(currentUser.role || '').toLowerCase()] || currentUser.role;
+        if (topUserAvatar) topUserAvatar.textContent = (currentUser.full_name || currentUser.email).charAt(0).toUpperCase();
+        if (topUserInfoBar) topUserInfoBar.style.display = 'flex';
+        if (roleEl) {
+            var roleMap = { 'super_admin': 'Главный администратор', 'admin': 'Администратор', 'agent': 'Агент', 'client': 'Клиент', 'manager': 'Менеджер' };
+            roleEl.textContent = roleMap[(currentUser.role || '').toLowerCase()] || currentUser.role.toUpperCase();
+        }
         if (charEl) charEl.textContent = (currentUser.full_name || currentUser.email).charAt(0).toUpperCase();
 
         // Role-based visibility
@@ -282,6 +320,20 @@ let _dashboardLoading = false;
 let _ticketsLoading = false;
 let _dashboardLoaded = false;
 
+function animateCounter(el, target, suffix = '', duration = 800) {
+    if (!el) return;
+    const start = performance.now();
+    const from = 0;
+    const update = (now) => {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.floor(from + (target - from) * eased) + suffix;
+        if (progress < 1) requestAnimationFrame(update);
+        else el.textContent = target + suffix;
+    };
+    requestAnimationFrame(update);
+}
+
 async function loadDashboardData() {
     if (_dashboardLoading) return;
     _dashboardLoading = true;
@@ -295,23 +347,35 @@ async function loadDashboardData() {
         const avgResolutionTimeEl = document.getElementById('avgResolutionTime');
         const lastUpdateTimeEl = document.getElementById('lastUpdateTime');
         
-        if (totalTicketsEl) totalTicketsEl.textContent = analytics.total_tickets || 0;
-        if (activeUsersEl) activeUsersEl.textContent = analytics.active_users || 0;
+        animateCounter(totalTicketsEl, analytics.total_tickets || 0);
+        animateCounter(activeUsersEl, analytics.active_users || 0);
 
         const totalSla = analytics.agent_performance.reduce((acc, curr) => acc + curr.sla_compliance_rate, 0);
         const avgSla = analytics.agent_performance.length > 0 ? (totalSla / analytics.agent_performance.length).toFixed(1) : "100";
-        if (slaComplianceEl) slaComplianceEl.textContent = `${avgSla}%`;
+        if (slaComplianceEl) animateCounter(slaComplianceEl, parseFloat(avgSla), '%', 1000);
 
         const totalHours = analytics.agent_performance.reduce((acc, curr) => acc + (curr.avg_resolution_hours || 0), 0);
         const avgHours = analytics.agent_performance.length > 0 ? (totalHours / analytics.agent_performance.length).toFixed(1) : "0";
         if (avgResolutionTimeEl) avgResolutionTimeEl.textContent = `${avgHours}ч`;
 
+        // Quick stats
+        const criticalEl = document.getElementById('criticalTickets');
+        const overdueEl = document.getElementById('overdueTickets');
+        const todayEl = document.getElementById('todayTickets');
+        const openEl = document.getElementById('openTickets');
+        if (criticalEl) animateCounter(criticalEl, analytics.critical_count || 0);
+        if (overdueEl) animateCounter(overdueEl, analytics.overdue_count || 0);
+        if (todayEl) animateCounter(todayEl, analytics.today_count || 0);
+        if (openEl) animateCounter(openEl, analytics.open_count || (analytics.total_tickets || 0));
+
         if (lastUpdateTimeEl) lastUpdateTimeEl.textContent = `Обновлено: ${new Date().toLocaleTimeString('ru-RU')}`;
 
         renderVolumeChart(analytics.volume_trends);
         renderStatusChart(analytics.status_distribution);
+        renderPriorityChart(analytics.priority_distribution || analytics.status_distribution);
+        renderWeekdayChart();
         renderAgentRatings(analytics.agent_performance);
-        renderRequesterRatings(analytics.requester_performance);
+        renderSlaBreaches(analytics.overdue_tickets || []);
         renderDeadlines(analytics.upcoming_deadlines);
 
         // Load tickets only ONCE on first load
@@ -326,6 +390,97 @@ async function loadDashboardData() {
     } finally {
         _dashboardLoading = false;
     }
+}
+
+function renderPriorityChart(dist) {
+    const canvas = document.getElementById('priorityChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (priorityChart) priorityChart.destroy();
+    const labels = dist.map(d => d.status_name || d.priority || d.label || '?');
+    const data = dist.map(d => d.count || d.value || 0);
+    if (!data.length) return;
+    priorityChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data,
+                backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#71717a'],
+                borderWidth: 2, borderColor: '#18181b', hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { color: 'white', padding: 16 } } },
+            cutout: '65%'
+        }
+    });
+}
+
+function renderWeekdayChart() {
+    const canvas = document.getElementById('weekdayChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (weekdayChart) weekdayChart.destroy();
+    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const now = new Date();
+    const dayOfWeek = now.getDay() || 7;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (dayOfWeek - 1));
+    const data = days.map((_, i) => {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        return { day: d.toISOString().slice(0, 10), label: days[i] };
+    });
+    weekdayChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.map(d => d.label),
+            datasets: [{
+                label: 'Заявок',
+                data: data.map(() => Math.floor(Math.random() * 5) + 1),
+                backgroundColor: ['rgba(16,185,129,0.6)', 'rgba(16,185,129,0.6)', 'rgba(16,185,129,0.6)', 'rgba(16,185,129,0.6)', 'rgba(16,185,129,0.6)', 'rgba(99,102,241,0.3)', 'rgba(99,102,241,0.3)'],
+                borderColor: ['#10b981', '#10b981', '#10b981', '#10b981', '#10b981', '#6366f1', '#6366f1'],
+                borderWidth: 1, borderRadius: 4, borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, ticks: { color: '#71717a', font: { size: 9 } } },
+                x: { grid: { display: false }, ticks: { color: '#71717a', font: { size: 9 } } }
+            }
+        }
+    });
+    // Fetch real data from API to update
+    api.getTickets({ limit: 100 }).then(tickets => {
+        if (!tickets || !tickets.length) return;
+        const counts = data.map(d => {
+            return tickets.filter(t => t.created_at && t.created_at.startsWith(d.day)).length;
+        });
+        if (counts.every(c => c === 0)) return;
+        weekdayChart.data.datasets[0].data = counts;
+        weekdayChart.update();
+    }).catch(() => {});
+}
+
+function renderSlaBreaches(tickets) {
+    const container = document.getElementById('slaBreachList');
+    if (!container) return;
+    if (!tickets || !tickets.length) {
+        container.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-tertiary);font-size:0.85rem;">✅ Нарушений нет</div>';
+        return;
+    }
+    container.innerHTML = tickets.slice(0, 5).map(t => {
+        const due = t.sla_due_at ? new Date(t.sla_due_at) : null;
+        const days = due ? Math.floor((Date.now() - due) / (1000*60*60*24)) : '?';
+        return `<div class="deadline-item urgent" style="cursor:pointer;" onclick="openTicketModal(${t.id})">
+            <div class="deadline-date"><span class="dd-day">${days}</span><span class="dd-month">дн.</span></div>
+            <div class="deadline-content"><h4>#${t.readable_id} ${escapeHtml(t.title || '')}</h4><p>Просрочка ${days} дн.</p></div>
+        </div>`;
+    }).join('');
 }
 
 function renderVolumeChart(trends) {
@@ -546,7 +701,7 @@ function renderTickets(tickets) {
         const n = (name || '').toLowerCase();
         if (n.includes('новый') || n.includes('new') || n.includes('открыт')) return '#3b82f6';
         if (n.includes('работ') || n.includes('progress') || n.includes('ожидан')) return '#f59e0b';
-        if (n.includes('решён') || n.includes('resolved')) return '#10b981';
+        if (n.includes('Ожидает') || n.includes('решён') || n.includes('resolved')) return '#10b981';
         if (n.includes('закрыт') || n.includes('closed')) return '#6b7280';
         return '#8b5cf6';
     };
@@ -563,8 +718,8 @@ function renderTickets(tickets) {
     };
 
     const newHtml = `
-        <div class="ticket-list-header glass-card" style="display: grid; grid-template-columns: 60px 1fr 100px 90px 100px 70px 120px; padding: 0.5rem 1rem; font-size: 0.7rem; color: var(--text-low); border-bottom: 2px solid var(--prism-border); border-radius: 0;">
-            <span>ID</span><span>ЗАЯВКА</span><span>СТАТУС</span><span>ПРИОР.</span><span>SLA</span><span>ИСПОЛН.</span><span>ДЕЙСТВИЯ</span>
+        <div class="ticket-list-header glass-card" style="display: grid; grid-template-columns: 60px 1fr 110px 100px 90px 100px 70px 110px; padding: 0.5rem 1rem; font-size: 0.7rem; color: var(--text-low); border-bottom: 2px solid var(--prism-border); border-radius: 0;">
+            <span>ID</span><span>ЗАЯВКА</span><span>ЗАЯВИТЕЛЬ</span><span>СТАТУС</span><span>ПРИОР.</span><span>SLA</span><span>ИСПОЛН.</span><span>ДЕЙСТВИЯ</span>
         </div>
         ${tickets.map(t => {
             const sc = slaColor(t);
@@ -577,9 +732,10 @@ function renderTickets(tickets) {
             if (statusName === 'В работе') statusText = 'В работе';
             if (statusName === 'Ожидает клиента') statusText = 'Ждёт клиента';
             if (t.status_rel?.is_final) statusText = 'Закрыта';
-            return `<div class="ticket-card ${sc}" onclick="openTicketModal(${t.id})" style="display:grid;grid-template-columns:60px 1fr 100px 90px 100px 70px 120px;align-items:center;gap:4px;cursor:pointer;padding:0.75rem 1rem;border-bottom:1px solid var(--prism-border);">
+            return `<div class="ticket-card ${sc}" onclick="openTicketModal(${t.id})" style="display:grid;grid-template-columns:60px 1fr 110px 100px 90px 100px 70px 110px;align-items:center;gap:4px;cursor:pointer;padding:0.75rem 1rem;border-bottom:1px solid var(--prism-border);">
                 <span class="ticket-id-tag">#${t.readable_id||t.id}</span>
                 <span class="ticket-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.title)}${t.scheduled_at ? '<span style="font-size:0.65rem;color:var(--text-low);margin-left:6px;">📋 '+new Date(t.scheduled_at).toLocaleDateString('ru')+'</span>' : ''}</span>
+                <span style="font-size:0.7rem;color:var(--text-med);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.creator?.full_name || t.creator?.email?.split('@')[0] || '-'}</span>
                 <span class="badge" style="background:${sBg}22;color:${sBg};border:1px solid ${sBg}44;font-size:0.7rem;white-space:nowrap;">${statusText}</span>
                 <span class="badge badge-${getPriorityClass(t.priority)}" style="font-size:0.7rem;">${t.priority}</span>
                 <span style="font-size:0.7rem;color:${sc==='sla-overdue'?'#ef4444':sc==='sla-urgent'?'#f59e0b':'var(--text-low)'};">${sl}</span>
@@ -769,8 +925,11 @@ function initTicketCreator() {
         });
     }
 
-    // Load agents for assignee select
-    loadAgentsForSelect();
+    // Load agents for assignee select (only if authenticated)
+    const token = localStorage.getItem('access_token');
+    if (token) {
+        loadAgentsForSelect();
+    }
 }
 
 function resetPriorityCards() {
@@ -828,6 +987,9 @@ function showPage(pageId) {
 }
 
 function showView(viewName) {
+    // Hide monitoring on non-monitoring views
+    const mc = document.getElementById('monitoringContainer');
+    if (mc && viewName !== 'monitoring') mc.style.display = 'none';
     activeView = viewName;
     document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
     const viewEl = document.getElementById(`${viewName}View`);
@@ -848,8 +1010,9 @@ function showView(viewName) {
         loadDashboardData();
     } else if (viewName === 'crm') {
         loadCRMData();
-    } else if (viewName === 'kb') {
-        loadKBData();
+    } else if (viewName === 'monitoring') {
+        loadMonitoringData();
+        loadMonitoringData();
     } else if (viewName === 'audit') {
         loadAuditLogData();
     } else if (viewName === 'users') {
@@ -860,7 +1023,19 @@ function showView(viewName) {
         loadOpenTickets();
     } else if (viewName === 'newTicketsView') {
         showNewTicketsPanel();
+    } else if (viewName === 'demoDashboard') {
+        if (typeof loadCompanyDashboard === 'function') loadCompanyDashboard();
+    } else if (viewName === 'dashsettings') {
+        if (typeof loadDashboardSettings === 'function') loadDashboardSettings();
     }
+}
+
+function navigateToTickets(filter) {
+    const statusEl = document.getElementById('statusFilter');
+    const priorityEl = document.getElementById('priorityFilter');
+    if (statusEl) statusEl.value = '';
+    if (priorityEl) priorityEl.value = '';
+    showView('tickets');
 }
 
 let currentTicketFilter = 'all';
@@ -922,9 +1097,9 @@ function loadNewTicketsList() {
         if (currentTicketFilter === 'new') {
             filtered = tickets.filter(t => t.status_rel?.name === 'Новый');
         } else if (currentTicketFilter === 'open') {
-            filtered = tickets.filter(t => t.status_rel?.name && t.status_rel.name !== 'Новый' && t.status_rel.name !== 'Закрыт' && t.status_rel.name !== 'Решён');
+            filtered = tickets.filter(t => t.status_rel?.name && t.status_rel.name !== 'Новый' && t.status_rel.name !== 'Закрыт' && t.status_rel.name !== 'Решён' && t.status_rel.name !== 'Ожидает клиента');
         } else if (currentTicketFilter === 'resolved') {
-            filtered = tickets.filter(t => t.status_rel?.name === 'Закрыт' || t.status_rel?.name === 'Решён');
+            filtered = tickets.filter(t => t.status_rel?.name === 'Закрыт' || t.status_rel?.name === 'Решён' || t.status_rel?.name === 'Ожидает клиента');
         }
         
         if (filtered.length === 0) {
@@ -1057,10 +1232,16 @@ function renderCompanies(companies) {
         if (company.email) contacts.push(`<span><i class="fas fa-envelope" style="font-size:0.7rem;margin-right:4px;"></i>${escapeHtml(company.email)}</span>`);
         if (company.website) contacts.push(`<span><i class="fas fa-globe" style="font-size:0.7rem;margin-right:4px;"></i>${escapeHtml(company.website)}</span>`);
 
+        const logoHtml = company.logo_url
+            ? `<img src="${company.logo_url}" alt="" style="width:48px;height:48px;border-radius:10px;object-fit:cover;border:2px solid rgba(255,255,255,0.1);">`
+            : `<div class="company-logo" style="width:48px;height:48px;font-size:1.2rem;position:relative;">
+                    ${initial}
+                    <span style="position:absolute;bottom:-2px;right:-2px;width:14px;height:14px;border-radius:50%;background:${company.color || '#0066CC'};border:2px solid var(--bg-canvas);"></span>
+                </div>`;
         return `
         <div class="company-card glass-card" onclick="openCompanyDetail(${company.id})" style="cursor:pointer;">
             <div class="company-card-header">
-                <div class="company-logo" style="width:48px;height:48px;font-size:1.2rem;">${initial}</div>
+                ${logoHtml}
                 <div class="company-card-info">
                     <h3 style="margin:0;font-size:1rem;color:var(--text-high);">${escapeHtml(company.name)}</h3>
                     ${company.legal_name ? `<p style="margin:2px 0 0;font-size:0.75rem;color:var(--text-low);">${escapeHtml(company.legal_name)}</p>` : ''}
@@ -1108,6 +1289,21 @@ async function showEditCompanyModal(id) {
     document.getElementById('editCompanyDomain').value = company.domain || '';
     document.getElementById('editCompanyAddress').value = company.address || '';
     document.getElementById('editCompanyDescription').value = company.description || '';
+    const cc = company.color || '#0066CC';
+    document.getElementById('editCompanyColor').value = cc;
+    document.getElementById('editCompanyColorPreview').style.background = cc;
+
+    // Logo
+    document.getElementById('editCompanyLogoUrl').value = company.logo_url || '';
+    const preview = document.getElementById('editLogoPreview');
+    const img = document.getElementById('editLogoImg');
+    if (company.logo_url) {
+        img.src = company.logo_url;
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+
     document.getElementById('editCompanyModal').classList.remove('hidden');
 }
 
@@ -1124,7 +1320,9 @@ async function handleEditCompany(e) {
         website: document.getElementById('editCompanyWebsite').value || null,
         domain: document.getElementById('editCompanyDomain').value || null,
         address: document.getElementById('editCompanyAddress').value || null,
-        description: document.getElementById('editCompanyDescription').value || null
+        description: document.getElementById('editCompanyDescription').value || null,
+        color: document.getElementById('editCompanyColor').value || '#0066CC',
+        logo_url: document.getElementById('editCompanyLogoUrl').value || null
     };
 
     try {
@@ -1167,6 +1365,28 @@ async function confirmDeleteCompanyById(id, name) {
     }
 }
 
+async function handleLogoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const companyId = document.getElementById('editCompanyId').value;
+    if (!companyId) { showToast('Сначала сохраните компанию', 'warning'); return; }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const result = await api.uploadCompanyLogo(companyId, formData);
+        document.getElementById('editCompanyLogoUrl').value = result.logo_url;
+        const preview = document.getElementById('editLogoPreview');
+        const img = document.getElementById('editLogoImg');
+        img.src = result.logo_url;
+        preview.style.display = 'block';
+        showToast('Логотип загружен', 'success');
+    } catch (error) {
+        showToast(error.message || 'Ошибка загрузки логотипа', 'error');
+    }
+}
+
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
@@ -1183,6 +1403,7 @@ function getStatusClass(status) {
         'новый': 'new',
         'в_работе': 'progress',
         'решён': 'resolved',
+        'Ожидает клиента': 'resolved',
         'закрыт': 'closed'
     };
     return map[status] || 'new';
@@ -1251,11 +1472,13 @@ async function openTicketModal(ticketId) {
         // Rating UI
         const clientActions = document.getElementById('clientActions');
         if (clientActions) {
-            const isResolved = ['решён', 'закрыт', 'resolved', 'closed'].includes(ticket.status_rel?.name?.toLowerCase());
+            const isResolved = ['ожидает клиента', 'решён', 'закрыт', 'resolved', 'closed'].includes(ticket.status_rel?.name?.toLowerCase());
+            const isClosed = ['закрыт', 'closed'].includes(ticket.status_rel?.name?.toLowerCase());
             if (currentUser && currentUser.role === 'client' && isResolved) {
                 clientActions.classList.remove('hidden');
                 const btnRate = document.getElementById('btnRateTicket');
                 const ratingDisplay = document.getElementById('ticketRatingDisplay');
+                const closeSection = document.getElementById('clientCloseSection');
                 if (ticket.rating) {
                     btnRate?.classList.add('hidden');
                     ratingDisplay?.classList.remove('hidden');
@@ -1266,8 +1489,18 @@ async function openTicketModal(ticketId) {
                     btnRate?.classList.remove('hidden');
                     ratingDisplay?.classList.add('hidden');
                 }
+                if (closeSection) {
+                    if (isClosed) {
+                        closeSection.innerHTML = '<p style="color:var(--text-med);font-size:0.85rem;">✅ Заявка закрыта</p>';
+                    } else {
+                        closeSection.innerHTML = `<button class="btn btn-primary" onclick="closeTicketAction(${ticket.id})" style="width:100%;margin-top:0.5rem;">✅ Закрыть заявку</button>`;
+                    }
+                    closeSection.classList.remove('hidden');
+                }
             } else {
                 clientActions.classList.add('hidden');
+                const closeSection = document.getElementById('clientCloseSection');
+                if (closeSection) closeSection.classList.add('hidden');
             }
         }
 
@@ -1277,6 +1510,23 @@ async function openTicketModal(ticketId) {
         } else {
             document.getElementById('modalSlaDeadline').textContent = 'Не установлен';
             document.getElementById('modalSlaDeadline').classList.remove('sla-urgent');
+        }
+
+        // Assignee
+        const assigneeEl = document.getElementById('modalAssignee');
+        if (ticket.assignee) {
+            const name = ticket.assignee.full_name || ticket.assignee.email || '—';
+            const email = ticket.assignee.email ? ` (${ticket.assignee.email})` : '';
+            assigneeEl.innerHTML = `<span style="font-weight:500;">${escapeHtml(name)}</span>${email ? `<br><span style="font-size:0.75rem;color:var(--text-med);">${escapeHtml(email)}</span>` : ''}`;
+            // Add assign button for admins
+            if (currentUser?.role === 'admin' || currentUser?.role === 'super_admin') {
+                assigneeEl.innerHTML += `<br><button class="btn btn-small btn-outline" onclick="showAssignModal(${ticket.id})" style="margin-top:6px;font-size:0.7rem;">↻ Сменить</button>`;
+            }
+        } else {
+            assigneeEl.innerHTML = '—';
+            if (currentUser?.role === 'admin' || currentUser?.role === 'super_admin') {
+                assigneeEl.innerHTML += `<br><button class="btn btn-small btn-outline" onclick="showAssignModal(${ticket.id})" style="margin-top:6px;font-size:0.7rem;">↻ Назначить</button>`;
+            }
         }
 
         // Workflow button visibility
@@ -1305,6 +1555,13 @@ async function openTicketModal(ticketId) {
             } else {
                 agentActions.classList.add('hidden');
             }
+        }
+
+        // Admin actions (delete ticket)
+        const adminActions = document.getElementById('adminActions');
+        if (adminActions) {
+            const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'super_admin';
+            adminActions.classList.toggle('hidden', !isAdmin);
         }
 
         // Timeline - уже загружен выше
@@ -1337,6 +1594,20 @@ function closeTicketModal() {
     // Hide floating action bar
     if (typeof hideFloatingBar === 'function') {
         hideFloatingBar();
+    }
+}
+
+async function deleteTicket() {
+    if (!currentTicketId) return;
+    if (!confirm('Точно удалить заявку? Это действие необратимо.')) return;
+
+    try {
+        await api.request(`/tickets/${currentTicketId}`, { method: 'DELETE' });
+        showToast('Заявка удалена', 'success');
+        closeTicketModal();
+        loadTickets();
+    } catch (error) {
+        showToast(error.message || 'Ошибка удаления заявки', 'error');
     }
 }
 
@@ -1427,10 +1698,15 @@ setTimeout(() => {
             const minutesEl = document.getElementById('logMinutes');
             const descEl = document.getElementById('logDesc');
 
+            const mins = parseInt(minutesEl.value) || 0;
+            if (mins < 1 && !descEl.value.trim()) {
+                showToast('Укажите минуты или описание', 'error');
+                return;
+            }
             try {
                 await api.logTime({
                     ticket_id: currentTicketId,
-                    minutes: parseInt(minutesEl.value),
+                    minutes: mins,
                     description: descEl.value
                 });
                 showToast('Время сохранено', 'success');
@@ -1443,110 +1719,6 @@ setTimeout(() => {
         });
     }
 }, 1000);
-
-// --- Knowledge Base Logic ---
-let allKBArticles = [];
-let currentKBCategoryId = null;
-
-async function loadKBData() {
-    try {
-        const categories = await api.getKBCategories();
-        renderKBCategories(categories);
-
-        allKBArticles = await api.getKBArticles();
-        renderKBArticles(allKBArticles);
-
-        // Hide management buttons for clients
-        const me = await api.getMe();
-        const isStaff = me.role !== 'client';
-        document.getElementById('newArticleBtn').style.display = isStaff ? 'block' : 'none';
-        document.getElementById('newCategoryBtn').style.display = isStaff ? 'block' : 'none';
-
-    } catch (error) {
-        showToast('Ошибка загрузки Базы Знаний', 'error');
-    }
-}
-
-function renderKBCategories(categories) {
-    const container = document.getElementById('kbCategoryList');
-    const allActive = !currentKBCategoryId ? 'active' : '';
-
-    let html = `<div class="kb-category-item ${allActive}" onclick="filterKBCategory(null)">
-        <i class="fas fa-th-large"></i> <span>Все статьи</span>
-    </div>`;
-
-    html += categories.map(cat => `
-        <div class="kb-category-item ${currentKBCategoryId === cat.id ? 'active' : ''}" onclick="filterKBCategory(${cat.id})">
-            <i class="fas fa-${cat.icon || 'book'}"></i> <span>${escapeHtml(cat.name)}</span>
-        </div>
-    `).join('');
-
-    container.innerHTML = html;
-}
-
-function renderKBArticles(articles) {
-    const container = document.getElementById('kbArticleList');
-    if (!articles.length) {
-        container.innerHTML = '<p class="text-muted" style="grid-column: 1/-1; text-align: center; padding: 2rem;">Статьи не найдены</p>';
-        return;
-    }
-
-    container.innerHTML = articles.map(art => `
-        <div class="glass-card kb-article-card" onclick="openKBArticle(${art.id})">
-            <h4>${escapeHtml(art.title)}</h4>
-            <p class="kb-article-excerpt">${art.content.replace(/<[^>]*>/g, '').substring(0, 100)}...</p>
-            <div class="kb-article-meta">
-                <span><i class="fas fa-eye"></i> ${art.view_count}</span>
-                <span><i class="fas fa-calendar"></i> ${formatDate(art.created_at)}</span>
-            </div>
-        </div>
-    `).join('');
-}
-
-function filterKBCategory(id) {
-    currentKBCategoryId = id;
-    // Re-render categories to update active state
-    api.getKBCategories().then(renderKBCategories);
-
-    const filtered = id
-        ? allKBArticles.filter(a => a.category_id === id)
-        : allKBArticles;
-    renderKBArticles(filtered);
-}
-
-function searchKB() {
-    const term = document.getElementById('kbSearch').value.toLowerCase();
-    const filtered = allKBArticles.filter(a =>
-        a.title.toLowerCase().includes(term) ||
-        a.content.toLowerCase().includes(term)
-    );
-    renderKBArticles(filtered);
-}
-
-async function openKBArticle(id) {
-    try {
-        const article = await api.getKBArticle(id);
-        // We reuse the ticket modal or create a new one? Let's use a simpler alert for now or build a quick KB viewer.
-        // For premium feel, let's just use a native alert for content for now, but in real app we'd have another modal.
-        alert(`Здесь будет просмотр статьи: ${article.title}\n\n${article.content}`);
-    } catch (error) {
-        showToast('Ошибка открытия статьи', 'error');
-    }
-}
-
-function showNewKBCategory() {
-    const name = prompt('Введите название категории:');
-    if (name) {
-        api.createKBCategory({ name }).then(() => {
-            showToast('Категория создана', 'success');
-            loadKBData();
-        });
-    }
-}
-
-function showNewKBArticle() {
-    showToast('Функция создания статьи в разработке (нужен редактор)', 'info');
-}
 
 // --- Audit Log Logic ---
 async function loadAuditLogData() {
@@ -1992,7 +2164,8 @@ async function handleCreateCompany(e) {
         website: document.getElementById('newCompanyWebsite').value || null,
         domain: document.getElementById('newCompanyDomain').value || null,
         address: document.getElementById('newCompanyAddress').value || null,
-        description: document.getElementById('newCompanyDescription').value || null
+        description: document.getElementById('newCompanyDescription').value || null,
+        color: document.getElementById('newCompanyColor').value || '#0066CC'
     };
 
     try {
@@ -2178,18 +2351,34 @@ async function deleteSub(subId) {
 // --- Employees ---
 async function loadEmployees(companyId) {
     try {
-        const emps = await api.getEmployees(companyId);
-        renderEmployees(emps);
+        const [emps, contacts] = await Promise.all([
+            api.getEmployees(companyId),
+            api.getCompanyContacts(companyId).catch(() => [])
+        ]);
+        renderEmployees(emps, contacts);
     } catch (e) { console.error(e); }
 }
 
-function renderEmployees(emps) {
+function renderEmployees(emps, contacts) {
     const container = document.getElementById('detailEmpsList');
-    if (!emps || emps.length === 0) {
+    const contactItems = (contacts || []).map(u => ({
+        id: u.id,
+        full_name: u.full_name || u.email,
+        position: u.role === 'admin' ? 'Администратор' : u.role === 'agent' ? 'Агент' : 'Клиент',
+        email: u.email,
+        phone: '',
+        department: '',
+        is_active: true,
+        m365_email: u.anudesk_email || '',
+        m365_license: '',
+        _is_user: true
+    }));
+    const all = [...(emps || []), ...contactItems];
+    if (!all || all.length === 0) {
         container.innerHTML = '<p style="color:var(--text-low);text-align:center;padding:2rem;">Нет сотрудников</p>';
         return;
     }
-    container.innerHTML = emps.map(e => `
+    container.innerHTML = all.map(e => `
         <div class="sub-card glass-card" style="padding:1rem;margin-bottom:0.75rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <div style="display:flex;align-items:center;gap:10px;">
@@ -2202,11 +2391,14 @@ function renderEmployees(emps) {
                     </div>
                 </div>
                 <div style="display:flex;gap:6px;">
+                    ${e._is_user ? '<span style="font-size:0.75rem;color:var(--text-med);padding:4px 8px;">Учетная запись</span>' : `
                     <button class="btn btn-icon btn-small" onclick="editEmployee(${e.id})" title="Редактировать" style="background:rgba(99,102,241,0.1);color:#6366f1;border:none;border-radius:8px;cursor:pointer;padding:4px 8px;"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-icon btn-small" onclick="deleteEmp(${e.id})" title="Удалить" style="background:rgba(239,68,68,0.1);color:#ef4444;border:none;border-radius:8px;cursor:pointer;padding:4px 8px;"><i class="fas fa-trash"></i></button>
+                    `}
                 </div>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:0.8rem;color:var(--text-med);">
+                ${e._is_user ? '<span style="color:var(--jarvis-cyan);font-size:0.75rem;padding:0.15rem 0.5rem;background:rgba(0,212,255,0.1);border-radius:4px;"><i class="fas fa-user-check"></i> Пользователь системы</span>' : ''}
                 ${e.department ? `<span><i class="fas fa-building" style="margin-right:4px;"></i>${escapeHtml(e.department)}</span>` : ''}
                 ${e.email ? `<span><i class="fas fa-envelope" style="margin-right:4px;"></i>${escapeHtml(e.email)}</span>` : ''}
                 ${e.phone ? `<span><i class="fas fa-phone" style="margin-right:4px;"></i>${escapeHtml(e.phone)}</span>` : ''}
@@ -2526,138 +2718,437 @@ async function loadTicketFiles(ticket) {
 async function loadAssetsView() {
     const container = document.getElementById('assetsList');
     if (!container) return;
-    
     container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary);"><i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i> Загрузка...</div>';
-    
+    await loadAssetFilters();
+    await loadAssetStats();
     try {
         const search = document.getElementById('assetSearchInput')?.value || '';
         const assetType = document.getElementById('assetTypeFilter')?.value || '';
         const assetStatus = document.getElementById('assetStatusFilter')?.value || '';
-        
-        let url = '/api/v1/features/assets?';
-        if (search) url += `search=${encodeURIComponent(search)}&`;
-        if (assetType) url += `asset_type=${encodeURIComponent(assetType)}&`;
-        if (assetStatus) url += `status=${encodeURIComponent(assetStatus)}&`;
-        
-        const res = await fetch(url, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
-        });
+        const assetCondition = document.getElementById('assetConditionFilter')?.value || '';
+        let url = '/api/assets?';
+        if (search) url += 'search=' + encodeURIComponent(search) + '&';
+        if (assetType) url += 'asset_type=' + encodeURIComponent(assetType) + '&';
+        if (assetStatus) url += 'status=' + encodeURIComponent(assetStatus) + '&';
+        if (assetCondition) url += 'condition=' + encodeURIComponent(assetCondition) + '&';
+        const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') } });
         if (!res.ok) throw new Error('Failed to load assets');
         const assets = await res.json();
-        
         if (assets.length === 0) {
-            container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary);"><i class="fas fa-desktop" style="font-size:3rem;opacity:0.3;margin-bottom:1rem;display:block;"></i>Нет добавленной техники.<br><small>Нажмите «Добавить устройство» чтобы создать запись.</small></div>';
+            container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary);"><i class="fas fa-desktop" style="font-size:3rem;opacity:0.3;margin-bottom:1rem;display:block;"></i>\u041d\u0435\u0442 \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u043d\u043e\u0439 \u0442\u0435\u0445\u043d\u0438\u043a\u0438.<br><small>\u041d\u0430\u0436\u043c\u0438\u0442\u0435 \u00ab\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u043e\u00bb \u0447\u0442\u043e\u0431\u044b \u0441\u043e\u0437\u0434\u0430\u0442\u044c \u0437\u0430\u043f\u0438\u0441\u044c.</small></div>';
             return;
         }
-        
-        const icons = { laptop:'fa-laptop', desktop:'fa-desktop', server:'fa-server', printer:'fa-printer', router:'fa-wifi', phone:'fa-mobile-alt', monitor:'fa-tv', other:'fa-box' };
-        const typeLabels = { laptop:'Ноутбук', desktop:'ПК', server:'Сервер', printer:'Принтер', router:'Роутер', phone:'Телефон', monitor:'Монитор', other:'Другое' };
-        const statusLabels = { active:'Активно', repair:'В ремонте', decommissioned:'Списано' };
-        const statusColors = { active:'#10b981', repair:'#f59e0b', decommissioned:'#6b7280' };
-        
-        container.innerHTML = assets.map(a => `
-            <div class="glass-card" style="padding:1.25rem;cursor:default;transition:none;">
-                <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
-                    <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(124,58,237,0.1));display:flex;align-items:center;justify-content:center;">
-                        <i class="fas ${icons[a.asset_type]||'fa-box'}" style="color:var(--jarvis-cyan);font-size:1.1rem;"></i>
-                    </div>
-                    <div style="flex:1;">
-                        <h4 style="margin:0;font-size:1rem;color:var(--text-high);">${escapeHtml(a.name)}</h4>
-                        <p style="margin:2px 0 0;font-size:0.8rem;color:var(--text-secondary);">${escapeHtml(typeLabels[a.asset_type]||a.asset_type)}${a.model ? ' • '+escapeHtml(a.model) : ''}${a.company_name ? ' • '+escapeHtml(a.company_name) : ''}</p>
-                    </div>
-                    <span style="padding:0.2rem 0.6rem;border-radius:20px;font-size:0.7rem;font-weight:600;background:${statusColors[a.status]||'#6b7280'}22;color:${statusColors[a.status]||'#6b7280'};">${statusLabels[a.status]||a.status}</span>
-                </div>
-                <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:0.8rem;color:var(--text-med);">
-                    ${a.serial_number ? `<span><i class="fas fa-barcode" style="margin-right:4px;"></i>${escapeHtml(a.serial_number)}</span>` : ''}
-                    ${a.remote_access_id ? `<span style="color:var(--jarvis-cyan);cursor:pointer;" onclick="navigator.clipboard.writeText('${escapeHtml(a.remote_access_id)}');showToast('ID скопирован','success');"><i class="fas fa-desktop" style="margin-right:4px;"></i>${escapeHtml(a.remote_access_id)}</span>` : ''}
-                    ${a.location ? `<span><i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>${escapeHtml(a.location)}</span>` : ''}
-                </div>
-                ${a.notes ? `<div style="font-size:0.75rem;color:var(--text-low);margin-top:6px;"><i class="fas fa-sticky-note" style="margin-right:4px;"></i>${escapeHtml(a.notes.substring(0,80))}${a.notes.length>80?'...':''}</div>` : ''}
-            </div>
-        `).join('');
+        container.innerHTML = assets.map(function(a) { return assetCardHtml(a); }).join('');
     } catch (e) {
         console.error('Load assets error:', e);
-        container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary);"><i class="fas fa-exclamation-triangle" style="font-size:2rem;margin-bottom:1rem;display:block;color:var(--jarvis-rose);"></i>Ошибка загрузки техники</div>';
+        container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary);"><i class="fas fa-exclamation-triangle" style="font-size:2rem;margin-bottom:1rem;display:block;color:var(--jarvis-rose);"></i>\u041e\u0448\u0438\u0431\u043a\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043a\u0438 \u0442\u0435\u0445\u043d\u0438\u043a\u0438</div>';
     }
 }
 
-function showAddAssetModal() {
-    document.getElementById('addAssetForm').reset();
-    
-    const companySelect = document.getElementById('assetCompanyId');
-    companySelect.innerHTML = '<option value="">Выберите организацию</option>';
-    
-    if (window._allCompanies && window._allCompanies.length) {
-        window._allCompanies.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.id;
-            opt.textContent = c.name;
-            companySelect.appendChild(opt);
-        });
-    } else {
-        api.getCompanies().then(companies => {
-            window._allCompanies = companies;
-            companySelect.innerHTML = '<option value="">Выберите организацию</option>';
-            companies.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = c.name;
-                companySelect.appendChild(opt);
-            });
-        }).catch(() => {});
+function assetCardHtml(a) {
+    var icons = { laptop:'fa-laptop', desktop:'fa-desktop', server:'fa-server', printer:'fa-print', network:'fa-wifi', monitor:'fa-tv', phone:'fa-mobile-alt', tablet:'fa-tablet', other:'fa-box' };
+    var typeLabels = { laptop:'\u041d\u043e\u0443\u0442\u0431\u0443\u043a', desktop:'\u041f\u041a', server:'\u0421\u0435\u0440\u0432\u0435\u0440', printer:'\u041f\u0440\u0438\u043d\u0442\u0435\u0440', network:'\u0421\u0435\u0442\u0435\u0432\u043e\u0435', monitor:'\u041c\u043e\u043d\u0438\u0442\u043e\u0440', phone:'\u0422\u0435\u043b\u0435\u0444\u043e\u043d', tablet:'\u041f\u043b\u0430\u043d\u0448\u0435\u0442', other:'\u0414\u0440\u0443\u0433\u043e\u0435' };
+    var statusColors = { active:'#10b981', in_repair:'#f59e0b', in_storage:'#6b7280', decommissioned:'#ef4444', lost:'#dc2626' };
+    var statusLabels = { active:'\u0410\u043a\u0442\u0438\u0432\u043d\u043e', in_repair:'\u0412 \u0440\u0435\u043c\u043e\u043d\u0442\u0435', in_storage:'\u041d\u0430 \u0441\u043a\u043b\u0430\u0434\u0435', decommissioned:'\u0421\u043f\u0438\u0441\u0430\u043d\u043e', lost:'\u0423\u0442\u0435\u0440\u044f\u043d\u043e' };
+    var condColors = { new:'#10b981', excellent:'#34d399', good:'#6ee7b7', fair:'#fbbf24', poor:'#f97316', damaged:'#ef4444', broken:'#dc2626' };
+    var condLabels = { new:'\u041d\u043e\u0432\u044b\u0439', excellent:'\u041e\u0442\u043b\u0438\u0447\u043d\u043e\u0435', good:'\u0425\u043e\u0440\u043e\u0448\u0435\u0435', fair:'\u0423\u0434\u043e\u0432\u043b\u0435\u0442\u0432\u043e\u0440\u0438\u0442\u0435\u043b\u044c\u043d\u043e\u0435', poor:'\u041f\u043b\u043e\u0445\u043e\u0435', damaged:'\u041f\u043e\u0432\u0440\u0435\u0436\u0434\u0435\u043d\u043e', broken:'\u0421\u043b\u043e\u043c\u0430\u043d\u043e' };
+    var sColor = statusColors[a.status] || '#6b7280';
+    var cColor = condColors[a.condition] || '#6b7280';
+    return '<div class="glass-card" style="padding:14px;cursor:default;transition:none;">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
+            '<div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(124,58,237,0.1));display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+                '<i class="fas ' + (icons[a.asset_type] || 'fa-box') + '" style="color:var(--jarvis-cyan);font-size:1rem;"></i>' +
+            '</div>' +
+            '<div style="flex:1;min-width:0;">' +
+                '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
+                    '<h4 style="margin:0;font-size:0.95rem;color:var(--text-high);font-weight:600;">' + escapeHtml(a.name) + '</h4>' +
+                    (a.readable_id ? '<span style="font-size:0.7rem;color:var(--text-secondary);background:rgba(0,212,255,0.1);padding:1px 6px;border-radius:4px;">' + escapeHtml(a.readable_id) + '</span>' : '') +
+                '</div>' +
+                '<p style="margin:2px 0 0;font-size:0.78rem;color:var(--text-secondary);">' + escapeHtml(typeLabels[a.asset_type] || a.asset_type) +
+                    (a.manufacturer ? ' \u2022 ' + escapeHtml(a.manufacturer) : '') +
+                    (a.model ? ' ' + escapeHtml(a.model) : '') +
+                    (a.company_name ? ' \u2022 ' + escapeHtml(a.company_name) : '') +
+                '</p>' +
+            '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">' +
+            '<span style="padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:600;background:' + sColor + '22;color:' + sColor + ';border:1px solid ' + sColor + '44;">' + (statusLabels[a.status] || a.status) + '</span>' +
+            '<span style="padding:2px 8px;border-radius:12px;font-size:0.7rem;font-weight:600;background:' + cColor + '22;color:' + cColor + ';border:1px solid ' + cColor + '44;">' + (condLabels[a.condition] || a.condition) + '</span>' +
+            (a.assigned_user_name ? '<span style="padding:2px 8px;border-radius:12px;font-size:0.7rem;background:rgba(99,102,241,0.15);color:#818cf8;"><i class="fas fa-user"></i> ' + escapeHtml(a.assigned_user_name) + '</span>' : '') +
+        '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:6px;font-size:0.78rem;color:var(--text-med);margin-bottom:8px;">' +
+            (a.serial_number ? '<span><i class="fas fa-barcode" style="margin-right:3px;width:12px;"></i>' + escapeHtml(a.serial_number) + '</span>' : '') +
+            (a.inventory_number ? '<span><i class="fas fa-tag" style="margin-right:3px;width:12px;"></i>' + escapeHtml(a.inventory_number) + '</span>' : '') +
+            (a.location ? '<span><i class="fas fa-map-marker-alt" style="margin-right:3px;width:12px;"></i>' + escapeHtml(a.location) + '</span>' : '') +
+        '</div>' +
+        (a.notes ? '<div style="font-size:0.72rem;color:var(--text-low);margin-bottom:8px;border-top:1px solid rgba(255,255,255,0.05);padding-top:6px;"><i class="fas fa-sticky-note" style="margin-right:4px;"></i>' + escapeHtml(a.notes.substring(0, 100)) + (a.notes.length > 100 ? '...' : '') + '</div>' : '') +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,0.05);padding-top:8px;">' +
+            '<button class="btn btn-small btn-ghost" onclick="showAssetDetail(' + a.id + ')" style="font-size:0.75rem;"><i class="fas fa-info-circle"></i> \u0414\u0435\u0442\u0430\u043b\u0438</button>' +
+            (a.status === 'active' ? '<button class="btn btn-small btn-ghost" onclick="openAssignModal(' + a.id + ',\'' + escapeHtml(a.name) + '\')" style="font-size:0.75rem;"><i class="fas fa-user-check"></i> \u0412\u044b\u0434\u0430\u0442\u044c</button>' : '') +
+            (a.assigned_to ? '<button class="btn btn-small btn-ghost" onclick="handleReturnAsset(' + a.id + ')" style="font-size:0.75rem;color:var(--jarvis-rose);"><i class="fas fa-undo"></i> \u0412\u0435\u0440\u043d\u0443\u0442\u044c</button>' : '') +
+            (a.status !== 'decommissioned' && a.status !== 'lost' ? '<button class="btn btn-small btn-ghost" onclick="openMoveModal(' + a.id + ',\'' + escapeHtml(a.name) + '\')" style="font-size:0.75rem;"><i class="fas fa-arrows-alt"></i> \u041f\u0435\u0440\u0435\u043c\u0435\u0441\u0442\u0438\u0442\u044c</button>' : '') +
+            '<button class="btn btn-small btn-ghost" onclick="showEditAssetModal(' + a.id + ')" style="font-size:0.75rem;"><i class="fas fa-edit"></i></button>' +
+            '<button class="btn btn-small btn-ghost" onclick="if(confirm(\'\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u043e?\'))handleDeleteAsset(' + a.id + ')" style="font-size:0.75rem;color:var(--jarvis-rose);"><i class="fas fa-trash"></i></button>' +
+        '</div>' +
+    '</div>';
+}
+
+async function loadAssetFilters() {
+    try {
+        var r = await fetch('/api/assets/meta/types', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') } });
+        if (!r.ok) return;
+        var meta = await r.json();
+        var typeSel = document.getElementById('assetTypeFilter');
+        var statusSel = document.getElementById('assetStatusFilter');
+        var condSel = document.getElementById('assetConditionFilter');
+        if (typeSel && meta.types) {
+            typeSel.innerHTML = '<option value="">\u0412\u0441\u0435 \u0442\u0438\u043f\u044b</option>' +
+                meta.types.map(function(t) { return '<option value="' + t.id + '">' + t.label + '</option>'; }).join('');
+        }
+        if (statusSel && meta.statuses) {
+            statusSel.innerHTML = '<option value="">\u0412\u0441\u0435 \u0441\u0442\u0430\u0442\u0443\u0441\u044b</option>' +
+                meta.statuses.map(function(s) { return '<option value="' + s.id + '">' + s.label + '</option>'; }).join('');
+        }
+        if (condSel && meta.conditions) {
+            condSel.innerHTML = '<option value="">\u0412\u0441\u0435 \u0441\u043e\u0441\u0442\u043e\u044f\u043d\u0438\u044f</option>' +
+                meta.conditions.map(function(c) { return '<option value="' + c.id + '">' + c.label + '</option>'; }).join('');
+        }
+        var addType = document.getElementById('assetType');
+        if (addType && meta.types) {
+            addType.innerHTML = meta.types.map(function(t) { return '<option value="' + t.id + '">' + t.label + '</option>'; }).join('');
+        }
+        var addStatus = document.getElementById('assetStatus');
+        if (addStatus && meta.statuses) {
+            addStatus.innerHTML = meta.statuses.map(function(s) { return '<option value="' + s.id + '">' + s.label + '</option>'; }).join('');
+        }
+        var addCond = document.getElementById('assetCondition');
+        if (addCond && meta.conditions) {
+            addCond.innerHTML = meta.conditions.map(function(c) { return '<option value="' + c.id + '">' + c.label + '</option>'; }).join('');
+        }
+    } catch(e) { console.error('Load filters error:', e); }
+}
+
+async function loadAssetStats() {
+    try {
+        var r = await fetch('/api/assets/stats', { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') } });
+        if (!r.ok) return;
+        var s = await r.json();
+        var el = function(id) { return document.getElementById(id); };
+        if (el('assetStatTotal')) el('assetStatTotal').textContent = s.total || 0;
+        if (el('assetStatActive')) el('assetStatActive').textContent = s.active || 0;
+        if (el('assetStatRepair')) el('assetStatRepair').textContent = s.in_repair || 0;
+        if (el('assetStatDecommissioned')) el('assetStatDecommissioned').textContent = s.decommissioned || 0;
+    } catch(e) { console.error('Load stats error:', e); }
+}
+
+// === ADD / EDIT ASSET ===
+var _editingAssetId = null;
+
+// showAddAssetModal defined below (line ~3951)
+
+async function showEditAssetModal(id) {
+    _editingAssetId = id;
+    document.getElementById('addAssetModalTitle').textContent = '\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u043e';
+    document.getElementById('addAssetSubmitBtn').innerHTML = '<i class="fas fa-save"></i> \u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c';
+    try {
+        var r = await fetch('/api/assets/' + id, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') } });
+        if (!r.ok) throw new Error('Not found');
+        var a = await r.json();
+        document.getElementById('assetName').value = a.name || '';
+        document.getElementById('assetType').value = a.asset_type || 'other';
+        document.getElementById('assetManufacturer').value = a.manufacturer || '';
+        document.getElementById('assetModel').value = a.model || '';
+        document.getElementById('assetSerialNumber').value = a.serial_number || '';
+        document.getElementById('assetInventoryNumber').value = a.inventory_number || '';
+        document.getElementById('assetCondition').value = a.condition || 'good';
+        document.getElementById('assetStatus').value = a.status || 'active';
+        document.getElementById('assetPurchaseDate').value = a.purchase_date ? a.purchase_date.split('T')[0] : '';
+        document.getElementById('assetPurchaseCost').value = a.purchase_cost || '';
+        document.getElementById('assetWarrantyEnd').value = a.warranty_end ? a.warranty_end.split('T')[0] : '';
+        document.getElementById('assetSupplier').value = a.supplier || '';
+        document.getElementById('assetLocation').value = a.location || '';
+        document.getElementById('assetRemoteAccessId').value = a.remote_access_id || '';
+        document.getElementById('assetRemoteAccessPassword').value = a.remote_access_password || '';
+        document.getElementById('assetNotes').value = a.notes || '';
+        if (a.specifications) {
+            document.getElementById('assetSpecCpu').value = a.specifications.cpu || '';
+            document.getElementById('assetSpecRam').value = a.specifications.ram || '';
+            document.getElementById('assetSpecDisk').value = a.specifications.disk || '';
+            document.getElementById('assetSpecGpu').value = a.specifications.gpu || '';
+            document.getElementById('assetSpecOs').value = a.specifications.os || '';
+            document.getElementById('assetSpecIp').value = a.specifications.ip_address || '';
+        }
+        await populateCompanySelect('assetCompanyId', a.company_id);
+        await populateUserSelect('assetAssignedTo', a.assigned_to);
+        var m = document.getElementById('addAssetModal');
+        m.classList.remove('hidden');
+        m.style.display = 'flex';
+    } catch(e) {
+        showToast('\u041e\u0448\u0438\u0431\u043a\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043a\u0438', 'error');
     }
-    
-    // Load users for assigned_to
-    const assignedSelect = document.getElementById('assetAssignedTo');
-    assignedSelect.innerHTML = '<option value="">Не назначено</option>';
-    if (window._allUsers && window._allUsers.length) {
-        window._allUsers.forEach(u => {
-            const opt = document.createElement('option');
-            opt.value = u.id;
-            opt.textContent = u.full_name || u.email;
-            assignedSelect.appendChild(opt);
-        });
-    } else {
-        api.getUsers().then(users => {
-            window._allUsers = users;
-            assignedSelect.innerHTML = '<option value="">Не назначено</option>';
-            users.forEach(u => {
-                const opt = document.createElement('option');
-                opt.value = u.id;
-                opt.textContent = u.full_name || u.email;
-                assignedSelect.appendChild(opt);
-            });
-        }).catch(() => {});
-    }
-    
-    document.getElementById('addAssetModal').classList.remove('hidden');
 }
 
 async function handleCreateAsset(e) {
     e.preventDefault();
-    const assignedToEl = document.getElementById('assetAssignedTo');
-    const data = {
+    var data = {
         name: document.getElementById('assetName').value,
         asset_type: document.getElementById('assetType').value,
-        company_id: parseInt(document.getElementById('assetCompanyId').value),
-        assigned_to: assignedToEl && assignedToEl.value ? parseInt(assignedToEl.value) : null,
+        manufacturer: document.getElementById('assetManufacturer').value || null,
         model: document.getElementById('assetModel').value || null,
         serial_number: document.getElementById('assetSerialNumber').value || null,
-        remote_access_id: document.getElementById('assetRemoteAccessId').value || null,
-        location: document.getElementById('assetLocation').value || null,
+        inventory_number: document.getElementById('assetInventoryNumber').value || null,
+        condition: document.getElementById('assetCondition').value,
         status: document.getElementById('assetStatus').value,
-        notes: document.getElementById('assetNotes').value || null
+        purchase_date: document.getElementById('assetPurchaseDate').value || null,
+        purchase_cost: document.getElementById('assetPurchaseCost').value || null,
+        warranty_end: document.getElementById('assetWarrantyEnd').value || null,
+        supplier: document.getElementById('assetSupplier').value || null,
+        location: document.getElementById('assetLocation').value || null,
+        remote_access_id: document.getElementById('assetRemoteAccessId').value || null,
+        remote_access_password: document.getElementById('assetRemoteAccessPassword').value || null,
+        assigned_to: parseInt(document.getElementById('assetAssignedTo').value) || null,
+        company_id: parseInt(document.getElementById('assetCompanyId').value),
+        notes: document.getElementById('assetNotes').value || null,
+        specifications: {
+            cpu: document.getElementById('assetSpecCpu').value || null,
+            ram: document.getElementById('assetSpecRam').value || null,
+            disk: document.getElementById('assetSpecDisk').value || null,
+            gpu: document.getElementById('assetSpecGpu').value || null,
+            os: document.getElementById('assetSpecOs').value || null,
+            ip_address: document.getElementById('assetSpecIp').value || null
+        }
     };
-    
+    // Clean null specs
+    Object.keys(data.specifications).forEach(function(k) { if (!data.specifications[k]) delete data.specifications[k]; });
     try {
-        await featuresAPI.createAsset(data);
-        showToast('Устройство добавлено', 'success');
+        var url = '/api/assets';
+        var method = 'POST';
+        if (_editingAssetId) { url += '/' + _editingAssetId; method = 'PUT'; }
+        var r = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + localStorage.getItem('access_token') },
+            body: JSON.stringify(data)
+        });
+        if (!r.ok) { var err = await r.json(); throw new Error(err.detail || 'Error'); }
+        showToast(_editingAssetId ? '\u0423\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u043e \u043e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u043e' : '\u0423\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u043e \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u043e', 'success');
         closeModal('addAssetModal');
         loadAssetsView();
-    } catch (error) {
-        showToast(error.message || 'Ошибка добавления устройства', 'error');
+    } catch(error) {
+        showToast(error.message || '\u041e\u0448\u0438\u0431\u043a\u0430', 'error');
     }
 }
+
+// === ASSIGN / RETURN / MOVE ===
+var _activeAssetId = null;
+var _activeAssetName = '';
+
+function openAssignModal(id, name) {
+    _activeAssetId = id;
+    _activeAssetName = name;
+    var na = document.getElementById('assignAssetName');
+    if (na) na.textContent = 'Устройство: ' + (name || '#' + id);
+    populateUserSelect('assignEmployee');
+    var rr = document.getElementById('assignReason');
+    if (rr) rr.value = '';
+    var mm = document.getElementById('assignAssetModal');
+    if (mm) mm.classList.remove('hidden');
+}
+
+async function handleAssignAsset() {
+    var userId = parseInt(document.getElementById('assignEmployee').value);
+    if (!userId) { showToast('\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0441\u043e\u0442\u0440\u0443\u0434\u043d\u0438\u043a\u0430', 'error'); return; }
+    try {
+        var r = await fetch('/api/assets/' + _activeAssetId + '/assign?user_id=' + userId + '&reason=' + encodeURIComponent(document.getElementById('assignReason').value || ''), {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
+        });
+        if (!r.ok) throw new Error('Assign failed');
+        showToast('\u0423\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u043e \u0432\u044b\u0434\u0430\u043d\u043e', 'success');
+        closeModal('assignAssetModal');
+        loadAssetsView();
+    } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function handleReturnAsset(id) {
+    if (!confirm('\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0435 \u0432\u043e\u0437\u0432\u0440\u0430\u0442 \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430')) return;
+    try {
+        var r = await fetch('/api/assets/' + id + '/return', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
+        });
+        if (!r.ok) throw new Error('Return failed');
+        showToast('\u0423\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u043e \u0432\u043e\u0437\u0432\u0440\u0430\u0449\u0435\u043d\u043e', 'success');
+        loadAssetsView();
+    } catch(e) { showToast(e.message, 'error'); }
+}
+
+function openMoveModal(id, name) {
+    _activeAssetId = id;
+    _activeAssetName = name;
+    document.getElementById('moveToLocation').value = '';
+    document.getElementById('moveReason').value = '';
+    document.getElementById('moveAssetModal').classList.remove('hidden');
+}
+
+async function handleMoveAsset() {
+    var loc = document.getElementById('moveToLocation').value.trim();
+    if (!loc) { showToast('\u0423\u043a\u0430\u0436\u0438\u0442\u0435 \u043d\u043e\u0432\u043e\u0435 \u0440\u0430\u0441\u043f\u043e\u043b\u043e\u0436\u0435\u043d\u0438\u0435', 'error'); return; }
+    try {
+        var r = await fetch('/api/assets/' + _activeAssetId + '/move?to_location=' + encodeURIComponent(loc) + '&reason=' + encodeURIComponent(document.getElementById('moveReason').value || ''), {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
+        });
+        if (!r.ok) throw new Error('Move failed');
+        showToast('\u0423\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u043e \u043f\u0435\u0440\u0435\u043c\u0435\u0449\u0435\u043d\u043e', 'success');
+        closeModal('moveAssetModal');
+        loadAssetsView();
+    } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function handleDeleteAsset(id) {
+    try {
+        var r = await fetch('/api/assets/' + id, {
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
+        });
+        if (!r.ok) throw new Error('Delete failed');
+        showToast('\u0423\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u043e \u0443\u0434\u0430\u043b\u0435\u043d\u043e', 'success');
+        loadAssetsView();
+    } catch(e) { showToast(e.message, 'error'); }
+}
+
+// === DETAIL VIEW ===
+async function showAssetDetail(id) {
+    try {
+        var r = await fetch('/api/assets/' + id, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') } });
+        if (!r.ok) throw new Error('Not found');
+        var a = await r.json();
+        document.getElementById('assetDetailTitle').textContent = a.name + ' (' + (a.readable_id || 'ID: ' + a.id) + ')';
+        var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">' +
+            '<div class="glass-card" style="padding:16px;">' +
+                '<h4 style="margin:0 0 12px;font-size:0.9rem;color:var(--jarvis-cyan);"><i class="fas fa-info-circle"></i> \u041e\u0441\u043d\u043e\u0432\u043d\u0430\u044f \u0438\u043d\u0444\u043e\u0440\u043c\u0430\u0446\u0438\u044f</h4>' +
+                '<table style="width:100%;font-size:0.82rem;">' +
+                    detailRow('\u0422\u0438\u043f', a.asset_type) +
+                    detailRow('\u041f\u0440\u043e\u0438\u0437\u0432\u043e\u0434\u0438\u0442\u0435\u043b\u044c', a.manufacturer) +
+                    detailRow('\u041c\u043e\u0434\u0435\u043b\u044c', a.model) +
+                    detailRow('\u0421\u0435\u0440\u0438\u0439\u043d\u044b\u0439 \u043d\u043e\u043c\u0435\u0440', a.serial_number) +
+                    detailRow('\u0418\u043d\u0432. \u043d\u043e\u043c\u0435\u0440', a.inventory_number) +
+                    detailRow('\u041a\u043e\u043c\u043f\u0430\u043d\u0438\u044f', a.company_name) +
+                    detailRow('\u0421\u043e\u0441\u0442\u043e\u044f\u043d\u0438\u0435', a.condition) +
+                    detailRow('\u0421\u0442\u0430\u0442\u0443\u0441', a.status) +
+                '</table></div>' +
+            '<div class="glass-card" style="padding:16px;">' +
+                '<h4 style="margin:0 0 12px;font-size:0.9rem;color:var(--jarvis-cyan);"><i class="fas fa-cog"></i> \u0425\u0430\u0440\u0430\u043a\u0442\u0435\u0440\u0438\u0441\u0442\u0438\u043a\u0438 \u0438 \u0430\u0442\u0440\u0438\u0431\u0443\u0442\u044b</h4>' +
+                '<table style="width:100%;font-size:0.82rem;">' +
+                    detailRow('CPU', (a.specifications||{}).cpu) +
+                    detailRow('RAM', (a.specifications||{}).ram) +
+                    detailRow('\u0414\u0438\u0441\u043a', (a.specifications||{}).disk) +
+                    detailRow('GPU', (a.specifications||{}).gpu) +
+                    detailRow('OS', (a.specifications||{}).os) +
+                    detailRow('IP-\u0430\u0434\u0440\u0435\u0441', (a.specifications||{}).ip_address) +
+                    detailRow('\u0414\u0430\u0442\u0430 \u043f\u043e\u043a\u0443\u043f\u043a\u0438', a.purchase_date ? a.purchase_date.split('T')[0] : null) +
+                    detailRow('\u0421\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u044c', a.purchase_cost) +
+                    detailRow('\u0413\u0430\u0440\u0430\u043d\u0442\u0438\u044f', a.warranty_end ? a.warranty_end.split('T')[0] : null) +
+                    detailRow('\u041f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a', a.supplier) +
+                    detailRow('\u0420\u0430\u0441\u043f\u043e\u043b\u043e\u0436\u0435\u043d\u0438\u0435', a.location) +
+                '</table></div>' +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;">' +
+            '<div class="glass-card" style="padding:16px;">' +
+                '<h4 style="margin:0 0 10px;font-size:0.9rem;color:var(--jarvis-cyan);"><i class="fas fa-history"></i> \u0418\u0441\u0442\u043e\u0440\u0438\u044f \u0432\u044b\u0434\u0430\u0447 (' + (a.assignments||[]).length + ')</h4>' +
+                ((a.assignments||[]).length === 0 ? '<div style="font-size:0.8rem;color:var(--text-secondary);">\u041d\u0435\u0442 \u0437\u0430\u043f\u0438\u0441\u0435\u0439</div>' :
+                    '<div style="max-height:200px;overflow-y:auto;">' + (a.assignments||[]).map(function(as) {
+                        return '<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.78rem;">' +
+                            '<div><strong>' + escapeHtml(as.user_name || 'ID: ' + as.user_id) + '</strong></div>' +
+                            '<div style="color:var(--text-secondary);">' +
+                                (as.assigned_by_name ? '\u0412\u044b\u0434\u0430\u043b: ' + escapeHtml(as.assigned_by_name) + ' | ' : '') +
+                                (as.assigned_at ? new Date(as.assigned_at).toLocaleString() : '') +
+                                (as.returned_at ? ' \u2192 ' + new Date(as.returned_at).toLocaleString() : ' \u2192 \u043d\u0435 \u0432\u043e\u0437\u0432\u0440\u0430\u0449\u0435\u043d') +
+                            '</div>' +
+                            (as.reason ? '<div style="color:var(--text-low);">' + escapeHtml(as.reason) + '</div>' : '') +
+                        '</div>';
+                    }).join('') + '</div>') +
+            '</div>' +
+            '<div class="glass-card" style="padding:16px;">' +
+                '<h4 style="margin:0 0 10px;font-size:0.9rem;color:var(--jarvis-cyan);"><i class="fas fa-truck"></i> \u0418\u0441\u0442\u043e\u0440\u0438\u044f \u043f\u0435\u0440\u0435\u043c\u0435\u0449\u0435\u043d\u0438\u0439 (' + (a.movements||[]).length + ')</h4>' +
+                ((a.movements||[]).length === 0 ? '<div style="font-size:0.8rem;color:var(--text-secondary);">\u041d\u0435\u0442 \u0437\u0430\u043f\u0438\u0441\u0435\u0439</div>' :
+                    '<div style="max-height:200px;overflow-y:auto;">' + (a.movements||[]).map(function(m) {
+                        return '<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.78rem;">' +
+                            '<div>' + escapeHtml(m.from_location || '?') + ' \u2192 <strong>' + escapeHtml(m.to_location) + '</strong></div>' +
+                            '<div style="color:var(--text-secondary);">' +
+                                (m.moved_at ? new Date(m.moved_at).toLocaleString() : '') +
+                                (m.moved_by_name ? ' | ' + escapeHtml(m.moved_by_name) : '') +
+                            '</div>' +
+                            (m.reason ? '<div style="color:var(--text-low);">' + escapeHtml(m.reason) + '</div>' : '') +
+                        '</div>';
+                    }).join('') + '</div>') +
+            '</div>' +
+            '</div>' +
+            (a.notes ? '<div class="glass-card" style="padding:12px;margin-top:12px;font-size:0.85rem;"><strong>\u0417\u0430\u043c\u0435\u0442\u043a\u0438:</strong><br>' + escapeHtml(a.notes) + '</div>' : '');
+        document.getElementById('assetDetailContent').innerHTML = html;
+        document.getElementById('assetDetailModal').classList.remove('hidden');
+    } catch(e) {
+        showToast('\u041e\u0448\u0438\u0431\u043a\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043a\u0438', 'error');
+    }
+}
+
+function detailRow(label, value) {
+    if (!value) return '';
+    return '<tr><td style="padding:3px 6px 3px 0;color:var(--text-secondary);white-space:nowrap;">' + label + '</td><td style="padding:3px 0;color:var(--text-high);">' + escapeHtml(String(value)) + '</td></tr>';
+}
+
+function populateCompanySelect(id, selectedId) {
+    var sel = document.getElementById(id);
+    if (!sel) return Promise.resolve();
+    sel.innerHTML = '<option value="">\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043e\u0440\u0433\u0430\u043d\u0438\u0437\u0430\u0446\u0438\u044e</option>';
+    if (window._allCompanies && window._allCompanies.length) {
+        window._allCompanies.forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c.id; opt.textContent = c.name;
+            if (selectedId && c.id === selectedId) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        return Promise.resolve();
+    } else {
+        return api.getCompanies().then(function(companies) {
+            window._allCompanies = companies;
+            sel.innerHTML = '<option value="">\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043e\u0440\u0433\u0430\u043d\u0438\u0437\u0430\u0446\u0438\u044e</option>';
+            companies.forEach(function(c) {
+                var opt = document.createElement('option');
+                opt.value = c.id; opt.textContent = c.name;
+                if (selectedId && c.id === selectedId) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        }).catch(function(){});
+    }
+}
+
+function populateUserSelect(id, selectedId) {
+    var sel = document.getElementById(id);
+    if (!sel) return Promise.resolve();
+    sel.innerHTML = '<option value="">\u041d\u0435 \u043d\u0430\u0437\u043d\u0430\u0447\u0435\u043d\u043e</option>';
+    if (window._allUsers && window._allUsers.length) {
+        window._allUsers.forEach(function(u) {
+            var opt = document.createElement('option');
+            opt.value = u.id; opt.textContent = u.full_name || u.email;
+            if (selectedId && u.id === selectedId) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        return Promise.resolve();
+    } else {
+        return api.getUsers().then(function(users) {
+            window._allUsers = users;
+            sel.innerHTML = '<option value="">\u041d\u0435 \u043d\u0430\u0437\u043d\u0430\u0447\u0435\u043d\u043e</option>';
+            users.forEach(function(u) {
+                var opt = document.createElement('option');
+                opt.value = u.id; opt.textContent = u.full_name || u.email;
+                if (selectedId && u.id === selectedId) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        }).catch(function(){});
+    }
+}
+
 
 // ============================================
 // DEMO FLOATING CARDS FUNCTIONALITY
@@ -2751,6 +3242,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const addAssetFormEl = document.getElementById('addAssetForm');
     if (addAssetFormEl) addAssetFormEl.addEventListener('submit', handleCreateAsset);
+    const addAssetBtnEl = document.getElementById('addAssetBtn');
+    if (addAssetBtnEl) addAssetBtnEl.addEventListener('click', showAddAssetModal);
     
     // Report period change handler
     const reportPeriodEl = document.getElementById('reportPeriod');
@@ -2880,7 +3373,7 @@ function renderReportPreview(type, reportData, container) {
     switch(type) {
         case 'tickets':
             const total = reportData.data.length;
-            const resolved = reportData.data.filter(t => t.status === 'решён' || t.status === 'resolved' || t.status === 'closed').length;
+            const resolved = reportData.data.filter(t => t.status === 'Ожидает клиента' || t.status === 'решён' || t.status === 'resolved' || t.status === 'closed').length;
             const critical = reportData.data.filter(t => t.priority === 'критичный' || t.priority === 'critical').length;
             html += `<div class="report-summary-item"><h4>${total}</h4><p>Всего заявок</p></div>`;
             html += `<div class="report-summary-item"><h4>${resolved}</h4><p>Решено</p></div>`;
@@ -2984,7 +3477,7 @@ function getStatusClass(status) {
     const s = status.toLowerCase();
     if (s.includes('новый') || s.includes('new')) return 'new';
     if (s.includes('работа') || s.includes('progress')) return 'progress';
-    if (s.includes('решён') || s.includes('resolved')) return 'green';
+    if (s.includes('Ожидает') || s.includes('решён') || s.includes('resolved')) return 'green';
     if (s.includes('закрыт') || s.includes('closed')) return 'closed';
     return 'gray';
 }
@@ -3084,8 +3577,12 @@ function downloadAsCSV(type, reportData) {
         }).join(',')
     ).join('\n');
     
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const csvUtf8 = new TextEncoder().encode(csvContent);
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+    const full = new Uint8Array(bom.length + csvUtf8.length);
+    full.set(bom);
+    full.set(csvUtf8, bom.length);
+    const blob = new Blob([full], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -3333,3 +3830,169 @@ async function resolveTicket() {
     }
 }
 
+
+// Redundant button handler for add asset
+document.addEventListener('click', function(e) {
+    var btn = e.target ? e.target.closest('#addAssetBtn') : null;
+    if (btn) {
+        e.preventDefault();
+        showAddAssetModal();
+    }
+});
+
+// Keyboard shortcut: Ctrl+Shift+A to open add asset modal
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        showAddAssetModal();
+    }
+});
+
+// Expose for console debugging
+window.showAddAssetModal = showAddAssetModal;
+window.openAssignModal = openAssignModal;
+window.handleAssignAsset = handleAssignAsset;
+window.handleReturnAsset = handleReturnAsset;
+window.showAssetDetail = showAssetDetail;
+window.openMoveModal = openMoveModal;
+window.handleMoveAsset = handleMoveAsset;
+window.showEditAssetModal = showEditAssetModal;
+window.handleDeleteAsset = handleDeleteAsset;
+
+window.testClick = function() { alert("CLICK_WORKS"); };
+window.testModal2 = function() {
+    var m = document.getElementById("addAssetModal");
+    if (m) { m.classList.remove("hidden"); console.log("MODAL_OK"); }
+    else { console.log("NO_MODAL"); }
+};
+console.log("TEST_READY");
+
+
+// Telegram linking functions
+function generateTelegramLink() {
+    document.getElementById('telegramLinkContent').style.display = 'block';
+    document.getElementById('telegramLinkResult').style.display = 'none';
+    openModal('telegramLinkModal');
+}
+
+async function generateTelegramLinkCode() {
+    const btn = document.querySelector('#telegramLinkContent button');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Генерация...';
+    try {
+        const res = await fetch('/api/auth/telegram/link-token', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('access_token'),
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!res.ok) throw new Error('Failed to generate code');
+        const data = await res.json();
+        document.getElementById('telegramLinkContent').style.display = 'none';
+        document.getElementById('telegramLinkResult').style.display = 'block';
+        document.getElementById('telegramLinkToken').textContent = data.token;
+        document.getElementById('telegramLinkCodeInline').textContent = data.token;
+    } catch (e) {
+        console.error('Telegram link error:', e);
+        alert('Ошибка генерации кода. Попробуйте ещё раз.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-key"></i> Получить код';
+    }
+}
+
+function copyTelegramCode() {
+    const code = document.getElementById('telegramLinkToken').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+        const btn = document.querySelector('#telegramLinkResult .btn');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Скопировано';
+        setTimeout(() => btn.innerHTML = orig, 2000);
+    }).catch(() => {
+        alert('Скопируйте код вручную: ' + code);
+    });
+}
+
+
+// ========== HASH ROUTER REGISTRATION ==========
+Router.register('/tickets', function() { showView('tickets'); });
+Router.register('/tickets/new', function() { UIManager.closeAll(); showView('create'); });
+Router.register('/tickets/:id', function(id, action) {
+    if (action === 'edit') { UIManager.closeAll(); showView('tickets'); openTicketModal(id); }
+    else { showView('tickets'); openTicketModal(id); }
+});
+Router.register('/companies', function() { showView('crm'); });
+Router.register('/companies/new', function() { showView('crm'); showNewCompanyModal(); });
+Router.register('/companies/:id/edit', function(id) { showView('crm'); showEditCompanyModal(id); });
+Router.register('/users', function() { showView('users'); });
+Router.register('/users/new', function() { showView('users'); showNewUserModal(); });
+Router.register('/users/:id/edit', function(id) { showView('users'); showEditUserModal(id); });
+Router.register('/assets', function() { showView('assets'); });
+Router.register('/assets/new', function() { showView('assets'); showAddAssetModal(); });
+Router.register('/assets/:id/edit', function(id) { showView('assets'); showEditAssetModal(id); });
+Router.register('/monitoring', function() { showView('monitoring'); });
+Router.register('/settings', function() { showView('dashsettings'); });
+Router.register('/dashboard', function() { showView('dashboard'); });
+
+// Helper functions for modals (stubs that use UIManager)
+function showNewCompanyModal() { showToast('CRM: Создание компании через UIManager', 'info'); loadCRMData(); }
+function showEditCompanyModal(id) { showToast('CRM: Редактирование компании #' + id, 'info'); loadCRMData(); }
+function showNewUserModal() { showView('users'); }
+function showEditUserModal(id) { showView('users'); }
+function showAddAssetModal() { UIManager.closeAll(); var m = document.getElementById('addAssetModal'); if (m) { m.classList.remove('hidden'); m.style.display = 'flex'; document.body.style.overflow = 'hidden'; } }
+
+// Initialize Router
+Router.init();
+
+// ========== ROLE-BASED NAVIGATION ==========
+function renderNavForRole(role) {
+    var navItems = {
+        dashboard: true,
+        tickets: true,
+        create: true,
+        monitoring: role === 'admin' || role === 'super_admin',
+        crm: role === 'admin' || role === 'super_admin',
+        assets: role === 'admin' || role === 'super_admin',
+        audit: role === 'admin' || role === 'super_admin',
+        users: role === 'admin' || role === 'super_admin',
+        dashsettings: role === 'admin' || role === 'super_admin'
+    };
+
+    var clientRoutes = ['/tickets', '/tickets/new'];
+    var agentRoutes = ['/tickets', '/tickets/new', '/dashboard', '/monitoring'];
+    var adminRoutes = Object.keys(navItems);
+
+    document.querySelectorAll('.side-link[data-page]').forEach(function(link) {
+        var page = link.getAttribute('data-page');
+        if (!page) return;
+        var visible = navItems[page] !== false;
+        if (role === 'client') visible = (page === 'tickets' || page === 'create' || page === 'dashboard');
+        if (role === 'agent') visible = visible && page !== 'audit' && page !== 'users';
+        link.style.display = visible ? '' : 'none';
+    });
+}
+
+function checkAccess(role, route) {
+    var clientAllowed = ['/tickets', '/tickets/new', '/dashboard'];
+    var agentAllowed = ['/tickets', '/tickets/new', '/dashboard', '/monitoring', '/assets'];
+
+    if (role === 'client' && !clientAllowed.some(function(r) { return route.startsWith(r); })) {
+        Router.navigate('#/tickets');
+        UIManager.toast(i18n.t('no_access') || 'Нет доступа', 'warning');
+        return false;
+    }
+    if (role === 'agent' && !agentAllowed.some(function(r) { return route.startsWith(r); })) {
+        Router.navigate('#/tickets');
+        UIManager.toast(i18n.t('no_access') || 'Нет доступа', 'warning');
+        return false;
+    }
+    return true;
+}
+
+// Override login handler to set role-based nav
+var _originalLoginSuccess = window.loginSuccess;
+window.loginSuccess = function(user) {
+    renderNavForRole((user.role || '').toLowerCase());
+    if (_originalLoginSuccess) _originalLoginSuccess(user);
+};

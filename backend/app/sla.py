@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 from app.models import TicketPriority
 
-# Simple SLA Policy (Time to Resolve in hours)
+# SLA Policy (Time to Resolve in hours) — aligned with services/sla_service.py
 SLA_POLICY = {
-    TicketPriority.LOW: 48,
-    TicketPriority.MEDIUM: 24,
-    TicketPriority.HIGH: 8,
-    TicketPriority.CRITICAL: 2
+    TicketPriority.LOW: 120,
+    TicketPriority.MEDIUM: 72,
+    TicketPriority.HIGH: 48,
+    TicketPriority.CRITICAL: 24
 }
 
 def calculate_sla_due_date(priority: str, start_time: datetime = None) -> datetime:

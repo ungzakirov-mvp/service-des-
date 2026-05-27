@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+import os
+import uuid
+import shutil
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session, joinedload, selectinload
 from typing import List
 from datetime import datetime, timedelta
@@ -30,7 +34,8 @@ def create_company(company_in: schemas.CompanyCreate, current_user: User = Depen
         name=company_in.name, legal_name=company_in.legal_name, inn=company_in.inn,
         address=company_in.address, phone=company_in.phone, email=company_in.email,
         website=company_in.website, logo_url=company_in.logo_url,
-        domain=company_in.domain, industry=company_in.industry, description=company_in.description
+        domain=company_in.domain, industry=company_in.industry, description=company_in.description,
+        color=company_in.color or "#0066CC"
     )
     try:
         db.add(new_company); db.commit(); db.refresh(new_company)
@@ -79,6 +84,34 @@ def delete_company(company_id: int, current_user: User = Depends(get_current_use
         raise HTTPException(status_code=404, detail="Компания не найдена")
     db.delete(company); db.commit()
     return None
+
+ALLOWED_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'}
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "logos")
+
+@router.post("/companies/{company_id}/logo")
+def upload_company_logo(company_id: int, file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role not in [UserRole.ADMIN, UserRole.AGENT, UserRole.SUPER_ADMIN]:
+        raise HTTPException(status_code=403, detail="Недостаточно прав")
+    tenant_id = get_active_tenant_id(db, current_user)
+    company = db.query(Company).filter(Company.id == company_id, Company.tenant_id == tenant_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Компания не найдена")
+
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail=f"Недопустимый формат. Разрешены: {', '.join(ALLOWED_EXTENSIONS)}")
+
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+    with open(filepath, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    logo_url = f"/api/static/logos/{filename}"
+    company.logo_url = logo_url
+    db.commit()
+    db.refresh(company)
+    return JSONResponse({"logo_url": logo_url})
 
 @router.get("/companies/{company_id}/contacts", response_model=List[schemas.UserResponse])
 def list_company_contacts(company_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

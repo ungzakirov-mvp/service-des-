@@ -12,7 +12,7 @@ let timerStartTime = null;
 
 // Initialize timer on page load
 document.addEventListener('DOMContentLoaded', async () => {
-    await checkTimerStatus();
+    if (localStorage.getItem('access_token')) await checkTimerStatus();
 });
 
 async function checkTimerStatus() {
@@ -151,7 +151,7 @@ async function getAgentCannedResponses() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await getAgentCannedResponses();
+    if (localStorage.getItem('access_token')) await getAgentCannedResponses();
 });
 
 // Handle / shortcut in reply editor
@@ -433,8 +433,8 @@ function copyToClipboard(text) {
     });
 }
 
-function showAddAssetModal() {
-    // TODO: Implement asset creation modal
+// showAddAssetModal is defined in app.js
+function _showAddAssetModal_stub() {
     showToast('Функция добавления оборудования в разработке', 'info');
 }
 
@@ -541,4 +541,4 @@ window.toggleChecklistItem = toggleChecklistItem;
 window.deleteChecklistItem = deleteChecklistItem;
 window.addInternalNote = addInternalNote;
 window.copyToClipboard = copyToClipboard;
-window.showAddAssetModal = showAddAssetModal;
+// window.showAddAssetModal is set in app.js

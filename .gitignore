@@ -25,3 +25,12 @@ dist-ssr
 
 # Local check scripts
 scripts/check_*.py
+.env
+*.bak
+*.bak2
+*.bak3
+*.bak4
+*.old
+data/*.db
+data/*.db-*
+ssl/

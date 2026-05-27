@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Service Desk - Premium Help Desk System</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%2300d4ff'/><text x='50' y='72' text-anchor='middle' font-size='60' fill='white' font-family='sans-serif' font-weight='bold'>SD</text></svg>">
-    <link rel="stylesheet" href="css/style.css?v=3.2.6">
+    <link rel="stylesheet" href="css/style.css?v=3.3.1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,15 +33,15 @@
                         <p class="tagline" data-i18n="tagline">Премиальная система управления заявками</p>
                     </div>
 
-                    <form id="loginForm" class="auth-form">
+                    <form id="loginForm" class="auth-form" autocomplete="off">
                         <div class="form-group">
                             <label data-i18n="email">Email</label>
-                            <input type="email" id="loginEmail" placeholder="your@email.com" required>
+                            <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="username" required>
                         </div>
 
                         <div class="form-group">
                             <label data-i18n="password">Пароль</label>
-                            <input type="password" id="loginPassword" placeholder="••••••••" required>
+                            <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="new-password" required>
                         </div>
 
                         <button type="submit" class="btn btn-primary">
@@ -73,15 +73,15 @@
                         <p class="tagline" data-i18n="register_tagline">Создайте новый аккаунт</p>
                     </div>
 
-                    <form id="registerForm" class="auth-form">
+                    <form id="registerForm" class="auth-form" autocomplete="off">
                         <div class="form-group">
                             <label data-i18n="full_name">Полное имя</label>
-                            <input type="text" id="regName" placeholder="Иван Иванов">
+                            <input type="text" id="regName" placeholder="Иван Иванов" autocomplete="name">
                         </div>
 
                         <div class="form-group">
                             <label data-i18n="email">Email</label>
-                            <input type="email" id="regEmail" placeholder="your@email.com" required>
+                            <input type="email" id="regEmail" placeholder="your@email.com" autocomplete="email" required>
                         </div>
 
                         <div class="form-group">
@@ -103,6 +103,14 @@
 
         <!-- Main Dashboard Page (Refactored to Sidebar) -->
         <div class="page hidden" id="dashboardPage">
+            <!-- User Info Bar -->
+            <div id="topUserInfoBar" style="display:none;position:sticky;top:0;z-index:100;background:linear-gradient(135deg,rgba(10,10,26,0.95),rgba(20,20,45,0.95));backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,212,255,0.15);padding:0.5rem 1.5rem;display:flex;align-items:center;gap:1rem;">
+                <div id="topUserAvatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#00d4ff,#7c3aed);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;color:white;">?</div>
+                <div style="display:flex;flex-direction:column;">
+                    <span id="topUserName" style="font-weight:600;font-size:0.95rem;color:#f0f0f0;"></span>
+                    <span id="topUserRole" style="font-size:0.7rem;color:#00d4ff;text-transform:uppercase;letter-spacing:0.05em;"></span>
+                </div>
+            </div>
             <!-- Mobile Toggle Button -->
             <button class="mobile-toggle" id="mobileToggle" onclick="toggleMobileSidebar()">
                 <i class="fas fa-bars"></i>
@@ -136,7 +144,7 @@
                         </div>
                     </div>
                     <div class="sidebar-menu">
-                        <a href="#" class="side-link active" data-page="dashboard">
+                        <a href="#" class="side-link active" data-page="dashboard" onclick="Router.navigate('#/dashboard')">
                             <i class="fas fa-chart-line"></i> <span data-i18n="dashboard">Дашборд</span>
                         </a>
                         <a href="#" class="side-link" data-page="tickets">
@@ -146,9 +154,9 @@
                             <i class="fas fa-buildings"></i>
                             <span data-i18n="crm">Компании</span>
                         </a>
-                        <a href="#" class="side-link" data-page="kb">
-                            <i class="fas fa-book-open"></i>
-                            <span data-i18n="kb">База знаний</span>
+                        <a href="#" class="side-link" data-page="monitoring">
+                            <i class="fas fa-heartbeat"></i>
+                            <span data-i18n="monitoring_center">Мониторинг</span>
                         </a>
                         <a href="#" class="side-link" data-page="audit" id="auditNavLink">
                             <i class="fas fa-shield-halved"></i>
@@ -206,7 +214,7 @@
                             
                             <!-- Dashboard Stats Row (for app.js) -->
                             <div class="stats-grid" style="margin-bottom: 1.5rem;">
-                                <div class="glass-card stat-card" style="background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(124,58,237,0.1));">
+                                <div class="glass-card stat-card" style="cursor:pointer; background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(124,58,237,0.1));" onclick="navigateToTickets('all')">
                                     <div class="stat-icon" style="background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(124,58,237,0.2)); color: var(--jarvis-cyan);">
                                         <i class="fas fa-ticket-alt"></i>
                                     </div>
@@ -215,7 +223,7 @@
                                         <p>Всего тикетов</p>
                                     </div>
                                 </div>
-                                <div class="glass-card stat-card" style="background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.1));">
+                                <div class="glass-card stat-card" style="cursor:pointer; background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.1));" onclick="showView('users')">
                                     <div class="stat-icon" style="background: linear-gradient(135deg, rgba(16,185,129,0.3), rgba(5,150,105,0.2)); color: #34d399;">
                                         <i class="fas fa-users"></i>
                                     </div>
@@ -224,7 +232,7 @@
                                         <p>Активных пользователей</p>
                                     </div>
                                 </div>
-                                <div class="glass-card stat-card" style="background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.1));">
+                                <div class="glass-card stat-card" style="cursor:pointer; background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.1));" onclick="showView('audit')">
                                     <div class="stat-icon" style="background: linear-gradient(135deg, rgba(245,158,11,0.3), rgba(217,119,6,0.2)); color: #fbbf24;">
                                         <i class="fas fa-shield-check"></i>
                                     </div>
@@ -233,7 +241,7 @@
                                         <p>SLA выполнение</p>
                                     </div>
                                 </div>
-                                <div class="glass-card stat-card" style="background: linear-gradient(135deg, rgba(244,63,94,0.1), rgba(225,29,72,0.1));">
+                                <div class="glass-card stat-card" style="cursor:pointer; background: linear-gradient(135deg, rgba(244,63,94,0.1), rgba(225,29,72,0.1));" onclick="showView('audit')">
                                     <div class="stat-icon" style="background: linear-gradient(135deg, rgba(244,63,94,0.3), rgba(225,29,72,0.2)); color: #fb7185;">
                                         <i class="fas fa-clock"></i>
                                     </div>
@@ -267,13 +275,11 @@
                                         <p>На сегодня</p>
                                     </div>
                                 </div>
-                                <div class="glass-card stat-card" style="background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(124,58,237,0.1)); cursor: pointer;" onclick="showTimerWidget()">
-                                    <div class="stat-icon" style="background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(124,58,237,0.2)); color: var(--jarvis-cyan);">
-                                        <i class="fas fa-stopwatch"></i>
-                                    </div>
+                                <div class="glass-card stat-card" style="background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.1)); cursor: pointer;" onclick="filterMyTickets('open')">
+                                    <div class="stat-icon"><i class="fas fa-folder-open"></i></div>
                                     <div class="stat-content">
-                                        <h3 id="timerDisplayMini">00:00</h3>
-                                        <p>Таймер</p>
+                                        <h3 id="openTickets">0</h3>
+                                        <p>Открытые</p>
                                     </div>
                                 </div>
                             </div>
@@ -315,6 +321,14 @@
                                             <h3 data-i18n="ticket_statuses">Статусы заявок</h3>
                                             <canvas id="statusChart"></canvas>
                                         </div>
+                                        <div class="glass-card chart-card side-chart">
+                                            <h3>Приоритеты</h3>
+                                            <canvas id="priorityChart"></canvas>
+                                        </div>
+                                        <div class="glass-card chart-card side-chart">
+                                            <h3>Нагрузка по дням</h3>
+                                            <canvas id="weekdayChart"></canvas>
+                                        </div>
                                     </div>
                                     <div class="dashboard-tabs-section">
                                         <div class="tab-header">
@@ -344,16 +358,16 @@
                                         </div>
                                     </div>
 
-                                    <!-- Requester Rating -->
+                                    <!-- SLA Breach Timeline -->
                                     <div class="glass-card sidebar-card">
                                         <div class="sidebar-card-header">
-                                            <div class="sidebar-icon accent-violet">
-                                                <i class="fas fa-star"></i>
+                                            <div class="sidebar-icon accent-rose">
+                                                <i class="fas fa-exclamation-triangle"></i>
                                             </div>
-                                            <h3 data-i18n="requester_rating">Рейтинг заказчиков</h3>
+                                            <h3>Нарушения SLA</h3>
                                         </div>
-                                        <div id="requesterRatingList" class="sidebar-list">
-                                            <div class="loading" data-i18n="loading">Загрузка...</div>
+                                        <div id="slaBreachList" class="sidebar-list">
+                                            <div class="loading">Загрузка...</div>
                                         </div>
                                     </div>
 
@@ -575,45 +589,30 @@
                             </div>
                         </div>
 
-                        <!-- KB View -->
-                        <div class="view hidden" id="kbView">
-                            <div class="page-header">
-                                <h2 data-i18n="kb">База Знаний</h2>
-                                <div class="actions">
-                                    <button class="btn btn-primary" onclick="showNewKBArticle()" id="newArticleBtn">
-                                        <i class="fas fa-plus"></i> <span data-i18n="new_article">Новая статья</span>
+                        
+                        <!-- Monitoring Center View -->
+                        <div class="view hidden" id="monitoringView">
+                            <div class="page-header dynamic-header">
+                                <div>
+                                    <h2><i class="fas fa-heartbeat" style="color: var(--jarvis-cyan);"></i> <span data-i18n="monitoring_center">Центр мониторинга</span></h2>
+                                    <p data-i18n="monitoring_desc">Состояние систем и оборудования по организациям</p>
+                                </div>
+                                <div class="header-actions">
+                                    <button class="btn btn-primary" onclick="loadMonitoringData()">
+                                        <i class="fas fa-sync-alt"></i> <span data-i18n="refresh">Обновить</span>
                                     </button>
                                 </div>
                             </div>
 
-                            <div class="kb-container">
-                                <div class="glass-card kb-search-box">
-                                    <input type="text" id="kbSearch" placeholder="Поиск решений..."
-                                        oninput="searchKB()" data-i18n="search_kb" data-i18n-attr="placeholder">
-                                </div>
-
-                                <div class="kb-layout">
-                                    <aside class="kb-sidebar">
-                                        <h3 data-i18n="categories">Категории</h3>
-                                        <div id="kbCategoryList" class="kb-list">
-                                            <div class="loading" data-i18n="loading">Загрузка...</div>
-                                        </div>
-                                        <button class="btn btn-outline btn-small" onclick="showNewKBCategory()"
-                                            id="newCategoryBtn" style="margin-top: 1rem; width: 100%;" data-i18n="new_category">
-                                            <i class="fas fa-folder-plus"></i> Категория
-                                        </button>
-                                    </aside>
-
-                                    <main class="kb-main">
-                                        <div id="kbArticleList" class="kb-articles-grid">
-                                            <!-- Articles will be rendered here -->
-                                        </div>
-                                    </main>
+                            <div id="monitoringContainer" style="display:flex;flex-direction:column;gap:1.5rem;">
+                                <div style="text-align:center;padding:3rem;color:var(--text-muted);">
+                                    <i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--jarvis-cyan);"></i>
+                                    <p style="margin-top:1rem;">Загрузка данных мониторинга...</p>
                                 </div>
                             </div>
                         </div>
 
-                        <!--Tickets View -->
+<!--Tickets View -->
                         <div class="view hidden" id="ticketsView">
                             <!-- Quick Actions Bar -->
                             <div class="quick-actions-bar" id="quickActionsBar">
@@ -925,6 +924,14 @@
                             <input type="text" id="newCompanyName" placeholder="ООО «Компания»" required>
                         </div>
                         <div class="form-group">
+                            <label>Цвет организации</label>
+                            <div style="display:flex;align-items:center;gap:0.75rem;">
+                                <input type="color" id="newCompanyColor" value="#0066CC" style="width:48px;height:40px;border:none;border-radius:8px;cursor:pointer;background:transparent;padding:0;">
+                                <span id="newCompanyColorPreview" style="width:24px;height:24px;border-radius:50%;background:#0066CC;border:2px solid rgba(255,255,255,0.2);flex-shrink:0;"></span>
+                                <span style="font-size:0.85rem;color:var(--text-tertiary);">Будет отображаться в Telegram-уведомлениях</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label data-i18n="legal_name">Юридическое название</label>
                             <input type="text" id="newCompanyLegalName" placeholder="ООО «Компания» (полное)">
                         </div>
@@ -1008,6 +1015,14 @@
                             <input type="text" id="editCompanyName" required>
                         </div>
                         <div class="form-group">
+                            <label>Цвет организации</label>
+                            <div style="display:flex;align-items:center;gap:0.75rem;">
+                                <input type="color" id="editCompanyColor" value="#0066CC" style="width:48px;height:40px;border:none;border-radius:8px;cursor:pointer;background:transparent;padding:0;">
+                                <span id="editCompanyColorPreview" style="width:24px;height:24px;border-radius:50%;background:#0066CC;border:2px solid rgba(255,255,255,0.2);flex-shrink:0;"></span>
+                                <span style="font-size:0.85rem;color:var(--text-tertiary);">Будет отображаться в Telegram-уведомлениях</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
                             <label data-i18n="legal_name">Юридическое название</label>
                             <input type="text" id="editCompanyLegalName" placeholder="ООО «Компания» (полное)">
                         </div>
@@ -1065,6 +1080,25 @@
                             <label data-i18n="description">Описание</label>
                             <textarea id="editCompanyDescription" rows="3" placeholder="Краткое описание..."></textarea>
                         </div>
+
+                        <h4 style="color: var(--text-med); margin: 1rem 0 0.5rem; font-size: 0.85rem;">Логотип</h4>
+                        <div class="form-group">
+                            <div id="editLogoPreview" style="display:none;margin-bottom:8px;">
+                                <img id="editLogoImg" src="" alt="logo" style="max-width:120px;max-height:120px;border-radius:10px;border:2px solid rgba(255,255,255,0.1);">
+                            </div>
+                            <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                                <label class="btn btn-secondary" style="cursor:pointer;padding:0.5rem 1rem;border-radius:8px;font-size:0.85rem;">
+                                    <i class="fas fa-upload"></i> Загрузить файл
+                                    <input type="file" id="editCompanyLogoFile" accept="image/png,image/jpeg,image/gif,image/svg+xml,image/webp" style="display:none;">
+                                </label>
+                                <span style="font-size:0.85rem;color:var(--text-tertiary);">PNG, JPG, GIF, SVG, WebP</span>
+                            </div>
+                            <div style="margin-top:8px;">
+                                <label style="font-size:0.8rem;color:var(--text-tertiary);">Или ссылка на логотип</label>
+                                <input type="text" id="editCompanyLogoUrl" placeholder="https://example.com/logo.png" style="margin-top:4px;">
+                            </div>
+                        </div>
+
                         <div class="modal-footer">
                             <button type="button" class="btn btn-danger" onclick="confirmDeleteCompany()">
                                 <i class="fas fa-trash"></i> <span data-i18n="delete">Удалить</span>
@@ -1241,7 +1275,7 @@
         </div>
 
         <!-- Assign Agent Modal -->
-        <div id="assignModal" class="modal hidden">
+        <div id="assignModal" class="modal hidden" style="z-index:9500;">
             <div class="modal-content glass-card" style="max-width:400px;">
                 <div class="modal-header">
                     <h2>Назначить исполнителя</h2>
@@ -1338,11 +1372,22 @@
                                 <label>Дедлайн (SLA)</label>
                                 <div id="modalSlaDeadline" class="sla-deadline"></div>
                             </div>
+                            <div class="info-group">
+                                <label>Исполнитель</label>
+                                <div id="modalAssignee" style="font-size:0.85rem;">—</div>
+                            </div>
                             
                             <div class="info-group" id="agentActions">
                                 <label>Действия агента</label>
                                 <button class="btn btn-success" id="btnResolveTicket" onclick="resolveTicket()" style="width: 100%; margin-bottom: 0.5rem;">
                                     <i class="fas fa-check-double"></i> Завершить работу и уведомить клиента
+                                </button>
+                            </div>
+
+                            <div class="info-group hidden" id="adminActions">
+                                <label>Управление</label>
+                                <button class="btn btn-danger" id="btnDeleteTicket" onclick="deleteTicket()" style="width:100%;margin-bottom:0.5rem;">
+                                    <i class="fas fa-trash"></i> Удалить заявку
                                 </button>
                             </div>
 
@@ -1352,9 +1397,10 @@
                                     id="btnRateTicket">
                                     <i class="far fa-star"></i> Оценить сервис
                                 </button>
-                                <div id="ticketRatingDisplay" class="hidden">
-                                    <!-- Stars will be inserted here if already rated -->
-                                </div>
+                                <div id="ticketRatingDisplay" class="hidden"></div>
+                            </div>
+                            <div class="info-group hidden" id="clientCloseSection">
+                            </div>
                             </div>
 
                             <hr class="modal-divider">
@@ -1365,7 +1411,7 @@
                                 <div id="modalTimeList" class="time-log-list"></div>
 
                                 <form id="logTimeForm" class="compact-form">
-                                    <input type="number" id="logMinutes" placeholder="Минуты" required min="1">
+                                    <input type="number" id="logMinutes" placeholder="Минуты" min="0">
                                     <input type="text" id="logDesc" placeholder="Что сделано?">
                                     <button type="submit" class="btn btn-small btn-primary">ОК</button>
                                 </form>
@@ -1730,12 +1776,16 @@
             </div>
         </div>
 
-        <script src="js/api.js?v=3.2.6"></script>
-        <script src="js/features-api.js?v=3.2.6"></script>
-        <script src="js/i18n.js?v=3.2.6"></script>
-        <script src="js/app.js?v=3.2.6"></script>
-        <script src="js/features-simple.js?v=3.2.6"></script>
-        <script src="js/features-agent.js?v=3.2.6"></script>
+        <script src="js/ui_manager.js?v=2"></script>
+        <script src="js/api.js?v=3.3.1"></script>
+        <script src="js/features-api.js?v=3.3.1"></script>
+        <script src="js/i18n.js?v=3.5.6"></script>
+        <script src="js/app.js?v=3.5.6"></script>
+        <script src="js/features-simple.js?v=3.3.1"></script>
+        <script src="js/features-agent.js?v=3.5.6"></script>
+        <script src="js/dashboard.js"></script>
+        <script src="js/monitoring.js?v=2"></script>
+        <script src="js/dashboard_settings.js"></script>
 </body>
 
 </html>

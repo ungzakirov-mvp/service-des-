@@ -108,20 +108,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 const originalText = this.elements.exportBtn.innerHTML;
                 this.elements.exportBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Экспорт...';
 
-                // Fetch recent tickets for export
-                const tickets = await api.getTickets({ limit: 500 });
-
-                let csv = 'ID,Title,Status,Priority,CreatedAt\n';
-                tickets.forEach(t => {
-                    const status = t.status ? t.status.name : (t.status_name || t.status_id);
-                    csv += `${t.readable_id},"${t.title.replace(/"/g, '""')}",${status},${t.priority},${t.created_at}\n`;
+                const token = localStorage.getItem('access_token');
+                const response = await fetch('/api/tickets/export/csv', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
 
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                if (!response.ok) {
+                    throw new Error('Ошибка сервера: ' + response.status);
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
+                link.href = url;
                 link.download = `service_desk_export_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(link);
                 link.click();
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }, 1000);
 
                 this.elements.exportBtn.innerHTML = originalText;
                 this.elements.exportBtn.disabled = false;

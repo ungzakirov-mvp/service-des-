@@ -31,6 +31,7 @@ class CompanyBase(BaseModel):
     domain: Optional[str] = None
     industry: Optional[str] = None
     description: Optional[str] = None
+    color: Optional[str] = None
 
 class CompanyCreate(CompanyBase):
     pass
@@ -47,6 +48,7 @@ class CompanyUpdate(BaseModel):
     domain: Optional[str] = None
     industry: Optional[str] = None
     description: Optional[str] = None
+    color: Optional[str] = None
 
 class CompanyResponse(CompanyBase):
     id: int
@@ -160,12 +162,14 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
     company_id: Optional[int] = None
+    anudesk_email: Optional[str] = None
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     password: Optional[str] = None
     company_id: Optional[int] = None
     role: Optional[UserRole] = None
+    anudesk_email: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -176,13 +180,14 @@ class UserResponse(UserBase):
     tenant_id: Optional[int]
     avatar_url: Optional[str] = None
     company_id: Optional[int] = None
+    anudesk_email: Optional[str] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
 
 class UserAdminResponse(UserResponse):
-    plain_password: Optional[str] = None
+    # plain_password removed from responses for security
     company: Optional[CompanyResponse] = None
 
 class Token(BaseModel):
@@ -442,6 +447,12 @@ class AnalyticsResponse(BaseModel):
     upcoming_deadlines: List[TaskDeadline]
     total_tickets: int
     active_users: int
+    priority_distribution: List[StatusDistribution] = []
+    critical_count: int = 0
+    overdue_count: int = 0
+    today_count: int = 0
+    open_count: int = 0
+    overdue_tickets: List[TaskDeadline] = []
 
 
 # ============================================================================
@@ -648,50 +659,105 @@ class BusinessHoursResponse(BusinessHoursBase):
 
 
 # ============================================================================
-# CUSTOMER ASSETS
+# IT ASSETS (полный учёт оборудования)
 # ============================================================================
+class AssetSpecifications(BaseModel):
+    cpu: Optional[str] = None
+    ram: Optional[str] = None
+    disk: Optional[str] = None
+    gpu: Optional[str] = None
+    os: Optional[str] = None
+    ip_address: Optional[str] = None
+    mac_address: Optional[str] = None
+
 class CustomerAssetBase(BaseModel):
-    asset_type: str  # computer, server, printer, network
     name: str
+    asset_type: str = "other"               # laptop, desktop, server, printer, network, monitor, phone, tablet, other
+    manufacturer: Optional[str] = None
     model: Optional[str] = None
     serial_number: Optional[str] = None
+    inventory_number: Optional[str] = None
     specifications: Dict[str, Any] = {}
+    condition: str = "good"                  # new, excellent, good, fair, poor, damaged, broken
+    status: str = "active"                   # active, in_repair, in_storage, decommissioned, lost
+    purchase_date: Optional[datetime] = None
+    purchase_cost: Optional[str] = None
+    warranty_end: Optional[datetime] = None
+    supplier: Optional[str] = None
+    location: Optional[str] = None
     remote_access_id: Optional[str] = None
     remote_access_password: Optional[str] = None
-    purchase_date: Optional[datetime] = None
-    warranty_end: Optional[datetime] = None
-    status: str = "active"
     assigned_to: Optional[int] = None
-    location: Optional[str] = None
     notes: Optional[str] = None
 
 class CustomerAssetCreate(CustomerAssetBase):
     company_id: int
 
 class CustomerAssetUpdate(BaseModel):
-    asset_type: Optional[str] = None
     name: Optional[str] = None
+    asset_type: Optional[str] = None
+    manufacturer: Optional[str] = None
     model: Optional[str] = None
     serial_number: Optional[str] = None
+    inventory_number: Optional[str] = None
     specifications: Optional[Dict[str, Any]] = None
+    condition: Optional[str] = None
+    status: Optional[str] = None
+    purchase_date: Optional[datetime] = None
+    purchase_cost: Optional[str] = None
+    warranty_end: Optional[datetime] = None
+    supplier: Optional[str] = None
+    location: Optional[str] = None
     remote_access_id: Optional[str] = None
     remote_access_password: Optional[str] = None
-    purchase_date: Optional[datetime] = None
-    warranty_end: Optional[datetime] = None
-    status: Optional[str] = None
     assigned_to: Optional[int] = None
-    location: Optional[str] = None
     notes: Optional[str] = None
 
 class CustomerAssetResponse(CustomerAssetBase):
     id: int
+    readable_id: Optional[str] = None
     company_id: int
     company_name: Optional[str] = None
     assigned_user_name: Optional[str] = None
+    assigned_at: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     ticket_count: int = 0
-    
+
+    class Config:
+        from_attributes = True
+
+class AssetAssignmentResponse(BaseModel):
+    id: int
+    asset_id: int
+    user_id: int
+    user_name: Optional[str] = None
+    assigned_by_name: Optional[str] = None
+    assigned_at: datetime
+    returned_at: Optional[datetime] = None
+    return_condition: Optional[str] = None
+    reason: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class AssetMovementResponse(BaseModel):
+    id: int
+    asset_id: int
+    from_location: Optional[str] = None
+    to_location: str
+    moved_at: datetime
+    moved_by_name: Optional[str] = None
+    reason: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class AssetDetailResponse(CustomerAssetResponse):
+    """Полная информация об активе с историей"""
+    assignments: List[AssetAssignmentResponse] = []
+    movements: List[AssetMovementResponse] = []
+
     class Config:
         from_attributes = True
 

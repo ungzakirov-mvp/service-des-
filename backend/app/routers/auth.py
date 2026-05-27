@@ -33,7 +33,9 @@ def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
         password=hash_password(user_data.password),
         full_name=user_data.full_name,
         tenant_id=tenant.id,
-        role=user_data.role # По умолчанию CLIENT
+        role=user_data.role, # По умолчанию CLIENT
+        company_id=user_data.company_id,
+        anudesk_email=user_data.anudesk_email
     )
     
     db.add(new_user)

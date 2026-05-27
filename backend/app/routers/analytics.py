@@ -120,6 +120,27 @@ def get_advanced_analytics(
     total_tickets = db.query(Ticket).filter(Ticket.tenant_id == tenant_id).count()
     active_users = db.query(User).filter(User.tenant_id == tenant_id).count()
 
+    # Priority distribution
+    from app.models import TicketPriority
+    priority_colors = {TicketPriority.CRITICAL: '#ef4444', TicketPriority.HIGH: '#f59e0b', TicketPriority.MEDIUM: '#3b82f6', TicketPriority.LOW: '#10b981'}
+    priority_distribution = []
+    for p in [TicketPriority.CRITICAL, TicketPriority.HIGH, TicketPriority.MEDIUM, TicketPriority.LOW]:
+        count = db.query(Ticket).filter(Ticket.tenant_id == tenant_id, Ticket.priority == p).count()
+        priority_distribution.append(schemas.StatusDistribution(status_name=p, count=count, color=priority_colors.get(p, '#71717a')))
+    critical_count = db.query(Ticket).filter(Ticket.tenant_id == tenant_id, Ticket.priority == TicketPriority.CRITICAL, Ticket.status_id.notin_(resolved_status_ids)).count()
+    today_count = db.query(Ticket).filter(Ticket.tenant_id == tenant_id, func.date(Ticket.created_at) == func.date('now')).count()
+    open_count = db.query(Ticket).filter(Ticket.tenant_id == tenant_id, Ticket.status_id.notin_(resolved_status_ids)).count()
+
+    # Overdue tickets
+    now = datetime.now()
+    overdue_tickets = db.query(Ticket).filter(
+        Ticket.tenant_id == tenant_id,
+        Ticket.sla_due_at != None,
+        Ticket.sla_due_at < now,
+        Ticket.status_id.notin_(resolved_status_ids)
+    ).order_by(Ticket.sla_due_at.asc()).all()
+    overdue_count = len(overdue_tickets)
+
     return schemas.AnalyticsResponse(
         volume_trends=volume_trends,
         agent_performance=agent_performance,
@@ -127,5 +148,11 @@ def get_advanced_analytics(
         status_distribution=status_distribution,
         upcoming_deadlines=upcoming_deadlines,
         total_tickets=total_tickets,
-        active_users=active_users
+        active_users=active_users,
+        priority_distribution=priority_distribution,
+        critical_count=critical_count,
+        overdue_count=overdue_count,
+        today_count=today_count,
+        open_count=open_count,
+        overdue_tickets=[schemas.TaskDeadline(ticket_id=t.id, title=t.title, due_at=t.sla_due_at, status_name=t.status_rel.name if t.status_rel else '', priority=t.priority) for t in overdue_tickets]
     )

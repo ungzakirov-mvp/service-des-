@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, Query, BackgroundTasks, HTTPException, status
+from fastapi import APIRouter, Depends, Query, BackgroundTasks, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
 from typing import Optional, List
 from app.database import get_db
-from app.models import Ticket, User, TicketStatus, TicketTimeline, TimelineEventType, TicketPriority, UserRole, Attachment, Notification
+from app.models import Ticket, User, Company, TicketStatus, TicketTimeline, TimelineEventType, TicketPriority, UserRole, Attachment, Notification
 from app.dependencies import get_current_user
 from app.exceptions import ticket_not_found, unauthorized
 from app.services.sla_service import SLAService
@@ -48,15 +48,11 @@ async def create_ticket(
     # Calculate SLA due date using SLAService
     sla_due = SLAService.calculate_due_date(db, current_user.tenant_id, ticket_in.priority)
 
-    # 2.2 Auto-routing (Find best agent)
-    assigned_agent_id = find_best_agent(db, current_user.tenant_id)
+    # 2.2 Do NOT auto-assign — agents pick up via "Accept" button in Telegram bot
+    assigned_agent_id = ticket_in.assigned_to
 
     # 2.3 CRM: Auto-link to company if not provided
     company_id = ticket_in.company_id or current_user.company_id
-
-    # Override agent if explicitly assigned
-    if ticket_in.assigned_to:
-        assigned_agent_id = ticket_in.assigned_to
 
     # 3. Create Ticket
     new_ticket = Ticket(
@@ -100,13 +96,24 @@ async def create_ticket(
     
     # 5.1 Notify assigned agent via Telegram
     if assigned_agent_id:
+        company_name = None
+        company_color = None
+        if new_ticket.company_id:
+            company = db.query(Company).filter(Company.id == new_ticket.company_id).first()
+            if company:
+                company_name = company.name
+                company_color = company.color or "#0066CC"
         background_tasks.add_task(
             notify_agent_new_ticket,
             agent_id=assigned_agent_id,
             ticket_id=new_ticket.id,
             readable_id=next_readable_id,
             title=new_ticket.title,
-            client_name=current_user.full_name or current_user.email
+            client_name=current_user.full_name or current_user.email,
+            priority=new_ticket.priority,
+            description=new_ticket.description,
+            company_name=company_name,
+            company_color=company_color
         )
     
     # 6. Process Automations (Async)
@@ -157,7 +164,7 @@ def list_tickets(
         query = query.filter(Ticket.priority == priority)
         
     # User can only see their own tickets unless Agent/Admin
-    if current_user.role == "client": # Assuming string check or UserRole enum
+    if current_user.role == UserRole.CLIENT:
         query = query.filter(Ticket.created_by == current_user.id)
         
     tickets = query.order_by(desc(Ticket.created_at)).offset(skip).limit(limit).all()
@@ -177,7 +184,7 @@ def get_ticket(
     if not ticket:
         raise ticket_not_found()
         
-    if current_user.role == "client" and ticket.created_by != current_user.id:
+    if current_user.role == UserRole.CLIENT and ticket.created_by != current_user.id:
         raise unauthorized()
         
     return ticket
@@ -196,6 +203,10 @@ async def update_ticket(
     
     if not ticket:
         raise ticket_not_found()
+
+    # Client access check: clients can only update their own tickets
+    if current_user.role == UserRole.CLIENT and ticket.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Нет прав на редактирование этого тикета")
 
     # Track changes for timeline
     changes = []
@@ -245,6 +256,7 @@ async def update_ticket(
 
     db.commit()
     db.refresh(ticket)
+    await manager.broadcast_to_tenant({"type": "REFRESH_TICKETS","ticket_id": ticket.id,"message": f"Тикет #{ticket.id} принят агентом"}, tenant_id=ticket.tenant_id)
     
     # Log timeline if significantly changed
     if changes:
@@ -300,7 +312,7 @@ def get_ticket_timeline(
 
     # Allow access if creator, or agent/admin
     # Simplified check for now:
-    if current_user.role == "client" and ticket.created_by != current_user.id:
+    if current_user.role == UserRole.CLIENT and ticket.created_by != current_user.id:
         raise unauthorized()
 
     events = db.query(TicketTimeline).filter(
@@ -333,7 +345,15 @@ async def rate_ticket(
     if not ticket.status_rel.is_final and ticket.status_rel.name.lower() not in ['решён', 'закрыт', 'resolved', 'closed']:
          raise HTTPException(status_code=400, detail="Ticket must be resolved to rate")
 
-    ticket.rating = rating.rating
+    from app.models import TicketRating
+    existing_rating = db.query(TicketRating).filter(TicketRating.ticket_id == ticket.id).first()
+    if existing_rating:
+        existing_rating.rating = rating.rating
+    else:
+        db.add(TicketRating(tenant_id=ticket.tenant_id, ticket_id=ticket.id, rating=rating.rating))
+    from sqlalchemy import update as sql_update
+    db.execute(sql_update(Ticket).where(Ticket.id == ticket.id).values(rating=rating.rating))
+    db.flush()
     ticket.rating_comment = rating.comment
     
     # Log to timeline
@@ -346,6 +366,7 @@ async def rate_ticket(
     db.add(timeline_event)
     db.commit()
     db.refresh(ticket)
+    await manager.broadcast_to_tenant({"type": "REFRESH_TICKETS","ticket_id": ticket.id,"message": f"Тикет #{ticket.id} принят агентом"}, tenant_id=ticket.tenant_id)
     
     return ticket
 
@@ -367,6 +388,7 @@ async def accept_ticket(ticket_id: int, current_user: User = Depends(get_current
     db.add(TicketTimeline(ticket_id=ticket.id, user_id=current_user.id, event_type="STATUS_CHANGE", content="Агент принял тикет"))
     db.commit()
     db.refresh(ticket)
+    await manager.broadcast_to_tenant({"type": "REFRESH_TICKETS","ticket_id": ticket.id,"message": f"Тикет #{ticket.id} принят агентом"}, tenant_id=ticket.tenant_id)
     return ticket
 
 @router.post("/{ticket_id}/resolve", response_model=schemas.TicketResponse)
@@ -425,6 +447,7 @@ async def resolve_ticket(
     
     db.commit()
     db.refresh(ticket)
+    await manager.broadcast_to_tenant({"type": "REFRESH_TICKETS","ticket_id": ticket.id,"message": f"Тикет #{ticket.id} принят агентом"}, tenant_id=ticket.tenant_id)
     
     # Broadcast update
     await manager.broadcast_to_tenant({
@@ -480,6 +503,7 @@ async def close_ticket(ticket_id: int, current_user: User = Depends(get_current_
     
     db.commit()
     db.refresh(ticket)
+    await manager.broadcast_to_tenant({"type": "REFRESH_TICKETS","ticket_id": ticket.id,"message": f"Тикет #{ticket.id} принят агентом"}, tenant_id=ticket.tenant_id)
     
     # Broadcast
     await manager.broadcast_to_tenant({
@@ -538,6 +562,7 @@ async def reopen_ticket(
     
     db.commit()
     db.refresh(ticket)
+    await manager.broadcast_to_tenant({"type": "REFRESH_TICKETS","ticket_id": ticket.id,"message": f"Тикет #{ticket.id} принят агентом"}, tenant_id=ticket.tenant_id)
     
     # Broadcast
     await manager.broadcast_to_tenant({
@@ -565,7 +590,28 @@ async def assign_ticket(ticket_id: int, agent_id: int, current_user: User = Depe
         extra_metadata={"old_assignee": old_assignee, "new_assignee": agent_id}))
     db.commit()
     db.refresh(ticket)
+    await manager.broadcast_to_tenant({"type": "REFRESH_TICKETS","ticket_id": ticket.id,"message": f"Тикет #{ticket.id} принят агентом"}, tenant_id=ticket.tenant_id)
     return ticket
+
+@router.delete("/{ticket_id}", status_code=204)
+def delete_ticket(ticket_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Удаление заявки (только ADMIN / SUPER_ADMIN)"""
+    if current_user.role not in [UserRole.ADMIN, UserRole.SUPER_ADMIN]:
+        raise HTTPException(status_code=403, detail="Только администраторы могут удалять заявки")
+
+    ticket = db.query(Ticket).filter(
+        Ticket.id == ticket_id,
+        Ticket.tenant_id == current_user.tenant_id
+    ).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Тикет не найден")
+
+    # Cleanup related data
+    db.query(TicketTimeline).filter(TicketTimeline.ticket_id == ticket_id).delete()
+    db.query(Attachment).filter(Attachment.ticket_id == ticket_id).delete()
+    db.delete(ticket)
+    db.commit()
+    return None
 
 @router.get("/stats/agents", response_model=List[schemas.AgentPerformance])
 def get_agent_stats(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -597,9 +643,72 @@ def get_ticket_attachments(
     if not ticket:
         raise HTTPException(status_code=404, detail="Тикет не найден")
     
+    # Client access check
+    if current_user.role == UserRole.CLIENT and ticket.created_by != current_user.id:
+        raise HTTPException(status_code=403, detail="Нет прав на просмотр этого тикета")
+    
     attachments = db.query(Attachment).filter(
         Attachment.ticket_id == ticket_id,
         Attachment.tenant_id == current_user.tenant_id
     ).all()
     
     return attachments
+
+@router.get("/export/csv", response_class=Response)
+def export_tickets_csv(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Экспорт тикетов в CSV (UTF-8 с BOM)"""
+    from io import StringIO
+    import csv as csv_module
+    
+    query = db.query(Ticket).filter(
+        Ticket.tenant_id == current_user.tenant_id
+    )
+
+    if current_user.role == UserRole.CLIENT:
+        query = query.filter(Ticket.created_by == current_user.id)
+
+    tickets = query.order_by(desc(Ticket.created_at)).all()
+    
+    output = StringIO()
+    output.write('\uFEFF')  # BOM
+    writer = csv_module.writer(output, delimiter=';', quoting=csv_module.QUOTE_ALL)
+    
+    # Header
+    writer.writerow(['ID', 'Заголовок', 'Описание', 'Статус', 'Приоритет', 
+                     'Заявитель', 'Исполнитель', 'Компания', 'SLA', 'Создан'])
+    
+    for t in tickets:
+        status = t.status_rel.name if t.status_rel else str(t.status_id)
+        creator = t.creator.full_name if t.creator else (t.creator.email if t.creator else '-')
+        assignee = t.assignee.full_name if t.assignee else (t.assignee.email if t.assignee else '-')
+        company = t.company.name if t.company else '-'
+        sla = t.sla_due_at.strftime('%Y-%m-%d %H:%M') if t.sla_due_at else '-'
+        created = t.created_at.strftime('%Y-%m-%d %H:%M') if t.created_at else '-'
+        
+        writer.writerow([
+            t.readable_id,
+            t.title or '',
+            (t.description or '').replace('\n', ' ').replace('\r', ''),
+            status,
+            t.priority,
+            creator,
+            assignee,
+            company,
+            sla,
+            created
+        ])
+    
+    csv_content = output.getvalue()
+    
+    return Response(
+        content=csv_content.encode('utf-8'),
+        media_type='text/csv',
+        headers={
+            'Content-Disposition': f'attachment; filename="tickets_export.csv"',
+            'Content-Type': 'text/csv; charset=utf-8'
+        }
+    )
+

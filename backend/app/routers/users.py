@@ -66,7 +66,8 @@ def create_user(
         tenant_id=current_user.tenant_id,
         role=user_in.role or UserRole.CLIENT,
         company_id=user_in.company_id,
-        plain_password=user_in.password
+        anudesk_email=user_in.anudesk_email,
+# SECURITY: plain_password excluded from response: plain_password=user_in.password
     )
     
     # Quick fix: The user request implies creating user FOR an organization.
@@ -93,8 +94,11 @@ def update_me(
     
     if update_data.password:
         current_user.password = hash_password(update_data.password)
-        current_user.plain_password = update_data.password
-        
+# SECURITY: plain_password excluded from response: current_user.plain_password = update_data.password
+
+    if update_data.anudesk_email is not None:
+        current_user.anudesk_email = update_data.anudesk_email
+
     db.commit()
     db.refresh(current_user)
     return current_user
@@ -120,7 +124,7 @@ def update_user_admin(
     for field, value in update_dict.items():
         if field == 'password' and value:
             setattr(user, 'password', hash_password(value))
-            setattr(user, 'plain_password', value)
+# SECURITY: plain_password excluded from response: setattr(user, 'plain_password', value)
         else:
             setattr(user, field, value)
 

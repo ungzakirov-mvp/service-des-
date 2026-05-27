@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models import Ticket, User, TicketStatus, TicketPriority, UserRole, Company, TicketTimeline
 from app.dependencies import get_current_user
 from app import schemas
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response
 import csv
 import io
 
@@ -356,17 +356,18 @@ def export_report(
         report = get_tickets_report(period, current_user, db)
     
     output = io.StringIO()
+    output.write('\uFEFF')  # UTF-8 BOM
+    
     if report.data:
         headers = list(report.data[0].keys())
         writer = csv.DictWriter(output, fieldnames=headers)
         writer.writeheader()
         writer.writerows(report.data)
     
-    output.seek(0)
     filename = f"report_{report_type}_{period}_{datetime.now().strftime('%Y%m%d')}.csv"
     
-    return StreamingResponse(
-        iter([output.getvalue()]),
-        media_type="text/csv",
+    return Response(
+        content=output.getvalue().encode('utf-8'),
+        media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
