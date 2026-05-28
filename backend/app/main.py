@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.routers import auth, tickets, comments, notifications, webhooks, analytics, users, crm, timetracking, audit, features, reports, assets, company_dashboard, monitoring, dashboard_hud, dashboard_v2, organizations, tariffs
 from app.config import settings
-from app.logger import log_request, setup_logging
+from app.logger import log_request, setup_logging, logger
 from app.services.websocket_manager import manager
 from app.database import engine, Base
 from jose import jwt
@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
         # Register tariff models so tables are created
         import app.models_tariffs  # noqa: F401
         Base.metadata.create_all(bind=engine)
-        print("Database tables initialized.")
+        logger.info("database_initialized")
         
         # Add missing columns for existing databases
         from sqlalchemy import inspect, text
@@ -85,7 +85,7 @@ async def lifespan(app: FastAPI):
                         print(f"Added '{col_name}' column to time_entries")
                 conn.commit()
     except Exception as e:
-        print(f"Database initialization error: {e}")
+        logger.error("database_init_error", error=str(e))
         
     # Start Telegram bot polling as task
     from app.telegram_bot import start_polling
@@ -106,8 +106,8 @@ app = FastAPI(
     title=settings.APP_NAME,
     description="Production-ready Service Desk / Help Desk backend",
     version="2.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if settings.DEBUG else None,
+    redoc_url="/redoc" if settings.DEBUG else None,
     lifespan=lifespan
 )
 
@@ -235,5 +235,5 @@ async def websocket_endpoint(websocket: WebSocket, token: str):
             manager.disconnect(websocket, tenant_id, user_id)
             
     except Exception as e:
-        print(f"WS Auth Error: {e}")
+        logger.error("websocket_auth_error", error=str(e))
         await websocket.close(code=1008)

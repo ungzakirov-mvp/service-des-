@@ -32,7 +32,7 @@ def process_inbound_email(
     user = db.query(User).filter(User.email == email_from).first()
     if not user:
         # Create new Client
-        password = "change_me_123" # Should send reset link email in real world
+        password = os.environ.get("EMAIL_AUTO_CREATE_PASSWORD", "")
         user = User(
             email=email_from,
             password=hash_password(password),

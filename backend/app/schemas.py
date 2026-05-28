@@ -384,29 +384,6 @@ class SLAPolicyResponse(SLAPolicyBase):
     class Config:
         from_attributes = True
 
-# --- Time Tracking ---
-class TimeEntryBase(BaseModel):
-    ticket_id: int
-    minutes: int
-    description: Optional[str] = None
-
-class TimeEntryCreate(TimeEntryBase):
-    pass
-
-class TimeEntryResponse(TimeEntryBase):
-    id: int
-    user_id: int
-    created_at: datetime
-    
-    # Nested user for response
-    user: Optional[UserResponse] = None
-
-    class Config:
-        from_attributes = True
-
-    class Config:
-        from_attributes = True
-
 # --- Knowledge Base ---
 class KBCategoryBase(BaseModel):
     name: str

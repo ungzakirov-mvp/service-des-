@@ -246,7 +246,7 @@ class Ticket(Base):
     time_entries = relationship("TimeEntry", back_populates="ticket", cascade="all, delete-orphan")
     checklists = relationship("TicketChecklist", back_populates="ticket", cascade="all, delete-orphan", order_by="TicketChecklist.order")
     internal_notes = relationship("InternalNote", back_populates="ticket", cascade="all, delete-orphan", order_by="InternalNote.created_at.desc()")
-    rating = relationship("TicketRating", back_populates="ticket", uselist=False)
+    ticket_rating = relationship("TicketRating", back_populates="ticket", uselist=False)
     assets = relationship("CustomerAsset", secondary="ticket_assets", back_populates="tickets")
 
 class Attachment(Base):
@@ -396,7 +396,7 @@ class TicketRating(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     tenant = relationship("Tenant")
-    ticket = relationship("Ticket", back_populates="rating")
+    ticket = relationship("Ticket", back_populates="ticket_rating")
 
 class InternalNote(Base):
     """Приватные заметки видные только агентам"""

@@ -124,7 +124,7 @@ def run_migration():
             "full_name VARCHAR, "
             "role VARCHAR DEFAULT 'client', "
             "company_id INTEGER, "
-            "plain_password VARCHAR, "
+            "
             "avatar_url VARCHAR, "
             "is_available BOOLEAN DEFAULT 1, "
             "telegram_chat_id VARCHAR, "
@@ -459,7 +459,7 @@ def run_migration():
     # Users
     if 'users' in existing_tables:
         for col, ctype in [('anudesk_email', 'VARCHAR'), ('is_available', "BOOLEAN DEFAULT 1"),
-                          ('telegram_chat_id', 'VARCHAR'), ('plain_password', 'VARCHAR'),
+                          ('telegram_chat_id', 'VARCHAR'),
                           ('avatar_url', 'VARCHAR'), ('updated_at', 'TIMESTAMP WITH TIME ZONE')]:
             safe_add_column(cursor, 'users', col, ctype)
     

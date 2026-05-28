@@ -13,7 +13,10 @@ from app.security import verify_token
 
 router = APIRouter(tags=["monitoring"])
 
-API_KEY = os.environ.get("MONITORING_API_KEY", "sk-servicedesk-monitor-2026")
+API_KEY = os.environ.get("MONITORING_API_KEY", "")
+if not API_KEY:
+    import warnings
+    warnings.warn("MONITORING_API_KEY not set - monitoring API key auth disabled")
 
 # Optional OAuth2 scheme that doesn't auto-raise 401
 oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
