@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, JSON
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, JSON, Time
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -36,6 +36,16 @@ class Tenant(Base):
     name = Column(String, nullable=False)
     slug = Column(String, unique=True, index=True, nullable=False)  # subdomain or unique id
     domain = Column(String, nullable=True)  # Custom domain
+    timezone = Column(String, default="Asia/Tashkent")
+    default_language = Column(String, default="ru")
+    business_hours_start = Column(String, default="09:00")
+    business_hours_end = Column(String, default="18:00")
+    business_days = Column(JSON, default=[1, 2, 3, 4, 5])  # Mon-Fri
+    sla_p1_minutes = Column(Integer, default=60)
+    sla_p2_minutes = Column(Integer, default=240)
+    sla_p3_minutes = Column(Integer, default=1440)
+    sla_p4_minutes = Column(Integer, default=4320)
+    max_tickets_per_agent = Column(Integer, default=20)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     is_active = Column(Boolean, default=True)
     settings = Column(JSON, default={})  # Theme, logo, usage limits
@@ -125,9 +135,10 @@ class User(Base):
     full_name = Column(String, nullable=True)
     role = Column(String, default=UserRole.CLIENT)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
-    plain_password = Column(String, nullable=True) # For admin visibility as per request
+    is_active = Column(Boolean, default=True)
     avatar_url = Column(String, nullable=True)
     is_available = Column(Boolean, default=True) # For Auto-routing
+    telegram_link_token = Column(String, nullable=True) # One-time token for Telegram linking
     telegram_chat_id = Column(String, nullable=True) # Link to TG User
     anudesk_email = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -148,6 +159,32 @@ class User(Base):
         back_populates="assignee"
     )
     timeline_events = relationship("TicketTimeline", back_populates="actor")
+
+class UserOrganization(Base):
+    __tablename__ = "user_organizations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
+    is_default = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    role_in_org = Column(String, default=UserRole.AGENT)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+    tenant = relationship("Tenant")
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token_hash = Column(String, unique=True, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    revoked = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
 
 class TicketStatus(Base):
     """Настраиваемые статусы для каждого тенанта"""
@@ -185,6 +222,7 @@ class Ticket(Base):
     sla_due_at = Column(DateTime(timezone=True), nullable=True)
     scheduled_at = Column(DateTime(timezone=True), nullable=True)
     accepted_at = Column(DateTime(timezone=True), nullable=True)
+    first_response_at = Column(DateTime(timezone=True), nullable=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
     resolved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     closed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -208,7 +246,7 @@ class Ticket(Base):
     time_entries = relationship("TimeEntry", back_populates="ticket", cascade="all, delete-orphan")
     checklists = relationship("TicketChecklist", back_populates="ticket", cascade="all, delete-orphan", order_by="TicketChecklist.order")
     internal_notes = relationship("InternalNote", back_populates="ticket", cascade="all, delete-orphan", order_by="InternalNote.created_at.desc()")
-    rating_rel = relationship("TicketRating", back_populates="ticket", uselist=False)
+    rating = relationship("TicketRating", back_populates="ticket", uselist=False)
     assets = relationship("CustomerAsset", secondary="ticket_assets", back_populates="tickets")
 
 class Attachment(Base):
@@ -358,7 +396,7 @@ class TicketRating(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     tenant = relationship("Tenant")
-    ticket = relationship("Ticket", back_populates="rating_rel")
+    ticket = relationship("Ticket", back_populates="rating")
 
 class InternalNote(Base):
     """Приватные заметки видные только агентам"""
@@ -430,40 +468,36 @@ class BusinessHours(Base):
     tenant = relationship("Tenant")
 
 class CustomerAsset(Base):
-    """IT оборудование клиентов (полный учёт)"""
+    """Учет оборудования клиентов (ПК, серверы, принтеры)"""
     __tablename__ = "customer_assets"
 
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    readable_id = Column(String, nullable=True, unique=True)
     
-    readable_id = Column(String, nullable=True)       # Авто: AST-0001
-    name = Column(String, nullable=False)            # "PC-001" / "Ноутбук Алексея"
-    asset_type = Column(String, nullable=False)      # laptop, desktop, server, printer, network, monitor, phone, tablet, other
-    manufacturer = Column(String, nullable=True)     # Dell, HP, Lenovo, Apple
-    model = Column(String, nullable=True)            # "OptiPlex 7090"
+    asset_type = Column(String, nullable=False)      # "computer", "server", "printer", "network"
+    name = Column(String, nullable=False)            # "PC-001"
+    model = Column(String, nullable=True)            # "Dell OptiPlex 7090"
     serial_number = Column(String, nullable=True)
-    inventory_number = Column(String, nullable=True) # Внутренний инвентарный номер
+    inventory_number = Column(String, nullable=True)
+    condition = Column(String, default="good")       # "new", "excellent", "good", "fair", "poor", "damaged", "broken"
     
-    specifications = Column(JSON, default={})        # {"cpu":"i7-12700","ram":"32GB","disk":"512GB SSD","gpu":"RTX3060","os":"Windows 11 Pro"}
-    condition = Column(String, default="good")       # new, excellent, good, fair, poor, damaged, broken
-    status = Column(String, default="active")        # active, in_repair, in_storage, decommissioned, lost
+    # Спецификации
+    specifications = Column(JSON, default={})        # {"cpu": "i7", "ram": "16GB", "disk": "512GB SSD"}
     
-    purchase_date = Column(DateTime(timezone=True), nullable=True)
-    purchase_cost = Column(String, nullable=True)    # Стоимость при покупке (текст: "1200 USD")
-    warranty_end = Column(DateTime(timezone=True), nullable=True)
-    supplier = Column(String, nullable=True)          # Поставщик
-    
-    location = Column(String, nullable=True)          # Текущее расположение: "Офис, этаж 3, каб. 305"
-    
-    # Удалённый доступ
-    remote_access_id = Column(String, nullable=True)
+    # Доступ
+    remote_access_id = Column(String, nullable=True) # TeamViewer ID
     remote_access_password = Column(String, nullable=True)
     
-    # Текущий ответственный
+    # Гарантия
+    purchase_date = Column(DateTime(timezone=True), nullable=True)
+    warranty_end = Column(DateTime(timezone=True), nullable=True)
+    
+    status = Column(String, default="active")        # "active", "repair", "retired"
     assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
     assigned_at = Column(DateTime(timezone=True), nullable=True)
-    
+    location = Column(String, nullable=True)          # "Офис, этаж 3, каб. 305"
     notes = Column(Text, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -471,76 +505,27 @@ class CustomerAsset(Base):
     
     tenant = relationship("Tenant")
     company = relationship("Company")
-    user = relationship("User", foreign_keys=[assigned_to])
+    user = relationship("User")
+
 
 class AssetAssignment(Base):
-    """История закрепления техники за сотрудниками"""
+    """История назначения оборудования сотрудникам"""
     __tablename__ = "asset_assignments"
 
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    asset_id = Column(Integer, ForeignKey("customer_assets.id"), nullable=False, index=True)
-    
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)      # Кому выдали
-    assigned_by = Column(Integer, ForeignKey("users.id"), nullable=True)   # Кто выдал
+    asset_id = Column(Integer, ForeignKey("customer_assets.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    assigned_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     assigned_at = Column(DateTime(timezone=True), server_default=func.now())
-    returned_at = Column(DateTime(timezone=True), nullable=True)           # Когда вернул
-    return_condition = Column(String, nullable=True)                       # Состояние при возврате
-    reason = Column(String, nullable=True)                                 # Причина выдачи
-    
-    asset = relationship("CustomerAsset", foreign_keys=[asset_id])
+    returned_at = Column(DateTime(timezone=True), nullable=True)
+    return_condition = Column(String, nullable=True)
+    reason = Column(String, nullable=True)
+
     user = relationship("User", foreign_keys=[user_id])
     assigner = relationship("User", foreign_keys=[assigned_by])
-
-class AssetMovement(Base):
-    """История перемещений техники"""
-    __tablename__ = "asset_movements"
-
-    id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    asset_id = Column(Integer, ForeignKey("customer_assets.id"), nullable=False, index=True)
-    
-    from_location = Column(String, nullable=True)     # Откуда
-    to_location = Column(String, nullable=False)      # Куда
-    moved_at = Column(DateTime(timezone=True), server_default=func.now())
-    moved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    reason = Column(String, nullable=True)            # Причина перемещения
-    
     asset = relationship("CustomerAsset", foreign_keys=[asset_id])
-    mover = relationship("User", foreign_keys=[moved_by])
 
-class KBCategory(Base):
-    __tablename__ = "kb_categories"
-
-    id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    name = Column(String, nullable=False)
-    description = Column(String)
-    icon = Column(String, default="book")
-
-    tenant = relationship("Tenant")
-    articles = relationship("KBArticle", back_populates="category", cascade="all, delete-orphan")
-
-class KBArticle(Base):
-    __tablename__ = "kb_articles"
-
-    id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
-    category_id = Column(Integer, ForeignKey("kb_categories.id"), nullable=False)
-    
-    title = Column(String(200), nullable=False)
-    content = Column(Text, nullable=False) # HTML/Markdown
-    
-    is_published = Column(Boolean, default=True)
-    view_count = Column(Integer, default=0)
-    
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    tenant = relationship("Tenant")
-    category = relationship("KBCategory", back_populates="articles")
-    creator = relationship("User")
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
@@ -561,6 +546,20 @@ class AuditLog(Base):
 
     tenant = relationship("Tenant")
     user = relationship("User")
+
+class CompanyDashboardSettings(Base):
+    """Настройки дашборда для компаний"""
+    __tablename__ = "company_dashboard_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, unique=True, index=True)
+    settings = Column(JSON, default={})
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    tenant = relationship("Tenant")
+    company = relationship("Company")
 
 # Association table for Ticket <-> CustomerAsset
 from sqlalchemy import Table

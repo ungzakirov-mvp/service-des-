@@ -1,14 +1,17 @@
 import bcrypt
+import hashlib
 from datetime import datetime, timedelta
 from typing import Optional
+from uuid import uuid4
 from jose import JWTError, jwt
 from app.config import settings
+from app.timezone import utc_now
 
 def hash_password(password: str) -> str:
     """
     Хеширование пароля с использованием bcrypt
     """
-    salt = bcrypt.gensalt()
+    salt = bcrypt.gensalt(rounds=14)
     pwd_bytes = password.encode('utf-8')
     hashed_bytes = bcrypt.hashpw(pwd_bytes, salt)
     return hashed_bytes.decode('utf-8')
@@ -40,9 +43,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode = data.copy()
     
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = utc_now() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = utc_now() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -50,19 +53,20 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return encoded_jwt
 
 
-def create_refresh_token(data: dict) -> str:
+def create_refresh_token(data: dict, jti: Optional[str] = None) -> str:
     """
     Создание JWT refresh токена (с длительным сроком жизни)
     
     Args:
         data: Данные для включения в токен
+        jti: Уникальный ID токена (для ротации)
     
     Returns:
         JWT refresh токен в виде строки
     """
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode.update({"exp": expire, "type": "refresh"})
+    expire = utc_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode.update({"exp": expire, "type": "refresh", "jti": jti or generate_jti()})
     
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
@@ -83,3 +87,13 @@ def verify_token(token: str) -> Optional[dict]:
         return payload
     except JWTError:
         return None
+
+
+def hash_refresh_token(token: str) -> str:
+    """Hash a refresh token for storage."""
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def generate_jti() -> str:
+    """Generate a unique JWT ID for refresh tokens."""
+    return uuid4().hex

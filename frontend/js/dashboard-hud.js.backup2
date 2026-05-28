@@ -1,0 +1,593 @@
+// ============================================================
+// HUD Dashboard — J.A.R.V.I.S. Tactical Interface  v2
+// ============================================================
+
+let HUD = {
+    summary: null,
+    priority: null,
+    agents: null,
+    critical: null,
+    flow: null,
+    chart: null,
+    intervals: []
+};
+
+function _t(key, fallback) {
+    if (typeof i18n !== 'undefined' && i18n.t) {
+        var v = i18n.t(key);
+        if (v && v !== key) return v;
+    }
+    return fallback || key;
+}
+
+// --- Init ---
+async function loadHUDDashboard() {
+    var container = document.getElementById('hudDashboard');
+    if (!container) return;
+
+    container.innerHTML = '<div class="hud-outer" style="display:flex;justify-content:center;align-items:center;height:60vh;color:var(--hud-cyan-dim, #4a8cb8);font-family:JetBrains Mono,monospace;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;">\u25d0 ' + _t('hud_initializing', 'INITIALIZING HUD') + ' \u25d0</div>';
+
+    HUD.intervals.forEach(function(i) { clearInterval(i); });
+    HUD.intervals = [];
+
+    await fetchAllData();
+    renderAll(container);
+
+    HUD.intervals.push(setInterval(updateClock, 1000));
+    HUD.intervals.push(setInterval(async function() {
+        await fetchCriticalAndAgents();
+        renderCriticalPanel(document.getElementById('hudCriticalBlock'));
+        renderAgentsPanel(document.getElementById('hudAgentsBlock'));
+        renderTopMetrics(document.getElementById('hudTopRow'));
+    }, 30000));
+    HUD.intervals.push(setInterval(async function() {
+        await fetchAllData();
+        renderAll(container);
+    }, 300000));
+}
+
+function mapApiData(data) {
+    var q = data.queue || {};
+    var sl = data.sla || {};
+    var pr = data.priority || {};
+    var ag = data.agents || [];
+    var as = data.agents_summary || {};
+    var ct = data.critical_tickets || [];
+    var fl = data.flow_14d || {};
+    var kp = data.kpi || {};
+    HUD.summary = {
+        total_open: q.open || 0,
+        new_count: q.new_today || 0,
+        resolved_30d: q.resolved_today || 0,
+        assigned: q.assigned || 0,
+        unassigned: q.unassigned || 0,
+        in_progress: q.in_progress || 0,
+        waiting: q.waiting_user || 0,
+        breach_count: sl.breached || 0,
+        at_risk_count: sl.at_risk || 0,
+        sla_compliance: sl.compliance_pct || 0,
+        sla_delta: sl.compliance_delta_24h || 0,
+        mttr_seconds: kp.mttr_minutes ? kp.mttr_minutes * 60 : 0,
+        mtta_seconds: kp.mtta_minutes ? kp.mtta_minutes * 60 : 0,
+        fcr_rate: kp.fcr_pct || 0,
+        csat: kp.csat || 0,
+        backlog_7d: kp.backlog_7d || 0
+    };
+    var prioOrder = ['critical','high','medium','low'];
+    var prioLabels = {critical:'CRITICAL',high:'HIGH',medium:'MEDIUM',low:'LOW'};
+    var breakdown = prioOrder.map(function(k) {
+        var pk = 'p1'; if (k === 'high') pk = 'p2'; else if (k === 'medium') pk = 'p3'; else if (k === 'low') pk = 'p4';
+        var item = pr[pk] || {};
+        return {priority: k, count: item.count || 0, percent: item.pct || 0};
+    });
+    HUD.priority = {total: q.open || 0, breakdown: breakdown};
+    HUD.agents = {agents: ag.map(function(a) {return {id:a.id,name:a.name||'',status:a.status||'offline',active_tickets:a.active_tickets||0,workload_pct:a.capacity_pct||0};}), online: as.online||0, idle: as.idle||0, offline: as.offline||0};
+    HUD.critical = {tickets: ct.map(function(t) {
+        var rem = t.sla_remaining_minutes || 0;
+        var h = Math.abs(Math.floor(rem / 60)); var m = Math.abs(rem % 60);
+        var slaStr = (rem <= 0 ? '-' : '+') + h + ':' + (m < 10 ? '0' : '') + m;
+        return {id:t.id, title:t.title||'', priority:t.priority||'medium', priority_label:t.priority?t.priority.toUpperCase():'?', sla_remaining:slaStr, sla_status:rem<=0?'breached':'at_risk'};
+    })};
+    var labels = fl.labels || [];
+    HUD.flow = {flow: labels.map(function(l, i) { return {date: l, created: (fl.created||[])[i]||0, resolved: (fl.resolved||[])[i]||0, breached: (fl.breached||[])[i]||0}; })};
+}
+
+async function fetchAllData() {
+    try {
+        var resp = await fetch('/api/dashboard?limit=6&days=14', {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
+        });
+        if (resp.ok) {
+            var data = await resp.json();
+            mapApiData(data);
+        } else {
+            throw new Error('Unified API not available');
+        }
+    } catch (e) {
+        console.error('HUD fetch error', e);
+    }
+}
+
+async function fetchCriticalAndAgents() {
+    try {
+        var resp = await fetch('/api/dashboard?limit=6&days=14', {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
+        });
+        if (resp.ok) {
+            var data = await resp.json();
+            mapApiData(data);
+        }
+    } catch (e) {
+        console.error('HUD refresh error', e);
+    }
+}
+
+// ============================================================
+// RENDER ENGINE
+// ============================================================
+
+function renderAll(container) {
+    container.innerHTML =
+        '<div class="hud-outer">' +
+            renderHeader() +
+            '<div id="hudTopRow" class="hud-top-row"></div>' +
+            '<div class="hud-mid-row">' +
+                '<div id="hudPriorityBlock" class="hud-priority-panel"></div>' +
+                '<div id="hudAgentsBlock" class="hud-agents-panel"></div>' +
+            '</div>' +
+            '<div id="hudCriticalBlock" class="hud-critical-panel"></div>' +
+            '<div class="hud-bottom-row">' +
+                '<div id="hudFlowBlock" class="hud-flow-panel"></div>' +
+                '<div id="hudMetricsBlock" class="hud-metrics-panel"></div>' +
+            '</div>' +
+        '</div>';
+
+    renderTopMetrics(document.getElementById('hudTopRow'));
+    renderPriorityMatrix(document.getElementById('hudPriorityBlock'));
+    renderAgentsPanel(document.getElementById('hudAgentsBlock'));
+    renderCriticalPanel(document.getElementById('hudCriticalBlock'));
+    renderFlowChart(document.getElementById('hudFlowBlock'));
+    renderKeyMetrics(document.getElementById('hudMetricsBlock'));
+    updateClock();
+}
+
+// ============================================================
+// BLOCK 1: HEADER
+// ============================================================
+
+function renderHeader() {
+    return '<div class="hud-header">' +
+        '<div class="hud-header-left">' +
+            '<span class="hud-sys-tag">[ SYS ]</span>' +
+            '<span class="hud-header-title">' + _t('hud_title', 'SERVICE DESK // MONITORING') + '</span>' +
+        '</div>' +
+        '<div class="hud-header-right">' +
+            '<span class="hud-online-dot" id="hudOnlineDot">\u25CF ' + _t('hud_online', 'ONLINE') + '</span>' +
+            '<span class="hud-clock" id="hudClock">SYNC 00:00:00</span>' +
+            '<span class="hud-live-tag" id="hudLiveTag">\u25CF ' + _t('hud_live', 'LIVE') + '</span>' +
+        '</div>' +
+    '</div>';
+}
+
+function updateClock() {
+    var el = document.getElementById('hudClock');
+    if (el) {
+        var now = new Date();
+        var locale = (typeof i18n !== 'undefined' && i18n.currentLocale) ? i18n.currentLocale : 'ru';
+        el.textContent = 'SYNC ' + now.toLocaleTimeString(locale, { hour12: false });
+    }
+}
+
+// ============================================================
+// BLOCK 2: TOP METRICS ROW
+// ============================================================
+
+function renderTopMetrics(container) {
+    if (!container || !HUD.summary) return;
+    var s = HUD.summary;
+    var breachRed = s.breach_count > 0;
+
+    var card1 = hudCard(
+        '<div class="hud-label">' + _t('hud_queue', 'ACTIVE QUEUE') + '</div>' +
+        '<div class="hud-main-number">' + s.total_open + '</div>' +
+        '<div class="hud-sub">' + _t('hud_breach_desc', '/ OPEN') + '</div>' +
+        '<div class="hud-mini-row">' +
+            '<span>' + _t('hud_new', 'NEW') + ' ' + s.new_count + '</span>' +
+            '<span class="hud-green">' + _t('hud_resolved', 'RESOLVED') + ' ' + s.resolved_30d + '</span>' +
+            '<span>' + _t('hud_assigned', 'ASSIGNED') + ' ' + s.assigned + '</span>' +
+        '</div>',
+    'default', 'hudOpenQueue');
+
+    var card2_html = breachRed
+        ? '<div class="hud-label hud-red">' + _t('hud_breach', 'SLA BREACH') + '</div>' +
+          '<div class="hud-main-number hud-red">' + s.breach_count + ' <span class="hud-breach-arrow">\u25B2</span></div>' +
+          '<div class="hud-sub hud-red">' + _t('hud_breach_desc', 'REQUIRES INTERVENTION') + '</div>'
+        : '<div class="hud-label hud-green">' + _t('hud_breach', 'SLA BREACH') + '</div>' +
+          '<div class="hud-main-number hud-green">0</div>' +
+          '<div class="hud-sub hud-green">' + _t('hud_breach_clear', 'ALL CLEAR') + '</div>';
+
+    var card2 = hudCard(card2_html, breachRed ? 'alert' : 'default', 'hudSlaBreach');
+
+    var card3 = hudCard(
+        '<div class="hud-label">' + _t('hud_at_risk', 'SLA AT RISK') + '</div>' +
+        '<div class="hud-main-number hud-amber">' + s.at_risk_count + '</div>' +
+        '<div class="hud-sub">' + _t('hud_at_risk_desc', '< 2H TO DEADLINE') + '</div>',
+    'default', 'hudSlaRisk');
+
+    var slaDelta = s.sla_delta >= 0 ? '\u2191' : '\u2193';
+    var card4 = hudCard(
+        '<div class="hud-label">' + _t('hud_compliance', 'SLA COMPLIANCE') + '</div>' +
+        '<div class="hud-main-number hud-green">' + s.sla_compliance + '%</div>' +
+        '<div class="hud-sub">' + slaDelta + ' ' + Math.abs(s.sla_delta) + '% ' + _t('hud_compliance_desc', 'LAST 30 DAYS') + '</div>',
+    'default', 'hudSlaCompliance');
+
+    container.innerHTML = card1 + card2 + card3 + card4;
+
+    // Click handlers
+    var el = container;
+    var openQ = el.querySelector('#hudOpenQueue');
+    var slaB = el.querySelector('#hudSlaBreach');
+    var slaR = el.querySelector('#hudSlaRisk');
+    var slaC = el.querySelector('#hudSlaCompliance');
+    if (openQ) openQ.addEventListener('click', function() { navigateToTickets('all'); });
+    if (slaB) slaB.addEventListener('click', function() { navigateToTickets('breach'); });
+    if (slaR) slaR.addEventListener('click', function() { navigateToTickets('at_risk'); });
+    if (slaC) slaC.addEventListener('click', function() { navigateToTickets('sla'); });
+}
+
+// ============================================================
+// HUD CARD COMPONENT
+// ============================================================
+
+function hudCard(content, variant, id) {
+    var alertClass = variant === 'alert' ? ' panel-alert' : '';
+    return '<div class="hud-panel' + alertClass + '" id="' + (id || '') + '" style="cursor:pointer;">' + content + '</div>';
+}
+
+// ============================================================
+// BLOCK 3A: PRIORITY MATRIX
+// ============================================================
+
+function renderPriorityMatrix(container) {
+    if (!container) return;
+    var p = HUD.priority;
+    var total = p ? p.total : 0;
+    var breakdown = p ? p.breakdown : [];
+
+    var priorityColors = { critical: '#ff5252', high: '#ffb347', medium: '#00d4ff', low: '#4a8cb8' };
+    var priorityLabels = {
+        critical: _t('prio_critical', 'CRITICAL'),
+        high: _t('prio_high', 'HIGH'),
+        medium: _t('prio_medium', 'MEDIUM'),
+        low: _t('prio_low', 'LOW')
+    };
+
+    var rows = '';
+    breakdown.forEach(function(item) {
+        var color = priorityColors[item.priority] || '#4a8cb8';
+        var label = 'P' + ({critical:'1', high:'2', medium:'3', low:'4'}[item.priority] || '?') + ' // ' + (priorityLabels[item.priority] || item.priority);
+        var isP1 = item.priority === 'critical';
+        var barGlow = isP1 && item.count > 0 ? ' style="box-shadow:0 0 8px rgba(255,82,82,0.5);"' : '';
+
+        rows += '<div class="hud-priority-row" data-priority="' + item.priority + '" style="cursor:pointer;">' +
+            '<div class="hud-priority-header">' +
+                '<span class="hud-prio-marker" style="color:' + color + ';">\u25B8 ' + label + '</span>' +
+                '<span class="hud-prio-count" style="color:' + color + ';">' + item.count + ' / ' + item.percent + '%</span>' +
+            '</div>' +
+            '<div class="hud-bar-track">' +
+                '<div class="hud-bar-fill" style="width:' + item.percent + '%;background:' + color + ';' + (barGlow ? barGlow.slice(1, -1) : '') + '"></div>' +
+            '</div>' +
+        '</div>';
+    });
+
+    var unassigned = HUD.summary ? HUD.summary.total_open - (HUD.summary.assigned || 0) : 0;
+    var inProg = HUD.summary ? HUD.summary.in_progress : 0;
+    var wait = HUD.summary ? HUD.summary.waiting : 0;
+
+    container.innerHTML =
+        '<div class="hud-panel" style="height:100%;">' +
+            '<div class="hud-panel-header">' +
+                '<span class="hud-label">' + _t('hud_priority_matrix', 'QUEUE / PRIORITY MATRIX') + '</span>' +
+                '<span class="hud-panel-header-right">' + _t('hud_total', 'TOTAL') + ': ' + total + '</span>' +
+            '</div>' +
+            '<div class="hud-priority-list">' + rows + '</div>' +
+            '<div class="hud-divider"></div>' +
+            '<div class="hud-mini-grid">' +
+                '<div class="hud-mini-metric">' +
+                    '<span class="hud-amber">' + _t('hud_unassigned', 'UNASSIGNED') + ' ' + unassigned + '</span>' +
+                '</div>' +
+                '<div class="hud-mini-metric">' +
+                    '<span class="hud-cyan">' + _t('hud_in_progress', 'IN PROGRESS') + ' ' + inProg + '</span>' +
+                '</div>' +
+                '<div class="hud-mini-metric">' +
+                    '<span>' + _t('hud_waiting', 'WAITING USER') + ' ' + wait + '</span>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+
+    container.querySelectorAll('.hud-priority-row').forEach(function(row) {
+        row.addEventListener('click', function() {
+            navigateToTickets('priority', row.dataset.priority);
+        });
+    });
+}
+
+// ============================================================
+// BLOCK 3B: AGENTS PANEL
+// ============================================================
+
+function renderAgentsPanel(container) {
+    if (!container) return;
+    var agents = HUD.agents;
+    var list = agents ? agents.agents : [];
+
+    var statusDot = function(s) {
+        if (s === 'online') return '<span class="hud-status-dot online"></span>';
+        if (s === 'idle') return '<span class="hud-status-dot idle"></span>';
+        return '<span class="hud-status-dot offline"></span>';
+    };
+
+    var workloadColor = function(pct) {
+        if (pct > 80) return 'var(--red-alert)';
+        if (pct > 40) return 'var(--amber-warn)';
+        return 'var(--green-ok)';
+    };
+
+    var items = '';
+    list.forEach(function(a) {
+        var color = workloadColor(a.workload_pct);
+        items += '<div class="hud-agent-row" data-agent-id="' + a.id + '" style="cursor:pointer;">' +
+            statusDot(a.status) +
+            '<span class="hud-agent-name">' + escapeHtml(a.name) + '</span>' +
+            '<div class="hud-agent-bar-track">' +
+                '<div class="hud-agent-bar-fill" style="width:' + a.workload_pct + '%;background:' + color + ';"></div>' +
+            '</div>' +
+            '<span class="hud-agent-count" style="color:' + color + ';">' + a.active_tickets + '</span>' +
+        '</div>';
+    });
+
+    var online = agents ? agents.online : 0;
+    var idle = agents ? agents.idle : 0;
+    var offline = agents ? agents.offline : 0;
+
+    container.innerHTML =
+        '<div class="hud-panel" style="height:100%;">' +
+            '<div class="hud-panel-header">' +
+                '<span class="hud-label">' + _t('hud_agents', 'AGENTS // ACTIVE') + '</span>' +
+                '<span class="hud-agent-summary">' +
+                    '<span class="hud-green">' + online + ' ' + _t('hud_online', 'ONLINE') + '</span>' +
+                    '<span style="color:var(--amber-warn);"> \u00B7 ' + idle + ' ' + _t('hud_idle', 'IDLE') + '</span>' +
+                    '<span style="color:var(--text-tertiary);"> \u00B7 ' + offline + ' ' + _t('hud_offline', 'OFFLINE') + '</span>' +
+                '</span>' +
+            '</div>' +
+            '<div class="hud-agent-list">' +
+                (items || '<div style="color:var(--cyan-dim);font-size:10px;padding:8px 0;">' + _t('hud_no_agents', 'NO ACTIVE AGENTS') + '</div>') +
+            '</div>' +
+        '</div>';
+
+    container.querySelectorAll('.hud-agent-row').forEach(function(row) {
+        row.addEventListener('click', function() {
+            navigateToTickets('agent', row.dataset.agentId);
+        });
+    });
+}
+
+// ============================================================
+// BLOCK 4: CRITICAL // IMMEDIATE ACTION
+// ============================================================
+
+function renderCriticalPanel(container) {
+    if (!container) return;
+    var tickets = HUD.critical ? HUD.critical.tickets : [];
+    var isCritical = tickets.length > 0;
+
+    var items = '';
+    tickets.forEach(function(t) {
+        var isP1 = t.priority === 'critical';
+        var prioColor = isP1 ? 'var(--red-alert)' : 'var(--amber-warn)';
+        var leftColor = isP1 ? 'var(--red-alert)' : 'var(--amber-warn)';
+        var bgColor = isP1 ? 'rgba(255,82,82,0.06)' : 'rgba(255,179,71,0.06)';
+        var slaColor = t.sla_status === 'breached' ? 'var(--red-alert)' : 'var(--amber-warn)';
+        var slaGlow = t.sla_status === 'breached' ? ' style="text-shadow:0 0 6px rgba(255,82,82,0.4);"' : '';
+
+        items += '<div class="hud-critical-row" data-ticket-id="' + t.id + '" style="border-left:2px solid ' + leftColor + ';background:' + bgColor + ';cursor:pointer;">' +
+            '<span class="hud-critical-prio" style="color:' + prioColor + ';">[' + t.priority_label + ']</span>' +
+            '<span class="hud-critical-id">#' + t.id + '</span>' +
+            '<span class="hud-critical-title">' + escapeHtml(t.title) + '</span>' +
+            '<span class="hud-critical-sla" style="color:' + slaColor + ';"' + slaGlow + '>SLA ' + t.sla_remaining + '</span>' +
+        '</div>';
+    });
+
+    container.innerHTML =
+        '<div class="hud-panel' + (isCritical ? ' panel-alert' : '') + '">' +
+            '<div class="hud-panel-header">' +
+                '<span class="hud-label' + (isCritical ? ' hud-red' : '') + '">' +
+                    (isCritical ? '\u26A0 ' : '') + _t('hud_critical', 'CRITICAL // IMMEDIATE ACTION') +
+                '</span>' +
+                '<span class="hud-panel-header-right">' + tickets.length + '</span>' +
+            '</div>' +
+            (items || '<div style="color:var(--cyan-dim);font-size:10px;padding:8px 0;">' + _t('hud_no_critical', 'NO CRITICAL TICKETS') + '</div>') +
+        '</div>';
+
+    container.querySelectorAll('.hud-critical-row').forEach(function(row) {
+        row.addEventListener('click', function() {
+            openTicketDetail(parseInt(row.dataset.ticketId));
+        });
+    });
+}
+
+// ============================================================
+// BLOCK 5A: TICKET FLOW CHART
+// ============================================================
+
+function renderFlowChart(container) {
+    if (!container) return;
+
+    var flowData = HUD.flow ? HUD.flow.flow : [];
+    var labels = flowData.map(function(d) {
+        var parts = d.date.split('-');
+        return parts[2] + '/' + parts[1];
+    });
+    var created = flowData.map(function(d) { return d.created; });
+    var resolved = flowData.map(function(d) { return d.resolved; });
+    var breached = flowData.map(function(d) { return d.breached; });
+
+    container.innerHTML =
+        '<div class="hud-panel">' +
+            '<div class="hud-panel-header">' +
+                '<span class="hud-label">' + _t('hud_flow', 'TICKET FLOW // 14 DAYS') + '</span>' +
+                '<span class="hud-chart-legend">' +
+                    '<span style="color:var(--cyan-primary);">\u2501 ' + _t('hud_created', 'CREATED') + '</span>' +
+                    '<span style="color:var(--green-ok);margin-left:10px;">\u2501 ' + _t('hud_resolved', 'RESOLVED') + '</span>' +
+                    '<span style="color:var(--red-alert);margin-left:10px;">\u2501 ' + _t('hud_breached', 'BREACHED') + '</span>' +
+                '</span>' +
+            '</div>' +
+            '<div class="hud-chart-wrapper">' +
+                '<canvas id="hudFlowChart"></canvas>' +
+            '</div>' +
+        '</div>';
+
+    if (HUD.chart) {
+        HUD.chart.destroy();
+        HUD.chart = null;
+    }
+
+    var ctx = document.getElementById('hudFlowChart');
+    if (!ctx) return;
+
+    HUD.chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'CREATED', data: created, borderColor: 'rgba(0,212,255,1)', backgroundColor: 'rgba(0,212,255,0.08)', borderWidth: 1.5, tension: 0.4, pointRadius: 0, fill: true },
+                { label: 'RESOLVED', data: resolved, borderColor: 'rgba(0,255,156,1)', borderWidth: 1.5, tension: 0.4, pointRadius: 0, fill: false },
+                { label: 'BREACHED', data: breached, borderColor: 'rgba(255,82,82,1)', borderWidth: 1.5, tension: 0.4, pointRadius: 0, fill: false }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,30,50,0.9)',
+                    titleFont: { family: 'JetBrains Mono, monospace', size: 10 },
+                    bodyFont: { family: 'JetBrains Mono, monospace', size: 10 },
+                    borderColor: 'rgba(0,212,255,0.3)',
+                    borderWidth: 1
+                }
+            },
+            scales: {
+                x: { ticks: { color: '#4a8cb8', font: { family: 'JetBrains Mono, monospace', size: 9 } }, grid: { color: 'rgba(0,200,255,0.05)' } },
+                y: { beginAtZero: true, ticks: { color: '#4a8cb8', font: { family: 'JetBrains Mono, monospace', size: 9 } }, grid: { color: 'rgba(0,200,255,0.05)' } }
+            }
+        }
+    });
+}
+
+// ============================================================
+// BLOCK 5B: KEY METRICS
+// ============================================================
+
+function renderKeyMetrics(container) {
+    if (!container) return;
+    var s = HUD.summary;
+
+    var fmtDuration = function(sec) {
+        if (!sec && sec !== 0) return '--:--:--';
+        var h = Math.floor(sec / 3600);
+        var m = Math.floor((sec % 3600) / 60);
+        var secs = sec % 60;
+        return h + ':' + String(m).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+    };
+
+    var mttr = fmtDuration(s ? s.mttr_seconds : 0);
+    var mtta = fmtDuration(s ? s.mtta_seconds : 0);
+    var fcr = s ? s.fcr_rate : 0;
+    var fcrColor = fcr >= 90 ? 'var(--green-ok)' : fcr >= 70 ? 'var(--amber-warn)' : 'var(--red-alert)';
+    var csat = s ? s.csat : 0;
+    var backlog = s ? s.backlog_7d : 0;
+    var backlogColor = backlog > 20 ? 'var(--amber-warn)' : 'var(--cyan-primary)';
+
+    container.innerHTML =
+        '<div class="hud-panel">' +
+            '<div class="hud-panel-header">' +
+                '<span class="hud-label">' + _t('hud_metrics', 'KEY METRICS') + '</span>' +
+            '</div>' +
+            '<div class="hud-metrics-list">' +
+                '<div class="hud-metric-row">' +
+                    '<span class="hud-metric-label">' + _t('hud_mttr', 'MTTR') + '</span>' +
+                    '<span class="hud-metric-value">' + mttr + '</span>' +
+                '</div>' +
+                '<div class="hud-metric-row">' +
+                    '<span class="hud-metric-label">' + _t('hud_mtta', 'MTTA') + '</span>' +
+                    '<span class="hud-metric-value">' + mtta + '</span>' +
+                '</div>' +
+                '<div class="hud-metric-row">' +
+                    '<span class="hud-metric-label">' + _t('hud_fcr', 'FCR RATE') + '</span>' +
+                    '<span class="hud-metric-value" style="color:' + fcrColor + '">' + fcr + '%</span>' +
+                '</div>' +
+                '<div class="hud-metric-row">' +
+                    '<span class="hud-metric-label">' + _t('hud_csat', 'CSAT') + '</span>' +
+                    '<span class="hud-metric-value">' + csat + ' / 5.0</span>' +
+                '</div>' +
+                '<div class="hud-metric-row">' +
+                    '<span class="hud-metric-label">' + _t('hud_backlog', 'BACKLOG >7D') + '</span>' +
+                    '<span class="hud-metric-value" style="color:' + backlogColor + '">' + backlog + '</span>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+}
+
+// ============================================================
+// UTILITY HELPERS
+// ============================================================
+
+function escapeHtml(text) {
+    if (!text) return '';
+    var d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+}
+
+function navigateToTickets(filter, value) {
+    if (typeof Router !== 'undefined' && Router.navigate) {
+        var hash = '#/tickets';
+        if (filter === 'breach') hash = '#/tickets?sla=breach';
+        else if (filter === 'at_risk') hash = '#/tickets?sla=risk';
+        else if (filter === 'sla') hash = '#/tickets?sla=all';
+        else if (filter === 'priority' && value) hash = '#/tickets?priority=' + value;
+        else if (filter === 'agent' && value) hash = '#/tickets?agent=' + value;
+        Router.navigate(hash);
+    } else {
+        showView('tickets');
+    }
+}
+
+function openTicketDetail(id) {
+    if (typeof openTicketModal === 'function') {
+        openTicketModal(id);
+    } else {
+        showView('tickets');
+    }
+}
+
+// Auto-load if dashboard is already active
+(function() {
+    var dashboardView = document.getElementById('dashboardView');
+    if (dashboardView && !dashboardView.classList.contains('hidden')) {
+        loadHUDDashboard();
+    }
+})();
+
+window.loadHUDDashboard = loadHUDDashboard;
+document.addEventListener('localeChanged', function() {
+    var container = document.getElementById('hudDashboard');
+    if (container && window.getComputedStyle(container).display !== 'none') {
+        window.HUD = window.HUD || {};
+        renderAll(container);
+    }
+});
+
+window.HUD = HUD;

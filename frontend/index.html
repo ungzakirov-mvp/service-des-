@@ -7,6 +7,7 @@
     <title>Service Desk - Premium Help Desk System</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%2300d4ff'/><text x='50' y='72' text-anchor='middle' font-size='60' fill='white' font-family='sans-serif' font-weight='bold'>SD</text></svg>">
     <link rel="stylesheet" href="css/style.css?v=3.3.1">
+    <link rel="stylesheet" href="css/dashboard-hud.css?v=3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +29,7 @@
                 <div class="glass-card auth-card">
                     <div class="scan-line"></div>
                     <div class="logo">
-                        <div class="logo-icon">🎫</div>
+                        <div class="logo-icon"><img src="img/logo.jpg" alt="Service Desk" class="auth-logo-img"></div>
                         <h1>Service Desk</h1>
                         <p class="tagline" data-i18n="tagline">Премиальная система управления заявками</p>
                     </div>
@@ -68,7 +69,7 @@
                 <div class="glass-card auth-card">
                     <div class="scan-line"></div>
                     <div class="logo">
-                        <div class="logo-icon">🎫</div>
+                        <div class="logo-icon"><img src="img/logo.jpg" alt="Service Desk" class="auth-logo-img"></div>
                         <h1 data-i18n="register">Регистрация</h1>
                         <p class="tagline" data-i18n="register_tagline">Создайте новый аккаунт</p>
                     </div>
@@ -123,7 +124,7 @@
                 <aside class="sidebar glass-card" id="mainSidebar">
                     <div class="sidebar-brand">
                         <div class="sidebar-logo">
-                            <span class="logo-icon-small">🎫</span>
+                            <img src="img/logo.jpg" alt="Service Desk" class="sidebar-logo-img">
                             <span class="sidebar-text">Service Desk</span>
                         </div>
                         <div class="notification-trigger" onclick="toggleNotifications()">
@@ -166,6 +167,10 @@
                             <i class="fas fa-desktop"></i>
                             <span>Техника</span>
                         </a>
+                        <a href="#" class="side-link" data-page="tariffs">
+                            <i class="fas fa-crown"></i>
+                            <span data-i18n="tariffs">Тарифы</span>
+                        </a>
                         <a href="#" class="side-link hidden" data-page="users" id="usersNavLink">
                             <i class="fas fa-users-gear"></i>
                             <span data-i18n="users">Пользователи</span>
@@ -195,199 +200,10 @@
 
                 <main class="main-content">
                     <div class="view-container">
-                        <!-- Dashboard View - Now Shows Active Tickets -->
+                        <!-- Dashboard View - HUD Tactical Interface -->
                         <div class="view" id="dashboardView">
-                            <div class="page-header dynamic-header">
-                                <div>
-                                    <h2><i class="fas fa-tasks" style="color: var(--jarvis-cyan);"></i> Система мониторинга заявок</h2>
-                                    <p>Активные заявки требующие внимания <span id="lastUpdateTime" style="font-size: 0.85rem; color: var(--text-tertiary); margin-left: 1rem;"></span></p>
-                                </div>
-                                <div class="header-actions">
-                                    <button class="btn btn-primary" onclick="showNewTicketsPanel()">
-                                        <i class="fas fa-list"></i> Новые заявки
-                                    </button>
-                                    <button class="btn btn-outline" id="refreshDashboardBtn" title="Обновить">
-                                        <i class="fas fa-rotate"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Dashboard Stats Row (for app.js) -->
-                            <div class="stats-grid" style="margin-bottom: 1.5rem;">
-                                <div class="glass-card stat-card" style="cursor:pointer; background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(124,58,237,0.1));" onclick="navigateToTickets('all')">
-                                    <div class="stat-icon" style="background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(124,58,237,0.2)); color: var(--jarvis-cyan);">
-                                        <i class="fas fa-ticket-alt"></i>
-                                    </div>
-                                    <div class="stat-content">
-                                        <h3 id="totalTickets">0</h3>
-                                        <p>Всего тикетов</p>
-                                    </div>
-                                </div>
-                                <div class="glass-card stat-card" style="cursor:pointer; background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.1));" onclick="showView('users')">
-                                    <div class="stat-icon" style="background: linear-gradient(135deg, rgba(16,185,129,0.3), rgba(5,150,105,0.2)); color: #34d399;">
-                                        <i class="fas fa-users"></i>
-                                    </div>
-                                    <div class="stat-content">
-                                        <h3 id="activeUsers">0</h3>
-                                        <p>Активных пользователей</p>
-                                    </div>
-                                </div>
-                                <div class="glass-card stat-card" style="cursor:pointer; background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.1));" onclick="showView('audit')">
-                                    <div class="stat-icon" style="background: linear-gradient(135deg, rgba(245,158,11,0.3), rgba(217,119,6,0.2)); color: #fbbf24;">
-                                        <i class="fas fa-shield-check"></i>
-                                    </div>
-                                    <div class="stat-content">
-                                        <h3 id="slaCompliance">100%</h3>
-                                        <p>SLA выполнение</p>
-                                    </div>
-                                </div>
-                                <div class="glass-card stat-card" style="cursor:pointer; background: linear-gradient(135deg, rgba(244,63,94,0.1), rgba(225,29,72,0.1));" onclick="showView('audit')">
-                                    <div class="stat-icon" style="background: linear-gradient(135deg, rgba(244,63,94,0.3), rgba(225,29,72,0.2)); color: #fb7185;">
-                                        <i class="fas fa-clock"></i>
-                                    </div>
-                                    <div class="stat-content">
-                                        <h3 id="avgResolutionTime">0ч</h3>
-                                        <p>Среднее время решения</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Quick Stats Row -->
-                            <div class="stats-grid" style="margin-bottom: 1.5rem;">
-                                <div class="glass-card stat-card accent-rose" style="cursor: pointer;" onclick="filterMyTickets('critical')">
-                                    <div class="stat-icon"><i class="fas fa-fire"></i></div>
-                                    <div class="stat-content">
-                                        <h3 id="criticalTickets">0</h3>
-                                        <p>Критичные</p>
-                                    </div>
-                                </div>
-                                <div class="glass-card stat-card accent-orange" style="cursor: pointer;" onclick="filterMyTickets('overdue')">
-                                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
-                                    <div class="stat-content">
-                                        <h3 id="overdueTickets">0</h3>
-                                        <p>Просроченные</p>
-                                    </div>
-                                </div>
-                                <div class="glass-card stat-card accent-cyan" style="cursor: pointer;" onclick="filterMyTickets('today')">
-                                    <div class="stat-icon"><i class="fas fa-calendar-day"></i></div>
-                                    <div class="stat-content">
-                                        <h3 id="todayTickets">0</h3>
-                                        <p>На сегодня</p>
-                                    </div>
-                                </div>
-                                <div class="glass-card stat-card" style="background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.1)); cursor: pointer;" onclick="filterMyTickets('open')">
-                                    <div class="stat-icon"><i class="fas fa-folder-open"></i></div>
-                                    <div class="stat-content">
-                                        <h3 id="openTickets">0</h3>
-                                        <p>Открытые</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Active Tickets List -->
-                            <div class="glass-card" style="padding: 0; overflow: hidden;">
-                                <div class="ticket-list-header" style="padding: 1rem 1.5rem; border-bottom: 1px solid rgba(0,212,255,0.1); display: flex; justify-content: space-between; align-items: center;">
-                                    <div style="display: flex; gap: 0.5rem;">
-                                        <button class="tab-btn active" data-filter="my" onclick="filterTickets('my')">Мои</button>
-                                        <button class="tab-btn" data-filter="new" onclick="filterTickets('new')">Новые</button>
-                                        <button class="tab-btn" data-filter="in_progress" onclick="filterTickets('in_progress')">В работе</button>
-                                        <button class="tab-btn" data-filter="all" onclick="filterTickets('all')">Все</button>
-                                    </div>
-                                    <div style="display: flex; gap: 0.5rem;">
-                                        <select class="filter-select" id="quickPriorityFilter" onchange="filterByPriority(this.value)" style="width: auto;">
-                                            <option value="">Все приоритеты</option>
-                                            <option value="critical">Критичный</option>
-                                            <option value="high">Высокий</option>
-                                            <option value="medium">Средний</option>
-                                            <option value="low">Низкий</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div id="activeTicketsList" style="max-height: calc(100vh - 350px); overflow-y: auto;">
-                                    <!-- Tickets loaded via JS -->
-                                </div>
-                            </div>
-                            
-                            <!-- Dashboard Sidebar -->
-                            <div class="dashboard-with-sidebar">
-                                <!-- Main Content -->
-                                <div class="dashboard-main">
-                                    <div class="dashboard-grid">
-                                        <div class="glass-card chart-card main-chart">
-                                            <h3 data-i18n="completion_trend">Тренд выполнения (7 дней)</h3>
-                                            <canvas id="volumeChart"></canvas>
-                                        </div>
-                                        <div class="glass-card chart-card side-chart">
-                                            <h3 data-i18n="ticket_statuses">Статусы заявок</h3>
-                                            <canvas id="statusChart"></canvas>
-                                        </div>
-                                        <div class="glass-card chart-card side-chart">
-                                            <h3>Приоритеты</h3>
-                                            <canvas id="priorityChart"></canvas>
-                                        </div>
-                                        <div class="glass-card chart-card side-chart">
-                                            <h3>Нагрузка по дням</h3>
-                                            <canvas id="weekdayChart"></canvas>
-                                        </div>
-                                    </div>
-                                    <div class="dashboard-tabs-section">
-                                        <div class="tab-header">
-                                            <button class="tab-btn active" data-status="all" data-i18n="all">Все</button>
-                                            <button class="tab-btn" data-status="новый" data-i18n="new">Новые</button>
-                                            <button class="tab-btn" data-status="в_работе" data-i18n="in_progress">В работе</button>
-                                            <button class="tab-btn" data-status="решён" data-i18n="resolved">Выполненные</button>
-                                        </div>
-                                        <div class="recent-tickets tab-content">
-                                            <div id="recentTicketsList"></div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Sidebar -->
-                                <aside class="dashboard-sidebar">
-                                    <!-- Agent Rating -->
-                                    <div class="glass-card sidebar-card">
-                                        <div class="sidebar-card-header">
-                                            <div class="sidebar-icon accent-cyan">
-                                                <i class="fas fa-trophy"></i>
-                                            </div>
-                                            <h3 data-i18n="agent_rating">Рейтинг исполнителей</h3>
-                                        </div>
-                                        <div id="agentRatingList" class="sidebar-list">
-                                            <div class="loading" data-i18n="loading">Загрузка...</div>
-                                        </div>
-                                    </div>
-
-                                    <!-- SLA Breach Timeline -->
-                                    <div class="glass-card sidebar-card">
-                                        <div class="sidebar-card-header">
-                                            <div class="sidebar-icon accent-rose">
-                                                <i class="fas fa-exclamation-triangle"></i>
-                                            </div>
-                                            <h3>Нарушения SLA</h3>
-                                        </div>
-                                        <div id="slaBreachList" class="sidebar-list">
-                                            <div class="loading">Загрузка...</div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Deadlines -->
-                                    <div class="glass-card sidebar-card">
-                                        <div class="sidebar-card-header">
-                                            <div class="sidebar-icon accent-rose">
-                                                <i class="fas fa-clock"></i>
-                                            </div>
-                                            <h3 data-i18n="upcoming_deadlines">Ближайшие дедлайны</h3>
-                                        </div>
-                                        <div id="deadlineList" class="sidebar-list">
-                                            <div class="loading" data-i18n="loading">Загрузка...</div>
-                                        </div>
-                                    </div>
-                                </aside>
-                            </div>
-                        </div>
-
-                        <!-- Users Administration View -->
+                            <div id="hudDashboard" class="hud-outer">&#x25d0; LOADING HUD &#x25d0;</div>
+                        </div><!-- Users Administration View -->
                         <div class="view hidden" id="usersView">
                             <div class="page-header dynamic-header">
                                 <div>
@@ -546,7 +362,7 @@
                         </div>
 
                         <!-- Assets View -->
-                        <div class="view hidden" id="assetsView">
+                                                <div class="view hidden" id="assetsView">
                             <div class="page-header dynamic-header">
                                 <div>
                                     <h2><i class="fas fa-desktop" style="color: var(--jarvis-cyan);"></i> Техника пользователей</h2>
@@ -559,38 +375,57 @@
                                 </div>
                             </div>
 
-                            <div class="glass-card" style="padding: 1rem; margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <!-- Filters -->
+                            <div class="glass-card" style="padding:1rem;margin-bottom:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
                                 <input type="text" id="assetSearchInput" placeholder="Поиск по названию, модели, серийному номеру..." 
-                                    style="flex: 1; min-width: 200px; padding: 0.75rem 1rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(0,212,255,0.2); border-radius: 10px; color: white; font-size: 0.9rem;">
-                                <select id="assetTypeFilter" style="padding: 0.75rem 1rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(0,212,255,0.2); border-radius: 10px; color: white; font-size: 0.9rem;">
+                                    style="flex:1;min-width:200px;padding:0.65rem 1rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.2);border-radius:10px;color:white;font-size:0.85rem;">
+                                <select id="assetTypeFilter" style="padding:0.65rem 1rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.2);border-radius:10px;color:white;font-size:0.85rem;">
                                     <option value="">Все типы</option>
-                                    <option value="laptop">Ноутбук</option>
-                                    <option value="desktop">ПК</option>
-                                    <option value="server">Сервер</option>
-                                    <option value="printer">Принтер</option>
-                                    <option value="router">Роутер</option>
-                                    <option value="phone">Телефон</option>
-                                    <option value="monitor">Монитор</option>
-                                    <option value="other">Другое</option>
                                 </select>
-                                <select id="assetStatusFilter" style="padding: 0.75rem 1rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(0,212,255,0.2); border-radius: 10px; color: white; font-size: 0.9rem;">
+                                <select id="assetStatusFilter" style="padding:0.65rem 1rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.2);border-radius:10px;color:white;font-size:0.85rem;">
                                     <option value="">Все статусы</option>
-                                    <option value="active">Активно</option>
-                                    <option value="repair">В ремонте</option>
-                                    <option value="decommissioned">Списано</option>
+                                </select>
+                                <select id="assetConditionFilter" style="padding:0.65rem 1rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.2);border-radius:10px;color:white;font-size:0.85rem;">
+                                    <option value="">Все состояния</option>
+                                </select>
+                                <select id="assetCompanyFilter" style="padding:0.65rem 1rem;background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.2);border-radius:10px;color:white;font-size:0.85rem;min-width:150px;">
+                                    <option value="">Все организации</option>
                                 </select>
                             </div>
 
-                            <div id="assetsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
-                                <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
-                                    <i class="fas fa-desktop" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; display: block;"></i>
+                            <!-- Stats -->
+                            <div class="glass-card" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-bottom:1rem;overflow:hidden;border-radius:12px;">
+                                <div style="padding:0.85rem;text-align:center;border-right:1px solid rgba(255,255,255,0.06);">
+                                    <div style="font-size:1.35rem;font-weight:700;color:var(--jarvis-cyan);" id="assetStatTotal">0</div>
+                                    <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:2px;">Всего</div>
+                                </div>
+                                <div style="padding:0.85rem;text-align:center;border-right:1px solid rgba(255,255,255,0.06);">
+                                    <div style="font-size:1.35rem;font-weight:700;color:#10b981;" id="assetStatActive">0</div>
+                                    <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:2px;">Активно</div>
+                                </div>
+                                <div style="padding:0.85rem;text-align:center;border-right:1px solid rgba(255,255,255,0.06);">
+                                    <div style="font-size:1.35rem;font-weight:700;color:#f59e0b;" id="assetStatRepair">0</div>
+                                    <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:2px;">В ремонте</div>
+                                </div>
+                                <div style="padding:0.85rem;text-align:center;">
+                                    <div style="font-size:1.35rem;font-weight:700;color:#ef4444;" id="assetStatDecommissioned">0</div>
+                                    <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:2px;">Списано</div>
+                                </div>
+                            </div>
+
+                            <!-- Asset List -->
+                            <div id="assetsList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;">
+                                <div style="text-align:center;padding:3rem;color:var(--text-secondary);">
+                                    <i class="fas fa-desktop" style="font-size:3rem;opacity:0.3;margin-bottom:1rem;display:block;"></i>
                                     Загрузка техники...
                                 </div>
                             </div>
                         </div>
 
-                        
-                        <!-- Monitoring Center View -->
+                        <!-- Monitoring Center View --><!-- Monitoring Center View -->
+                        <div class="view hidden" id="tariffsView">
+                            <div id="tariffsContainer" class="tariffs-outer"></div>
+                        </div>
                         <div class="view hidden" id="monitoringView">
                             <div class="page-header dynamic-header">
                                 <div>
@@ -598,8 +433,11 @@
                                     <p data-i18n="monitoring_desc">Состояние систем и оборудования по организациям</p>
                                 </div>
                                 <div class="header-actions">
+                                    <button class="btn btn-outline" onclick="openMonitoringSettings()" title="Настроить показатели">
+                                        <i class="fas fa-sliders-h"></i> Показатели
+                                    </button>
                                     <button class="btn btn-primary" onclick="loadMonitoringData()">
-                                        <i class="fas fa-sync-alt"></i> <span data-i18n="refresh">Обновить</span>
+                                        <i class="fas fa-sync-alt"></i> Обновить
                                     </button>
                                 </div>
                             </div>
@@ -1592,9 +1430,9 @@
 
         <!-- Add Asset Modal -->
         <div id="addAssetModal" class="modal hidden">
-            <div class="modal-content glass-card" style="max-width:550px;">
+            <div class="modal-content glass-card" style="max-width:650px;">
                 <div class="modal-header">
-                    <h2><i class="fas fa-desktop" style="color: var(--jarvis-cyan);"></i> Добавить устройство</h2>
+                    <h2 id="addAssetModalTitle"><i class="fas fa-desktop" style="color: var(--jarvis-cyan);"></i> Добавить устройство</h2>
                     <button class="btn-close" onclick="closeModal('addAssetModal')">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -1606,43 +1444,46 @@
                         <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                             <div class="form-group">
                                 <label>Тип устройства *</label>
-                                <select id="assetType" required>
-                                    <option value="laptop">Ноутбук</option>
-                                    <option value="desktop">ПК</option>
-                                    <option value="server">Сервер</option>
-                                    <option value="printer">Принтер</option>
-                                    <option value="router">Роутер</option>
-                                    <option value="phone">Телефон</option>
-                                    <option value="monitor">Монитор</option>
-                                    <option value="other">Другое</option>
-                                </select>
+                                <select id="assetType" required></select>
                             </div>
                             <div class="form-group">
                                 <label>Организация *</label>
-                                <select id="assetCompanyId" required>
-                                    <option value="">Выберите организацию</option>
-                                </select>
+                                <select id="assetCompanyId" required><option value="">Выберите организацию</option></select>
                             </div>
                             <div class="form-group">
                                 <label>Ответственный</label>
-                                <select id="assetAssignedTo">
-                                    <option value="">Не назначено</option>
-                                </select>
+                                <select id="assetAssignedTo"><option value="">Не назначено</option></select>
                             </div>
                         </div>
                         <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                             <div class="form-group">
-                                <label>Модель</label>
-                                <input type="text" id="assetModel" placeholder="Dell OptiPlex 7090">
+                                <label>Производитель</label>
+                                <input type="text" id="assetManufacturer" placeholder="Dell, HP, Lenovo...">
                             </div>
+                            <div class="form-group">
+                                <label>Модель</label>
+                                <input type="text" id="assetModel" placeholder="OptiPlex 7090">
+                            </div>
+                        </div>
+                        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                             <div class="form-group">
                                 <label>Серийный номер</label>
                                 <input type="text" id="assetSerialNumber" placeholder="SN-XXXXX">
                             </div>
+                            <div class="form-group">
+                                <label>Инвентарный номер</label>
+                                <input type="text" id="assetInventoryNumber" placeholder="INV-XXXXX">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Удалённый доступ (ID)</label>
-                            <input type="text" id="assetRemoteAccessId" placeholder="TeamViewer ID, AnyDesk...">
+                        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                            <div class="form-group">
+                                <label>Состояние</label>
+                                <select id="assetCondition"></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Статус</label>
+                                <select id="assetStatus"></select>
+                            </div>
                         </div>
                         <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                             <div class="form-group">
@@ -1650,12 +1491,37 @@
                                 <input type="text" id="assetLocation" placeholder="Офис, этаж 3, каб. 305">
                             </div>
                             <div class="form-group">
-                                <label>Статус</label>
-                                <select id="assetStatus">
-                                    <option value="active">Активно</option>
-                                    <option value="repair">В ремонте</option>
-                                    <option value="decommissioned">Списано</option>
-                                </select>
+                                <label>Поставщик</label>
+                                <input type="text" id="assetSupplier" placeholder="ООО Поставщик">
+                            </div>
+                        </div>
+                        <details style="margin-bottom:1rem;">
+                            <summary style="cursor:pointer;color:var(--jarvis-cyan);font-size:0.85rem;padding:0.5rem 0;"><i class="fas fa-plus-circle"></i> Характеристики</summary>
+                            <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem;">
+                                <div class="form-group"><label>CPU</label><input type="text" id="assetSpecCpu" placeholder="Intel i7-12700"></div>
+                                <div class="form-group"><label>RAM</label><input type="text" id="assetSpecRam" placeholder="16 GB DDR4"></div>
+                                <div class="form-group"><label>Диск</label><input type="text" id="assetSpecDisk" placeholder="512 GB SSD"></div>
+                                <div class="form-group"><label>GPU</label><input type="text" id="assetSpecGpu" placeholder="NVIDIA GTX 1650"></div>
+                                <div class="form-group"><label>ОС</label><input type="text" id="assetSpecOs" placeholder="Windows 11 Pro"></div>
+                                <div class="form-group"><label>IP-адрес</label><input type="text" id="assetSpecIp" placeholder="192.168.1.100"></div>
+                            </div>
+                        </details>
+                        <details style="margin-bottom:1rem;">
+                            <summary style="cursor:pointer;color:var(--jarvis-cyan);font-size:0.85rem;padding:0.5rem 0;"><i class="fas fa-shopping-cart"></i> Закупка</summary>
+                            <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem;">
+                                <div class="form-group"><label>Дата покупки</label><input type="date" id="assetPurchaseDate"></div>
+                                <div class="form-group"><label>Стоимость</label><input type="text" id="assetPurchaseCost" placeholder="100 000 сум"></div>
+                                <div class="form-group"><label>Гарантия до</label><input type="date" id="assetWarrantyEnd"></div>
+                            </div>
+                        </details>
+                        <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                            <div class="form-group">
+                                <label>Удалённый доступ (ID)</label>
+                                <input type="text" id="assetRemoteAccessId" placeholder="TeamViewer ID, AnyDesk...">
+                            </div>
+                            <div class="form-group">
+                                <label>Пароль удалённого доступа</label>
+                                <input type="text" id="assetRemoteAccessPassword" placeholder="Пароль">
                             </div>
                         </div>
                         <div class="form-group">
@@ -1664,7 +1530,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-text" onclick="closeModal('addAssetModal')">Отмена</button>
-                            <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Добавить</button>
+                            <button id="addAssetSubmitBtn" type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Добавить</button>
                         </div>
                     </form>
                 </div>
@@ -1672,6 +1538,72 @@
         </div>
 
         <!-- Report Modal -->
+        <!-- Assign Asset Modal -->
+        <div id="assignAssetModal" class="modal hidden">
+            <div class="modal-content glass-card" style="max-width:450px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-user-check" style="color:var(--jarvis-cyan);"></i> Выдать устройство</h2>
+                    <button class="btn-close" onclick="closeModal('assignAssetModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p id="assignAssetName" style="margin-bottom:1rem;font-size:0.9rem;color:var(--text-secondary);"></p>
+                    <div class="form-group">
+                        <label>Сотрудник *</label>
+                        <select id="assignEmployee"><option value="">Выберите сотрудника</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Причина выдачи</label>
+                        <textarea id="assignReason" rows="2" placeholder="Для выполнения рабочих задач..."></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-text" onclick="closeModal('assignAssetModal')">Отмена</button>
+                        <button class="btn btn-primary" onclick="handleAssignAsset()"><i class="fas fa-check"></i> Выдать</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Move Asset Modal -->
+        <div id="moveAssetModal" class="modal hidden">
+            <div class="modal-content glass-card" style="max-width:450px;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-arrows-alt" style="color:var(--jarvis-cyan);"></i> Переместить устройство</h2>
+                    <button class="btn-close" onclick="closeModal('moveAssetModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p id="moveAssetName" style="margin-bottom:1rem;font-size:0.9rem;color:var(--text-secondary);"></p>
+                    <div class="form-group">
+                        <label>Новое расположение *</label>
+                        <input type="text" id="moveToLocation" placeholder="Каб. 402, Серверная, Склад..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>Причина перемещения</label>
+                        <textarea id="moveReason" rows="2" placeholder="Смена отдела, ремонт..."></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-text" onclick="closeModal('moveAssetModal')">Отмена</button>
+                        <button class="btn btn-primary" onclick="handleMoveAsset()"><i class="fas fa-check"></i> Переместить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Detail Modal -->
+        <div id="assetDetailModal" class="modal hidden">
+            <div class="modal-content glass-card" style="max-width:800px;">
+                <div class="modal-header">
+                    <h2 id="assetDetailTitle"><i class="fas fa-info-circle" style="color:var(--jarvis-cyan);"></i> Детали устройства</h2>
+                    <button class="btn-close" onclick="closeModal('assetDetailModal')">&times;</button>
+                </div>
+                <div class="modal-body" id="assetDetailContent">
+                    <div style="text-align:center;padding:2rem;color:var(--text-secondary);">Загрузка...</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-text" onclick="closeModal('assetDetailModal')">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
         <div class="modal hidden" id="reportModal">
             <div class="modal-content glass-card" style="max-width: 700px;">
                 <div class="scan-line"></div>
@@ -1779,13 +1711,32 @@
         <script src="js/ui_manager.js?v=2"></script>
         <script src="js/api.js?v=3.3.1"></script>
         <script src="js/features-api.js?v=3.3.1"></script>
-        <script src="js/i18n.js?v=3.5.6"></script>
-        <script src="js/app.js?v=3.5.6"></script>
+        <script src="js/i18n.js?v=2.7.0"></script>
+        <script src="js/app.js?v=3.8.0"></script>
         <script src="js/features-simple.js?v=3.3.1"></script>
         <script src="js/features-agent.js?v=3.5.6"></script>
-        <script src="js/dashboard.js"></script>
+        <script src="js/dashboard-hud.js?v=6"></script>
+        <script src="js/tariffs-hud.js?v=7"></script>
         <script src="js/monitoring.js?v=2"></script>
         <script src="js/dashboard_settings.js"></script>
+
+        <!-- Monitoring Settings Modal -->
+        <div id="monitoringSettingsModal" class="modal hidden">
+            <div class="modal-content glass-card" style="max-width:750px;max-height:85vh;overflow-y:auto;">
+                <div class="modal-header">
+                    <h2><i class="fas fa-sliders-h" style="color:var(--jarvis-cyan);"></i> Настройка показателей мониторинга</h2>
+                    <button class="btn-close" onclick="closeModal('monitoringSettingsModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;">Настройте IT-инфраструктуру для каждой организации. Данные отображаются в Центре мониторинга.</p>
+                    <div id="monitoringSettingsList"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-text" onclick="closeModal('monitoringSettingsModal')">Отмена</button>
+                    <button class="btn btn-primary" onclick="saveMonitoringSettings()"><i class="fas fa-save"></i> Сохранить</button>
+                </div>
+            </div>
+        </div>
 </body>
 
 </html>

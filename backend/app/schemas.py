@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from app.models import TicketPriority, UserRole
@@ -164,12 +164,32 @@ class UserCreate(UserBase):
     company_id: Optional[int] = None
     anudesk_email: Optional[str] = None
 
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError("Пароль должен содержать минимум 6 символов")
+        if not any(c.isalpha() for c in v):
+            raise ValueError("Пароль должен содержать хотя бы одну букву")
+        return v
+
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     password: Optional[str] = None
     company_id: Optional[int] = None
     role: Optional[UserRole] = None
     anudesk_email: Optional[str] = None
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        if len(v) < 6:
+            raise ValueError("Пароль должен содержать минимум 6 символов")
+        if not any(c.isalpha() for c in v):
+            raise ValueError("Пароль должен содержать хотя бы одну букву")
+        return v
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -187,13 +207,29 @@ class UserResponse(UserBase):
         from_attributes = True
 
 class UserAdminResponse(UserResponse):
-    # plain_password removed from responses for security
+    """Admin view — no plain_password exposed."""
     company: Optional[CompanyResponse] = None
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
 
 class Token(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str
+
+class SwitchOrgRequest(BaseModel):
+    organization_id: str
+
+class OrgResponse(BaseModel):
+    id: str
+    name: str
+    slug: str
+
+class SwitchOrgResponse(BaseModel):
+    access_token: str
+    token_type: str
+    organization: OrgResponse
 
 # --- Ticket Status ---
 class TicketStatusBase(BaseModel):
@@ -268,6 +304,24 @@ class TicketResponse(BaseModel):
     
     rating: Optional[int] = None
     rating_comment: Optional[str] = None
+
+    @field_validator("rating", mode="before")
+    @classmethod
+    def coerce_rating(cls, v):
+        if v is None:
+            return None
+        if hasattr(v, "rating"):
+            return v.rating
+        return v
+
+    @field_validator("rating_comment", mode="before")
+    @classmethod
+    def coerce_rating_comment(cls, v):
+        if v is None:
+            return None
+        if hasattr(v, "comment"):
+            return v.comment
+        return v
     
     status: Optional[TicketStatusResponse] = Field(None, alias="status_rel") 
     creator: Optional[UserResponse] = None
@@ -659,67 +713,65 @@ class BusinessHoursResponse(BusinessHoursBase):
 
 
 # ============================================================================
-# IT ASSETS (полный учёт оборудования)
+# CUSTOMER ASSETS
 # ============================================================================
-class AssetSpecifications(BaseModel):
-    cpu: Optional[str] = None
-    ram: Optional[str] = None
-    disk: Optional[str] = None
-    gpu: Optional[str] = None
-    os: Optional[str] = None
-    ip_address: Optional[str] = None
-    mac_address: Optional[str] = None
-
 class CustomerAssetBase(BaseModel):
+    asset_type: str  # computer, server, printer, network
     name: str
-    asset_type: str = "other"               # laptop, desktop, server, printer, network, monitor, phone, tablet, other
-    manufacturer: Optional[str] = None
     model: Optional[str] = None
     serial_number: Optional[str] = None
-    inventory_number: Optional[str] = None
     specifications: Dict[str, Any] = {}
-    condition: str = "good"                  # new, excellent, good, fair, poor, damaged, broken
-    status: str = "active"                   # active, in_repair, in_storage, decommissioned, lost
-    purchase_date: Optional[datetime] = None
-    purchase_cost: Optional[str] = None
-    warranty_end: Optional[datetime] = None
-    supplier: Optional[str] = None
-    location: Optional[str] = None
     remote_access_id: Optional[str] = None
     remote_access_password: Optional[str] = None
+    purchase_date: Optional[datetime] = None
+    warranty_end: Optional[datetime] = None
+    status: str = "active"
     assigned_to: Optional[int] = None
+    location: Optional[str] = None
     notes: Optional[str] = None
 
 class CustomerAssetCreate(CustomerAssetBase):
     company_id: int
 
 class CustomerAssetUpdate(BaseModel):
-    name: Optional[str] = None
     asset_type: Optional[str] = None
-    manufacturer: Optional[str] = None
+    name: Optional[str] = None
+    model: Optional[str] = None
+    serial_number: Optional[str] = None
+    readable_id: Optional[str] = None
+    inventory_number: Optional[str] = None
+    condition: Optional[str] = None
+    specifications: Optional[Dict[str, Any]] = None
+    remote_access_id: Optional[str] = None
+    remote_access_password: Optional[str] = None
+    purchase_date: Optional[datetime] = None
+    warranty_end: Optional[datetime] = None
+    status: Optional[str] = None
+    assigned_to: Optional[int] = None
+    location: Optional[str] = None
+    notes: Optional[str] = None
+
+class CustomerAssetResponse(BaseModel):
+    """Public response — NO remote credentials exposed in list views."""
+    id: int
+    company_id: int
+    readable_id: Optional[str] = None
+    asset_type: str
+    name: str
     model: Optional[str] = None
     serial_number: Optional[str] = None
     inventory_number: Optional[str] = None
-    specifications: Optional[Dict[str, Any]] = None
-    condition: Optional[str] = None
-    status: Optional[str] = None
+    condition: Optional[str] = "good"
+    specifications: Dict[str, Any] = {}
     purchase_date: Optional[datetime] = None
-    purchase_cost: Optional[str] = None
     warranty_end: Optional[datetime] = None
-    supplier: Optional[str] = None
-    location: Optional[str] = None
-    remote_access_id: Optional[str] = None
-    remote_access_password: Optional[str] = None
+    status: str = "active"
     assigned_to: Optional[int] = None
+    assigned_at: Optional[datetime] = None
+    location: Optional[str] = None
     notes: Optional[str] = None
-
-class CustomerAssetResponse(CustomerAssetBase):
-    id: int
-    readable_id: Optional[str] = None
-    company_id: int
     company_name: Optional[str] = None
     assigned_user_name: Optional[str] = None
-    assigned_at: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     ticket_count: int = 0
@@ -727,34 +779,94 @@ class CustomerAssetResponse(CustomerAssetBase):
     class Config:
         from_attributes = True
 
+
+class CustomerAssetDetailResponse(BaseModel):
+    """Full detail — includes remote credentials. Only for authorized users."""
+    id: int
+    company_id: int
+    readable_id: Optional[str] = None
+    asset_type: str
+    name: str
+    model: Optional[str] = None
+    serial_number: Optional[str] = None
+    inventory_number: Optional[str] = None
+    condition: Optional[str] = "good"
+    specifications: Dict[str, Any] = {}
+    remote_access_id: Optional[str] = None
+    remote_access_password: Optional[str] = None
+    purchase_date: Optional[datetime] = None
+    warranty_end: Optional[datetime] = None
+    status: str = "active"
+    assigned_to: Optional[int] = None
+    assigned_at: Optional[datetime] = None
+    location: Optional[str] = None
+    notes: Optional[str] = None
+    company_name: Optional[str] = None
+    assigned_user_name: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    ticket_count: int = 0
+    
+    class Config:
+        from_attributes = True
+
+
 class AssetAssignmentResponse(BaseModel):
     id: int
     asset_id: int
     user_id: int
-    user_name: Optional[str] = None
-    assigned_by_name: Optional[str] = None
+    assigned_by: int
     assigned_at: datetime
     returned_at: Optional[datetime] = None
     return_condition: Optional[str] = None
     reason: Optional[str] = None
+    user_name: Optional[str] = None
+    assigned_by_name: Optional[str] = None
 
     class Config:
         from_attributes = True
+
 
 class AssetMovementResponse(BaseModel):
     id: int
     asset_id: int
     from_location: Optional[str] = None
-    to_location: str
+    to_location: Optional[str] = None
+    moved_by: int
     moved_at: datetime
-    moved_by_name: Optional[str] = None
     reason: Optional[str] = None
+    moved_by_name: Optional[str] = None
 
     class Config:
         from_attributes = True
 
-class AssetDetailResponse(CustomerAssetResponse):
-    """Полная информация об активе с историей"""
+
+class AssetDetailResponse(BaseModel):
+    """Full asset detail with nested assignments and movements."""
+    id: int
+    company_id: int
+    readable_id: Optional[str] = None
+    asset_type: str
+    name: str
+    model: Optional[str] = None
+    serial_number: Optional[str] = None
+    inventory_number: Optional[str] = None
+    condition: Optional[str] = "good"
+    specifications: Dict[str, Any] = {}
+    remote_access_id: Optional[str] = None
+    remote_access_password: Optional[str] = None
+    purchase_date: Optional[datetime] = None
+    warranty_end: Optional[datetime] = None
+    status: str = "active"
+    assigned_to: Optional[int] = None
+    assigned_at: Optional[datetime] = None
+    location: Optional[str] = None
+    notes: Optional[str] = None
+    company_name: Optional[str] = None
+    assigned_user_name: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    ticket_count: int = 0
     assignments: List[AssetAssignmentResponse] = []
     movements: List[AssetMovementResponse] = []
 
@@ -772,3 +884,79 @@ class ReportResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+# ============================================================================
+# COMPANY DASHBOARD
+# ============================================================================
+class CompanyDashboardNetwork(BaseModel):
+    total_devices: int = 0
+    online: int = 0
+    offline: int = 0
+    categories: Dict[str, int] = {}
+
+class CompanyDashboardServers(BaseModel):
+    total: int = 0
+    physical: int = 0
+    virtual: int = 0
+    online: int = 0
+    offline: int = 0
+    os_distribution: Dict[str, int] = {}
+
+class CompanyDashboardM365(BaseModel):
+    total_licenses: int = 0
+    active_users: int = 0
+    exchange_online: int = 0
+    teams_active: int = 0
+    onedrive_users: int = 0
+    sharepoint_sites: int = 0
+
+class CompanyDashboardDLP(BaseModel):
+    status: str = "online"
+    total_incidents: int = 0
+    prevented: int = 0
+    open: int = 0
+
+class CompanyDashboardBackup(BaseModel):
+    status: str = "ok"
+    success_rate: float = 100.0
+    total_backups: int = 0
+    storage_used_gb: float = 0
+
+class CompanyDashboardSecurity(BaseModel):
+    score: int = 85
+    vulnerabilities_critical: int = 0
+    vulnerabilities_high: int = 0
+    vulnerabilities_medium: int = 0
+    patches_pending: int = 0
+
+class CompanyDashboardTickets(BaseModel):
+    total: int = 0
+    open: int = 0
+    resolved: int = 0
+    sla_compliance: float = 100.0
+    critical_open: int = 0
+
+class CompanyDashboardEvent(BaseModel):
+    type: str = "info"
+    text: str = ""
+    time: str = ""
+
+class CompanyDashboardData(BaseModel):
+    company: Dict[str, Any]
+    security: CompanyDashboardSecurity
+    network: CompanyDashboardNetwork
+    servers: CompanyDashboardServers
+    m365: CompanyDashboardM365
+    dlp: CompanyDashboardDLP
+    backup: CompanyDashboardBackup
+    tickets: CompanyDashboardTickets
+    recent_events: List[CompanyDashboardEvent] = []
+
+class CompanyDashboardSettingsData(BaseModel):
+    company_id: int
+    company_name: Optional[str] = None
+    settings: Dict[str, Any] = {}
+
+class CompanyDashboardSettingsBulk(BaseModel):
+    settings: List[CompanyDashboardSettingsData]

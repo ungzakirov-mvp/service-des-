@@ -26,7 +26,7 @@ function initializeApp() {
     const token = localStorage.getItem('access_token');
     if (token) {
         showDashboard();
-        // loadDashboardData() вызывается внутри showView('dashboard')
+        // loadDashboardData() ???????????????????? ???????????? showView('dashboard')
     } else {
         showPage('loginPage');
     }
@@ -127,7 +127,7 @@ function setupEventListeners() {
     // Refresh Dashboard
     document.getElementById('refreshDashboardBtn').addEventListener('click', () => {
         loadDashboardData();
-        showToast('Данные обновлены', 'success');
+        showToast('???????????? ??????????????????', 'success');
     });
 
     // Command Center shortcut (Ctrl+K)
@@ -225,9 +225,9 @@ async function handleLogin(e) {
 
     try {
         await api.login(email, password);
-        showToast('Вход выполнен успешно!', 'success');
+        showToast('???????? ???????????????? ??????????????!', 'success');
         showDashboard();
-        // loadDashboardData() вызывается внутри showView
+        // loadDashboardData() ???????????????????? ???????????? showView
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -241,9 +241,9 @@ async function handleRegister(e) {
 
     try {
         await api.register(email, password, fullName);
-        showToast('Регистрация успешна!', 'success');
+        showToast('?????????????????????? ??????????????!', 'success');
         showDashboard();
-        // loadDashboardData() вызывается внутри showView
+        // loadDashboardData() ???????????????????? ???????????? showView
     } catch (error) {
         showToast(error.message, 'error');
     }
@@ -253,7 +253,7 @@ function handleLogout() {
     api.clearToken();
     currentUser = null;
     showPage('loginPage');
-    showToast('Вы вышли из системы', 'success');
+    showToast('???? ?????????? ???? ??????????????', 'success');
 }
 
 // Dashboard
@@ -287,7 +287,7 @@ async function showDashboard() {
         if (topUserAvatar) topUserAvatar.textContent = (currentUser.full_name || currentUser.email).charAt(0).toUpperCase();
         if (topUserInfoBar) topUserInfoBar.style.display = 'flex';
         if (roleEl) {
-            var roleMap = { 'super_admin': 'Главный администратор', 'admin': 'Администратор', 'agent': 'Агент', 'client': 'Клиент', 'manager': 'Менеджер' };
+            var roleMap = { 'super_admin': '?????????????? ??????????????????????????', 'admin': '??????????????????????????', 'agent': '??????????', 'client': '????????????', 'manager': '????????????????' };
             roleEl.textContent = roleMap[(currentUser.role || '').toLowerCase()] || currentUser.role.toUpperCase();
         }
         if (charEl) charEl.textContent = (currentUser.full_name || currentUser.email).charAt(0).toUpperCase();
@@ -295,8 +295,8 @@ async function showDashboard() {
         // Role-based visibility
         const role = currentUser.role;
         const auditLink = document.getElementById('auditNavLink');
-        const crmLink = document.querySelector('[data-page="crm"]');
         const usersLink = document.getElementById('usersNavLink');
+        const crmLink = document.querySelector('[data-page="crm"]');
 
         if (auditLink) auditLink.style.display = (role === 'manager' || role === 'admin') ? 'flex' : 'none';
         if (crmLink) crmLink.style.display = (role !== 'client') ? 'flex' : 'none';
@@ -345,6 +345,8 @@ async function loadDashboardData() {
         const activeUsersEl = document.getElementById('activeUsers');
         const slaComplianceEl = document.getElementById('slaCompliance');
         const avgResolutionTimeEl = document.getElementById('avgResolutionTime');
+        // Guard: if old dashboard elements are missing, skip legacy rendering
+        if (!totalTicketsEl) return;
         const lastUpdateTimeEl = document.getElementById('lastUpdateTime');
         
         animateCounter(totalTicketsEl, analytics.total_tickets || 0);
@@ -356,7 +358,7 @@ async function loadDashboardData() {
 
         const totalHours = analytics.agent_performance.reduce((acc, curr) => acc + (curr.avg_resolution_hours || 0), 0);
         const avgHours = analytics.agent_performance.length > 0 ? (totalHours / analytics.agent_performance.length).toFixed(1) : "0";
-        if (avgResolutionTimeEl) avgResolutionTimeEl.textContent = `${avgHours}ч`;
+        if (avgResolutionTimeEl) avgResolutionTimeEl.textContent = `${avgHours}??`;
 
         // Quick stats
         const criticalEl = document.getElementById('criticalTickets');
@@ -368,7 +370,7 @@ async function loadDashboardData() {
         if (todayEl) animateCounter(todayEl, analytics.today_count || 0);
         if (openEl) animateCounter(openEl, analytics.open_count || (analytics.total_tickets || 0));
 
-        if (lastUpdateTimeEl) lastUpdateTimeEl.textContent = `Обновлено: ${new Date().toLocaleTimeString('ru-RU')}`;
+        if (lastUpdateTimeEl) lastUpdateTimeEl.textContent = `??????????????????: ${new Date().toLocaleTimeString('ru-RU')}`;
 
         renderVolumeChart(analytics.volume_trends);
         renderStatusChart(analytics.status_distribution);
@@ -423,7 +425,7 @@ function renderWeekdayChart() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (weekdayChart) weekdayChart.destroy();
-    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const days = ['????', '????', '????', '????', '????', '????', '????'];
     const now = new Date();
     const dayOfWeek = now.getDay() || 7;
     const monday = new Date(now);
@@ -438,7 +440,7 @@ function renderWeekdayChart() {
         data: {
             labels: data.map(d => d.label),
             datasets: [{
-                label: 'Заявок',
+                label: '????????????',
                 data: data.map(() => Math.floor(Math.random() * 5) + 1),
                 backgroundColor: ['rgba(16,185,129,0.6)', 'rgba(16,185,129,0.6)', 'rgba(16,185,129,0.6)', 'rgba(16,185,129,0.6)', 'rgba(16,185,129,0.6)', 'rgba(99,102,241,0.3)', 'rgba(99,102,241,0.3)'],
                 borderColor: ['#10b981', '#10b981', '#10b981', '#10b981', '#10b981', '#6366f1', '#6366f1'],
@@ -470,15 +472,15 @@ function renderSlaBreaches(tickets) {
     const container = document.getElementById('slaBreachList');
     if (!container) return;
     if (!tickets || !tickets.length) {
-        container.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-tertiary);font-size:0.85rem;">✅ Нарушений нет</div>';
+        container.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-tertiary);font-size:0.85rem;">??? ?????????????????? ??????</div>';
         return;
     }
     container.innerHTML = tickets.slice(0, 5).map(t => {
         const due = t.sla_due_at ? new Date(t.sla_due_at) : null;
         const days = due ? Math.floor((Date.now() - due) / (1000*60*60*24)) : '?';
         return `<div class="deadline-item urgent" style="cursor:pointer;" onclick="openTicketModal(${t.id})">
-            <div class="deadline-date"><span class="dd-day">${days}</span><span class="dd-month">дн.</span></div>
-            <div class="deadline-content"><h4>#${t.readable_id} ${escapeHtml(t.title || '')}</h4><p>Просрочка ${days} дн.</p></div>
+            <div class="deadline-date"><span class="dd-day">${days}</span><span class="dd-month">????.</span></div>
+            <div class="deadline-content"><h4>#${t.readable_id} ${escapeHtml(t.title || '')}</h4><p>?????????????????? ${days} ????.</p></div>
         </div>`;
     }).join('');
 }
@@ -493,7 +495,7 @@ function renderVolumeChart(trends) {
         data: {
             labels: trends.map(t => t.date),
             datasets: [{
-                label: 'Количество заявок',
+                label: '???????????????????? ????????????',
                 data: trends.map(t => t.count),
                 borderColor: '#6366f1',
                 backgroundColor: 'rgba(99, 102, 241, 0.1)',
@@ -554,7 +556,7 @@ function renderStatusChart(dist) {
 function renderAgentRatings(agents) {
     const container = document.getElementById('agentRatingList');
     if (!agents.length) {
-        container.innerHTML = '<div class="loading">Нет исполнителей</div>';
+        container.innerHTML = '<div class="loading">?????? ????????????????????????</div>';
         return;
     }
 
@@ -565,8 +567,8 @@ function renderAgentRatings(agents) {
         <div class="rating-item">
             <div class="rating-rank">${index + 1}</div>
             <div class="rating-info">
-                <span class="rating-name">${escapeHtml(agent.full_name || 'Неизвестно')}</span>
-                <span class="rating-val">${agent.resolved_count} решено • ${agent.sla_compliance_rate}% SLA</span>
+                <span class="rating-name">${escapeHtml(agent.full_name || '????????????????????')}</span>
+                <span class="rating-val">${agent.resolved_count} ???????????? ??? ${agent.sla_compliance_rate}% SLA</span>
             </div>
         </div>
     `).join('');
@@ -575,7 +577,7 @@ function renderAgentRatings(agents) {
 function renderRequesterRatings(requesters) {
     const container = document.getElementById('requesterRatingList');
     if (!requesters.length) {
-        container.innerHTML = '<div class="loading">Нет заказчиков</div>';
+        container.innerHTML = '<div class="loading">?????? ????????????????????</div>';
         return;
     }
 
@@ -584,8 +586,8 @@ function renderRequesterRatings(requesters) {
         <div class="rating-item">
             <div class="rating-rank">${index + 1}</div>
             <div class="rating-info">
-                <span class="rating-name">${escapeHtml(req.full_name || 'Неизвестно')}</span>
-                <span class="rating-val">${req.ticket_count} заявок</span>
+                <span class="rating-name">${escapeHtml(req.full_name || '????????????????????')}</span>
+                <span class="rating-val">${req.ticket_count} ????????????</span>
             </div>
         </div>
     `).join('');
@@ -594,7 +596,7 @@ function renderRequesterRatings(requesters) {
 function renderDeadlines(deadlines) {
     const container = document.getElementById('deadlineList');
     if (!deadlines.length) {
-        container.innerHTML = '<div class="loading">Дедлайнов нет</div>';
+        container.innerHTML = '<div class="loading">?????????????????? ??????</div>';
         return;
     }
 
@@ -612,7 +614,7 @@ function renderDeadlines(deadlines) {
                 </div>
                 <div class="deadline-content">
                     <h4>${escapeHtml(d.title)}</h4>
-                    <p>${d.status_name} • ${d.priority}</p>
+                    <p>${d.status_name} ??? ${d.priority}</p>
                 </div>
             </div>
         `;
@@ -620,7 +622,7 @@ function renderDeadlines(deadlines) {
 }
 
 function filterRecentTickets(status) {
-    const tickets = window.allRecentTickets || [];
+    var tickets = window.allRecentTickets || [];
     const filtered = status === 'all'
         ? tickets
         : tickets.filter(t => t.status.toLowerCase() === status.toLowerCase());
@@ -628,182 +630,260 @@ function filterRecentTickets(status) {
     renderRecentTickets(filtered);
 }
 
-function renderRecentTickets(tickets) {
-    const container = document.getElementById('recentTicketsList');
-    if (!tickets || tickets.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-secondary); padding: 2rem; text-align: center;">Тикетов не найдено</p>';
-        return;
-    }
 
-    // Не перерисовывать если данные не изменились
-    const newHtml = `
-        <div class="ticket-list-header glass-card" style="display: grid; grid-template-columns: 80px 1fr 120px 120px 140px; padding: 0.5rem 1.25rem; font-size: 0.75rem; color: var(--text-low); border-bottom: 2px solid var(--prism-border); border-radius: 0;">
-            <span>ID</span>
-            <span>TITLE</span>
-            <span>STATUS</span>
-            <span>PRIORITY</span>
-            <span>UPDATED</span>
-        </div>
-        ${tickets.map(ticket => `
-            <div class="ticket-card" onclick="openTicketModal(${ticket.id})">
-                <span class="ticket-id-tag">#${ticket.readable_id || ticket.id}</span>
-                <span class="ticket-title">${escapeHtml(ticket.title)}${ticket.rating ? ` <span class="text-warning text-xs" title="Оценка: ${ticket.rating}/5" style="margin-left: 0.5rem;"><i class="fas fa-star"></i> ${ticket.rating}</span>` : ''}</span>
-                <span class="badge badge-${getStatusClass(ticket.status_rel?.name || 'новый')}">${ticket.status_rel?.name || 'новый'}</span>
-                <span class="badge badge-${getPriorityClass(ticket.priority)}">${ticket.priority}</span>
-                <span style="color: var(--text-low); font-size: 0.75rem;">${formatDate(ticket.created_at)}</span>
-            </div>
-        `).join('')}
-    `;
-    
-    if (container._lastHtml === newHtml) return;
-    container._lastHtml = newHtml;
-    container.innerHTML = newHtml;
-}
 
 // Tickets View
 async function loadTickets() {
     if (_ticketsLoading) return;
     _ticketsLoading = true;
-    const status = document.getElementById('statusFilter').value;
-    const priority = document.getElementById('priorityFilter').value;
+    var status = document.getElementById('statusFilter').value;
+    var priority = document.getElementById('priorityFilter').value;
 
-    const filters = {};
+    var filters = {};
     if (status) filters.status = status;
     if (priority) filters.priority = priority;
 
     try {
-        const tickets = await api.getTickets(filters);
+        var tickets = await api.getTickets(filters);
         renderTickets(tickets);
     } catch (error) {
-        showToast('Ошибка загрузки тикетов', 'error');
+        showToast('???????????? ???????????????? ??????????????', 'error');
     } finally {
         _ticketsLoading = false;
     }
 }
 
 function renderTickets(tickets) {
-    const container = document.getElementById('ticketsList');
+    var container = document.getElementById('ticketsList');
+    if (!container) return;
+
     if (!tickets || tickets.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-secondary)">Тикеты не найдены</p>';
+        container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary);"><i class="fas fa-inbox" style="font-size:2rem;display:block;margin-bottom:0.5rem;color:var(--text-tertiary);"></i><p>???????????? ???? ??????????????</p></div>';
         return;
     }
 
-    const slaColor = (ticket) => {
-        if (!ticket.sla_due_at) return '';
-        const diff = new Date(ticket.sla_due_at) - new Date();
+    var statusBg = function(name) {
+        var n = (name || '').toLowerCase();
+        if (n.includes('??????????') || n.includes('new')) return '#3b82f6';
+        if (n.includes('??????????') || n.includes('progress')) return '#f59e0b';
+        if (n.includes('????????????') || n.includes('awaiting')) return '#8b5cf6';
+        if (n.includes('????????????') || n.includes('closed')) return '#6b7280';
+        if (n.includes('??????????') || n.includes('resolved') || n.includes('????????????????') || n.includes('????????????')) return '#10b981';
+        return '#6366f1';
+    };
+    var statusLabel = function(name) {
+        var n = (name || '').toLowerCase();
+        if (n.includes('??????????') || n.includes('new')) return '??????????';
+        if (n.includes('??????????') || n.includes('progress')) return '?? ????????????';
+        if (n.includes('????????????') || n.includes('awaiting')) return '??????????????';
+        if (n.includes('??????????') || n.includes('resolved') || n.includes('????????????????')) return '????????????????';
+        if (n.includes('????????????') || n.includes('closed') || n.includes('????????????')) return '????????????????';
+        return name || '?';
+    };
+    var fmtSla = function(d) {
+        if (!d) return '';
+        // Append Z to treat as UTC (backend sends UTC timestamps)
+        var slaDate = d.endsWith('Z') ? new Date(d) : new Date(d + 'Z');
+        var diff = slaDate - new Date();
+        if (diff < 0) return '????????????????????';
+        var h = Math.floor(diff/3600000);
+        var m = Math.floor((diff%3600000)/60000);
+        if (h > 24) return Math.floor(h/24) + '?? ' + (h%24) + '??';
+        if (h > 0) return h + '?? ' + m + '??';
+        return m + ' ??????';
+    };
+    var slaClass = function(t) {
+        if (!t.sla_due_at) return '';
+        var slaDate = t.sla_due_at.endsWith('Z') ? new Date(t.sla_due_at) : new Date(t.sla_due_at + 'Z');
+        var diff = slaDate - new Date();
         if (diff < 0) return 'sla-overdue';
         if (diff < 2*3600000) return 'sla-urgent';
         if (diff < 24*3600000) return 'sla-warning';
         return '';
     };
-
-    const statusBg = (name) => {
-        const n = (name || '').toLowerCase();
-        if (n.includes('новый') || n.includes('new') || n.includes('открыт')) return '#3b82f6';
-        if (n.includes('работ') || n.includes('progress') || n.includes('ожидан')) return '#f59e0b';
-        if (n.includes('Ожидает') || n.includes('решён') || n.includes('resolved')) return '#10b981';
-        if (n.includes('закрыт') || n.includes('closed')) return '#6b7280';
-        return '#8b5cf6';
+    var getInitials = function(name) {
+        if (!name) return '?';
+        var parts = name.split(' ');
+        return (parts[0][0] || '') + (parts[1] ? parts[1][0] : '');
+    };
+    var avatarColor = function(name) {
+        if (!name) return '#6366f1';
+        var hash = 0;
+        for (var i = 0; i < name.length; i++) { hash = name.charCodeAt(i) + ((hash << 5) - hash); }
+        var colors = ['#6366f1','#ec4899','#10b981','#f59e0b','#3b82f6','#8b5cf6','#ef4444','#14b8a6'];
+        return colors[Math.abs(hash) % colors.length];
+    };
+    var getPriorityBadge = function(p) {
+        p = (p || '').toLowerCase();
+        if (p === 'critical') return {label:'??????????????????', color:'#ef4444', bg:'rgba(239,68,68,0.15)'};
+        if (p === 'high') return {label:'??????????????', color:'#f59e0b', bg:'rgba(245,158,11,0.15)'};
+        if (p === 'medium') return {label:'??????????????', color:'#3b82f6', bg:'rgba(59,130,246,0.15)'};
+        if (p === 'low') return {label:'????????????', color:'#10b981', bg:'rgba(16,185,129,0.15)'};
+        return {label:p || '???', color:'#6b7280', bg:'rgba(107,114,128,0.15)'};
+    };
+    var isOverdue = function(t) {
+        return t.sla_due_at && new Date(t.sla_due_at) < new Date();
     };
 
-    const fmtSla = (d) => {
-        if (!d) return '';
-        const diff = new Date(d) - new Date();
-        if (diff < 0) return 'Просрочено';
-        const h = Math.floor(diff/3600000);
-        const m = Math.floor((diff%3600000)/60000);
-        if (h > 24) return `${Math.floor(h/24)}д ${h%24}ч`;
-        if (h > 0) return `${h}ч ${m}м`;
-        return `${m} мин`;
-    };
+    // Compute stats
+    var total = tickets.length;
+    var newCount = 0, progressCount = 0, awaitingCount = 0, resolvedCount = 0, closedCount = 0, overdueCount = 0;
+    for (var ti = 0; ti < tickets.length; ti++) {
+        var t = tickets[ti];
+        var sn = (t.status_rel ? t.status_rel.name : t.status || '').toLowerCase();
+        if (sn.includes('??????????') || sn.includes('new') || sn.includes('????????????')) newCount++;
+        else if (sn.includes('??????????') || sn.includes('progress')) progressCount++;
+        else if (sn.includes('????????????') || sn.includes('awaiting')) awaitingCount++;
+        else if (sn.includes('??????????') || sn.includes('resolved')) resolvedCount++;
+        else if (sn.includes('????????????') || sn.includes('closed')) closedCount++;
+        if (isOverdue(t)) overdueCount++;
+    }
 
-    const newHtml = `
-        <div class="ticket-list-header glass-card" style="display: grid; grid-template-columns: 60px 1fr 110px 100px 90px 100px 70px 110px; padding: 0.5rem 1rem; font-size: 0.7rem; color: var(--text-low); border-bottom: 2px solid var(--prism-border); border-radius: 0;">
-            <span>ID</span><span>ЗАЯВКА</span><span>ЗАЯВИТЕЛЬ</span><span>СТАТУС</span><span>ПРИОР.</span><span>SLA</span><span>ИСПОЛН.</span><span>ДЕЙСТВИЯ</span>
-        </div>
-        ${tickets.map(t => {
-            const sc = slaColor(t);
-            const sl = fmtSla(t.sla_due_at);
-            const sBg = statusBg(t.status_rel?.name);
-            const assigned = t.assignee ? (t.assignee.full_name || t.assignee.email.split('@')[0]) : '—';
-            const statusName = t.status_rel?.name || '?';
-            let statusText = statusName;
-            if (statusName === 'Новый') statusText = 'Новая';
-            if (statusName === 'В работе') statusText = 'В работе';
-            if (statusName === 'Ожидает клиента') statusText = 'Ждёт клиента';
-            if (t.status_rel?.is_final) statusText = 'Закрыта';
-            return `<div class="ticket-card ${sc}" onclick="openTicketModal(${t.id})" style="display:grid;grid-template-columns:60px 1fr 110px 100px 90px 100px 70px 110px;align-items:center;gap:4px;cursor:pointer;padding:0.75rem 1rem;border-bottom:1px solid var(--prism-border);">
-                <span class="ticket-id-tag">#${t.readable_id||t.id}</span>
-                <span class="ticket-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(t.title)}${t.scheduled_at ? '<span style="font-size:0.65rem;color:var(--text-low);margin-left:6px;">📋 '+new Date(t.scheduled_at).toLocaleDateString('ru')+'</span>' : ''}</span>
-                <span style="font-size:0.7rem;color:var(--text-med);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.creator?.full_name || t.creator?.email?.split('@')[0] || '-'}</span>
-                <span class="badge" style="background:${sBg}22;color:${sBg};border:1px solid ${sBg}44;font-size:0.7rem;white-space:nowrap;">${statusText}</span>
-                <span class="badge badge-${getPriorityClass(t.priority)}" style="font-size:0.7rem;">${t.priority}</span>
-                <span style="font-size:0.7rem;color:${sc==='sla-overdue'?'#ef4444':sc==='sla-urgent'?'#f59e0b':'var(--text-low)'};">${sl}</span>
-                <span style="font-size:0.7rem;color:var(--text-med);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(assigned)}</span>
-                <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;" onclick="event.stopPropagation();">
-                    ${!t.accepted_at && window._currentUser?.role !== 'client' ? `<button class="ticket-action-btn accept-btn" onclick="acceptTicket(${t.id})">Принять</button>` : ''}
-                    ${t.accepted_at && t.status_rel?.name === 'В работе' && window._currentUser?.role !== 'client' ? `<button class="ticket-action-btn resolve-btn" onclick="resolveTicketAction(${t.id})">Завершить</button>` : ''}
-                    ${t.status_rel?.name === 'Ожидает клиента' ? `<span class="awaiting-text"><i class="fas fa-clock"></i> Ждём</span>` : ''}
-                    ${t.status_rel?.is_final ? `<button class="ticket-action-btn reopen-btn" onclick="reopenTicketAction(${t.id})">Открыть</button>` : ''}
-                    ${window._currentUser?.role === 'admin' || window._currentUser?.role === 'super_admin' ? `<button class="ticket-action-btn assign-btn" onclick="showAssignModal(${t.id})">↻</button>` : ''}
-                    ${t.rating ? `<span style="color:#f59e0b;">★${t.rating}</span>` : ''}
-                </span>
-            </div>`;
-        }).join('')}
-    `;
-    
-    // Не перерисовывать если HTML не изменился
-    if (container._lastHtml === newHtml) return;
-    container._lastHtml = newHtml;
-    container.innerHTML = newHtml;
+    var html = '';
+
+    // Stats widgets row
+    html += '<div class="ticket-stats-row">';
+    var stats = [
+        {icon:'fa-inbox', label:'??????????', value:total, color:'#3b82f6'},
+        {icon:'fa-star', label:'??????????', value:newCount, color:'#f59e0b'},
+        {icon:'fa-spinner', label:'?? ????????????', value:progressCount, color:'#8b5cf6'},
+        {icon:'fa-clock', label:'??????????????', value:awaitingCount, color:'#ec4899'},
+        {icon:'fa-check-circle', label:'????????????', value:resolvedCount, color:'#10b981'},
+        {icon:'fa-exclamation-triangle', label:'???????????????????? SLA', value:overdueCount, color:'#ef4444'}
+    ];
+    for (var si = 0; si < stats.length; si++) {
+        html += '<div class="ticket-stat-card" style="border-left-color:' + stats[si].color + ';">' +
+            '<div class="ticket-stat-icon" style="color:' + stats[si].color + ';"><i class="fas ' + stats[si].icon + '"></i></div>' +
+            '<div class="ticket-stat-info"><div class="ticket-stat-value">' + stats[si].value + '</div><div class="ticket-stat-label">' + stats[si].label + '</div></div></div>';
+    }
+    html += '</div>';
+
+    // Tickets list
+    html += '<div class="tickets-card-list">';
+    for (var ti = 0; ti < tickets.length; ti++) {
+        var t = tickets[ti];
+        var sc = slaClass(t);
+        var sl = fmtSla(t.sla_due_at);
+        var sBg = statusBg(t.status_rel ? t.status_rel.name : '');
+        var sLbl = statusLabel(t.status_rel ? t.status_rel.name : '');
+        var prio = getPriorityBadge(t.priority);
+        var creatorName = t.creator ? (t.creator.full_name || t.creator.email || '???') : '???';
+        var assigneeName = t.assignee ? (t.assignee.full_name || t.assignee.email || '???') : '???';
+        var init = getInitials(creatorName);
+        var ac = avatarColor(creatorName);
+        var overdue = isOverdue(t);
+        var hasSla = t.sla_due_at ? true : false;
+
+        html += '<div class="ticket-modern-card" onclick="openTicketModal(' + t.id + ')">';
+        
+        // Left: avatar
+        html += '<div class="ticket-card-left">';
+        html += '<div class="ticket-avatar" style="background:' + ac + ';">' + init + '</div>';
+        html += '</div>';
+
+        // Center: content
+        html += '<div class="ticket-card-center">';
+        html += '<div class="ticket-card-title-row">';
+        html += '<span class="ticket-card-id">#' + (t.readable_id || t.id) + '</span>';
+        html += '<span class="ticket-card-title">' + escapeHtml(t.title) + '</span>';
+        html += '</div>';
+        html += '<div class="ticket-card-meta">';
+        html += '<span class="ticket-card-meta-item"><i class="fas fa-user"></i> ' + escapeHtml(creatorName) + '</span>';
+        html += '<span class="ticket-card-meta-item"><i class="fas fa-user-check"></i> ' + escapeHtml(assigneeName) + '</span>';
+        if (t.created_at) {
+            var d = new Date(t.created_at);
+            html += '<span class="ticket-card-meta-item"><i class="fas fa-calendar"></i> ' + d.toLocaleDateString('ru-RU') + '</span>';
+        }
+        if (t.company_name) {
+            html += '<span class="ticket-card-meta-item"><i class="fas fa-building"></i> ' + escapeHtml(t.company_name) + '</span>';
+        }
+        html += '</div>';
+        html += '</div>';
+
+        // Right: badges and actions
+        html += '<div class="ticket-card-right">';
+        // Status badge
+        html += '<span class="ticket-badge status-badge" style="background:' + sBg + '22;color:' + sBg + ';border:1px solid ' + sBg + '44;">' + sLbl + '</span>';
+        // Priority badge
+        html += '<span class="ticket-badge prio-badge" style="background:' + prio.bg + ';color:' + prio.color + ';border:1px solid ' + prio.color + '44;">' + prio.label + '</span>';
+        // SLA
+        if (hasSla) {
+            html += '<span class="ticket-badge sla-badge ' + sc + '" style="' + (overdue ? 'color:#ef4444;border-color:#ef4444;' : '') + '"><i class="fas fa-hourglass-half"></i> ' + sl + '</span>';
+        }
+        // Rating
+        if (t.rating) {
+            html += '<span class="ticket-badge" style="color:#f59e0b;"><i class="fas fa-star"></i> ' + t.rating + '</span>';
+        }
+        // Actions
+        html += '<div class="ticket-card-actions" onclick="event.stopPropagation();">';
+        if (!t.accepted_at && window._currentUser && window._currentUser.role !== 'client') {
+            html += '<button class="ticket-btn accept-btn" onclick="acceptTicket(' + t.id + ')" title="??????????????"><i class="fas fa-check"></i></button>';
+        }
+        if (t.status_rel && t.status_rel.name === '?? ????????????' && window._currentUser && window._currentUser.role !== 'client') {
+            html += '<button class="ticket-btn resolve-btn" onclick="resolveTicketAction(' + t.id + ')" title="??????????????????"><i class="fas fa-check-double"></i></button>';
+        }
+        if (t.status_rel && t.status_rel.is_final) {
+            html += '<button class="ticket-btn reopen-btn" onclick="reopenTicketAction(' + t.id + ')" title="??????????????"><i class="fas fa-redo"></i></button>';
+        }
+        if (window._currentUser && (window._currentUser.role === 'admin' || window._currentUser.role === 'super_admin')) {
+            html += '<button class="ticket-btn assign-btn" onclick="showAssignModal(' + t.id + ')" title="??????????????????"><i class="fas fa-user-plus"></i></button>';
+        }
+        html += '</div>';
+        html += '</div>';
+
+        html += '</div>';
+    }
+    html += '</div>';
+
+    container.innerHTML = html;
 }
 
 async function acceptTicket(ticketId) {
     try {
         await api.acceptTicket(ticketId);
-        showToast('Тикет принят', 'success');
+        showToast('?????????? ????????????', 'success');
         loadTickets();
-    } catch (e) { showToast(e.message || 'Ошибка', 'error'); }
+    } catch (e) { showToast(e.message || '????????????', 'error'); }
 }
 
 async function closeTicketAction(ticketId) {
-    if (!confirm('Закрыть тикет?')) return;
+    if (!confirm('?????????????? ???????????')) return;
     try {
         await api.closeTicket(ticketId);
-        showToast('Тикет закрыт', 'success');
+        showToast('?????????? ????????????', 'success');
         loadTickets();
-    } catch (e) { showToast(e.message || 'Ошибка', 'error'); }
+    } catch (e) { showToast(e.message || '????????????', 'error'); }
 }
 
 async function resolveTicketAction(ticketId) {
-    var comment = prompt('Комментарий о выполненной работе (необязательно):');
+    var comment = prompt('?????????????????????? ?? ?????????????????????? ???????????? (??????????????????????????):');
     if (comment === null) return;
     try {
         await api.resolveTicket(ticketId, comment);
-        showToast('Тикет завершён! Клиент уведомлён.', 'success');
+        showToast('?????????? ????????????????! ???????????? ??????????????????.', 'success');
         loadTickets();
-    } catch (e) { showToast(e.message || 'Ошибка', 'error'); }
+    } catch (e) { showToast(e.message || '????????????', 'error'); }
 }
 
 async function reopenTicketAction(ticketId) {
-    var reason = prompt('Причина переоткрытия:');
+    var reason = prompt('?????????????? ????????????????????????:');
     if (reason === null) return;
     try {
-        await api.reopenTicket(ticketId, reason || 'Агент переоткрыл');
-        showToast('Тикет переоткрыт', 'success');
+        await api.reopenTicket(ticketId, reason || '?????????? ????????????????????');
+        showToast('?????????? ????????????????????', 'success');
         loadTickets();
-    } catch (e) { showToast(e.message || 'Ошибка', 'error'); }
+    } catch (e) { showToast(e.message || '????????????', 'error'); }
 }
 
 async function showAssignModal(ticketId) {
     window._assignTicketId = ticketId;
     const sel = document.getElementById('assignAgentSelect');
-    sel.innerHTML = '<option value="">Загрузка агентов...</option>';
+    sel.innerHTML = '<option value="">???????????????? ??????????????...</option>';
     document.getElementById('assignModal').classList.remove('hidden');
     try {
         const users = await api.getUsers();
         const agents = users.filter(u => u.role === 'agent' || u.role === 'admin' || u.role === 'super_admin');
-        sel.innerHTML = '<option value="">Выберите исполнителя</option>';
+        sel.innerHTML = '<option value="">???????????????? ??????????????????????</option>';
         agents.forEach(a => {
             const opt = document.createElement('option');
             opt.value = a.id;
@@ -811,24 +891,24 @@ async function showAssignModal(ticketId) {
             sel.appendChild(opt);
         });
         if (agents.length === 0) {
-            sel.innerHTML = '<option value="">Нет агентов</option>';
+            sel.innerHTML = '<option value="">?????? ??????????????</option>';
         }
     } catch (e) {
-        sel.innerHTML = '<option value="">Ошибка загрузки</option>';
-        showToast('Не удалось загрузить агентов', 'error');
+        sel.innerHTML = '<option value="">???????????? ????????????????</option>';
+        showToast('???? ?????????????? ?????????????????? ??????????????', 'error');
     }
 }
 
 async function handleAssignTicket(e) {
     e.preventDefault();
     const agentId = document.getElementById('assignAgentSelect').value;
-    if (!agentId) { showToast('Выберите исполнителя', 'error'); return; }
+    if (!agentId) { showToast('???????????????? ??????????????????????', 'error'); return; }
     try {
         await api.assignTicket(window._assignTicketId, parseInt(agentId));
-        showToast('Исполнитель назначен', 'success');
+        showToast('?????????????????????? ????????????????', 'success');
         closeModal('assignModal');
         loadTickets();
-    } catch (e) { showToast(e.message || 'Ошибка', 'error'); }
+    } catch (e) { showToast(e.message || '????????????', 'error'); }
 }
 
 // Create Ticket
@@ -838,12 +918,12 @@ async function handleCreateTicket(e) {
     const btn = e.target.querySelector('.btn-creator-submit') || e.target.querySelector('button[type="submit"]');
     if (btn) {
         btn.classList.add('loading');
-        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Создание...';
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> ????????????????...';
     }
 
     const title = document.getElementById('ticketTitle').value;
     const description = document.getElementById('ticketDescription').value;
-    const priority = document.querySelector('input[name="priority"]:checked')?.value || 'medium';
+    var priority = document.querySelector('input[name="priority"]:checked')?.value || 'medium';
     const scheduledAt = document.getElementById('ticketScheduledAt')?.value;
     const assignee = document.getElementById('ticketAssignee')?.value;
 
@@ -853,11 +933,11 @@ async function handleCreateTicket(e) {
 
     try {
         const result = await api.createTicket(data);
-        showToast('✅ Заявка создана и отправлена на обработку!', 'success');
+        showToast('??? ???????????? ?????????????? ?? ???????????????????? ???? ??????????????????!', 'success');
         e.target.reset();
         resetPriorityCards();
         
-        // Перенаправить на список тикетов
+        // ?????????????????????????? ???? ???????????? ??????????????
         document.querySelectorAll('.side-link').forEach(l => l.classList.remove('active'));
         document.querySelector('[data-page="tickets"]').classList.add('active');
         showView('tickets');
@@ -867,7 +947,7 @@ async function handleCreateTicket(e) {
     } finally {
         if (btn) {
             btn.classList.remove('loading');
-            btn.innerHTML = '<span class="btn-content"><i class="fas fa-paper-plane"></i><span>Создать заявку</span></span><div class="btn-ripple"></div>';
+            btn.innerHTML = '<span class="btn-content"><i class="fas fa-paper-plane"></i><span>?????????????? ????????????</span></span><div class="btn-ripple"></div>';
         }
     }
 }
@@ -875,7 +955,7 @@ async function handleCreateTicket(e) {
 // Initialize Ticket Creator Form
 function initTicketCreator() {
     // Priority cards selection
-    const priorityCards = document.querySelectorAll('.priority-card');
+    var priorityCards = document.querySelectorAll('.priority-card');
     priorityCards.forEach(card => {
         card.addEventListener('click', () => {
             priorityCards.forEach(c => c.classList.remove('active'));
@@ -968,7 +1048,7 @@ async function loadAgentsForSelect() {
         const users = await api.getUsers();
         const agents = users.filter(u => u.role === 'agent' || u.role === 'admin');
         
-        select.innerHTML = '<option value="">Автоматически</option>';
+        select.innerHTML = '<option value="">??????????????????????????</option>';
         agents.forEach(agent => {
             const option = document.createElement('option');
             option.value = agent.id;
@@ -1007,11 +1087,15 @@ function showView(viewName) {
     if (viewName === 'tickets') {
         loadTickets();
     } else if (viewName === 'dashboard') {
-        loadDashboardData();
+        // HUD handles its own data loading
+        if (typeof loadHUDDashboard === 'function') {
+            loadHUDDashboard();
+        } else {
+            loadDashboardData();
+        }
     } else if (viewName === 'crm') {
         loadCRMData();
     } else if (viewName === 'monitoring') {
-        loadMonitoringData();
         loadMonitoringData();
     } else if (viewName === 'audit') {
         loadAuditLogData();
@@ -1019,7 +1103,9 @@ function showView(viewName) {
         loadUsers();
     } else if (viewName === 'assets') {
         loadAssetsView();
-} else if (viewName === 'create') {
+    } else if (viewName === 'tariffs') {
+        if (typeof loadTariffsView === 'function') loadTariffsView();
+    } else if (viewName === 'create') {
         loadOpenTickets();
     } else if (viewName === 'newTicketsView') {
         showNewTicketsPanel();
@@ -1032,7 +1118,7 @@ function showView(viewName) {
 
 function navigateToTickets(filter) {
     const statusEl = document.getElementById('statusFilter');
-    const priorityEl = document.getElementById('priorityFilter');
+    var priorityEl = document.getElementById('priorityFilter');
     if (statusEl) statusEl.value = '';
     if (priorityEl) priorityEl.value = '';
     showView('tickets');
@@ -1052,16 +1138,16 @@ function showNewTicketsPanel() {
     
     listPanel.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem;border-bottom:1px solid rgba(0,212,255,0.2);">
-            <h2 style="color:#00d4ff;margin:0;font-size:1.25rem;"><i class="fas fa-ticket-alt"></i> Система мониторинга заявок</h2>
+            <h2 style="color:#00d4ff;margin:0;font-size:1.25rem;"><i class="fas fa-ticket-alt"></i> ?????????????? ?????????????????????? ????????????</h2>
             <button onclick="closeNewTicketsPanel()" style="background:none;border:none;color:#666;font-size:1.5rem;cursor:pointer;">&times;</button>
         </div>
         <div style="display:flex;gap:0.5rem;padding:0.75rem;background:rgba(0,0,0,0.3);">
-            <button onclick="setTicketFilter('all')" class="filter-btn active" data-filter="all">Все</button>
-            <button onclick="setTicketFilter('new')" class="filter-btn" data-filter="new">Новые</button>
-            <button onclick="setTicketFilter('open')" class="filter-btn" data-filter="open">В работе</button>
-            <button onclick="setTicketFilter('resolved')" class="filter-btn" data-filter="resolved">Закрытые</button>
+            <button onclick="setTicketFilter('all')" class="filter-btn active" data-filter="all">??????</button>
+            <button onclick="setTicketFilter('new')" class="filter-btn" data-filter="new">??????????</button>
+            <button onclick="setTicketFilter('open')" class="filter-btn" data-filter="open">?? ????????????</button>
+            <button onclick="setTicketFilter('resolved')" class="filter-btn" data-filter="resolved">????????????????</button>
         </div>
-        <div id="newTicketsListContent" style="padding:0.5rem;overflow-y:auto;height:calc(100%-120px);">Загрузка...</div>
+        <div id="newTicketsListContent" style="padding:0.5rem;overflow-y:auto;height:calc(100%-120px);">????????????????...</div>
     `;
     
     loadNewTicketsList();
@@ -1086,7 +1172,7 @@ function loadNewTicketsList() {
     const content = document.getElementById('newTicketsListContent');
     if (!content) return;
     
-    content.innerHTML = '<p style="color:#666;text-align:center;padding:2rem;"><i class="fas fa-spinner fa-spin"></i> Загрузка...</p>';
+    content.innerHTML = '<p style="color:#666;text-align:center;padding:2rem;"><i class="fas fa-spinner fa-spin"></i> ????????????????...</p>';
     
     fetch('/api/tickets/', {
         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
@@ -1095,21 +1181,21 @@ function loadNewTicketsList() {
     .then(tickets => {
         let filtered = tickets;
         if (currentTicketFilter === 'new') {
-            filtered = tickets.filter(t => t.status_rel?.name === 'Новый');
+            filtered = tickets.filter(t => t.status_rel?.name === '??????????');
         } else if (currentTicketFilter === 'open') {
-            filtered = tickets.filter(t => t.status_rel?.name && t.status_rel.name !== 'Новый' && t.status_rel.name !== 'Закрыт' && t.status_rel.name !== 'Решён' && t.status_rel.name !== 'Ожидает клиента');
+            filtered = tickets.filter(t => t.status_rel?.name && t.status_rel.name !== '??????????' && t.status_rel.name !== '????????????' && t.status_rel.name !== '??????????' && t.status_rel.name !== '?????????????? ??????????????');
         } else if (currentTicketFilter === 'resolved') {
-            filtered = tickets.filter(t => t.status_rel?.name === 'Закрыт' || t.status_rel?.name === 'Решён' || t.status_rel?.name === 'Ожидает клиента');
+            filtered = tickets.filter(t => t.status_rel?.name === '????????????' || t.status_rel?.name === '??????????' || t.status_rel?.name === '?????????????? ??????????????');
         }
         
         if (filtered.length === 0) {
-            content.innerHTML = '<p style="color:#666;text-align:center;padding:2rem;">Нет заявок</p>';
+            content.innerHTML = '<p style="color:#666;text-align:center;padding:2rem;">?????? ????????????</p>';
             return;
         }
         
         content.innerHTML = filtered.map(t => {
-            const statusColor = t.status_rel?.name === 'Новый' ? '#3B82F6' : t.status_rel?.name === 'Закрыт' ? '#10B981' : '#F59E0B';
-            const priorityColor = t.priority === 'critical' ? '#EF4444' : t.priority === 'high' ? '#F59E0B' : '#00D4FF';
+            const statusColor = t.status_rel?.name === '??????????' ? '#3B82F6' : t.status_rel?.name === '????????????' ? '#10B981' : '#F59E0B';
+            var priorityColor = t.priority === 'critical' ? '#EF4444' : t.priority === 'high' ? '#F59E0B' : '#00D4FF';
             
             return `<div style="padding:1rem;margin-bottom:0.5rem;background:linear-gradient(135deg,rgba(26,26,58,0.8) 0%,rgba(20,20,45,0.9) 100%);border-radius:12px;border-left:4px solid ${priorityColor};cursor:pointer;transition:all 0.2s;" 
                 onmouseover="this.style.background='rgba(0,212,255,0.1)'"
@@ -1117,9 +1203,9 @@ function loadNewTicketsList() {
                 onclick="openTicketModal(${t.id});closeNewTicketsPanel();">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
                     <span style="color:${priorityColor};font-weight:bold;font-size:1.1rem;">#${t.id}</span>
-                    <span style="background:${statusColor}22;color:${statusColor};padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:600;">${t.status_rel?.name || 'Новый'}</span>
+                    <span style="background:${statusColor}22;color:${statusColor};padding:0.2rem 0.6rem;border-radius:20px;font-size:0.75rem;font-weight:600;">${t.status_rel?.name || '??????????'}</span>
                 </div>
-                <div style="color:#fff;font-size:0.95rem;margin-bottom:0.5rem;">${t.title || 'Без заголовка'}</div>
+                <div style="color:#fff;font-size:0.95rem;margin-bottom:0.5rem;">${t.title || '?????? ??????????????????'}</div>
                 <div style="display:flex;gap:1rem;font-size:0.8rem;color:#888;">
                     <span><i class="fas fa-user"></i> ${t.creator?.email?.split('@')[0] || '-'}</span>
                     <span><i class="fas fa-clock"></i> ${new Date(t.created_at).toLocaleDateString('ru')}</span>
@@ -1128,7 +1214,7 @@ function loadNewTicketsList() {
             </div>`;
         }).join('');
     })
-    .catch(e => content.innerHTML = '<p style="color:#EF4444;text-align:center;padding:2rem;">Ошибка: ' + e.message + '</p>');
+    .catch(e => content.innerHTML = '<p style="color:#EF4444;text-align:center;padding:2rem;">????????????: ' + e.message + '</p>');
 }
 
 async function loadOpenTickets() {
@@ -1140,7 +1226,7 @@ async function loadOpenTickets() {
         return;
     }
     
-    container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.85rem;">Загрузка...</p>';
+    container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.85rem;">????????????????...</p>';
     
     const token = localStorage.getItem('access_token');
     console.log('Token exists:', !!token);
@@ -1153,16 +1239,16 @@ async function loadOpenTickets() {
         console.log('Response status:', res.status);
         
         if (!res.ok) {
-            container.innerHTML = '<p style="color:var(--jarvis-rose);font-size:0.85rem;">Ошибка: ' + res.status + '</p>';
+            container.innerHTML = '<p style="color:var(--jarvis-rose);font-size:0.85rem;">????????????: ' + res.status + '</p>';
             return;
         }
         
-        const tickets = await res.json();
+        var tickets = await res.json();
         console.log('Tickets:', JSON.stringify(tickets).substring(0, 500));
         console.log('First ticket keys:', Object.keys(tickets[0] || {}));
         
         if (!tickets || tickets.length === 0) {
-            container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.85rem;">Нет заявок</p>';
+            container.innerHTML = '<p style="color:var(--text-tertiary);font-size:0.85rem;">?????? ????????????</p>';
             return;
         }
         
@@ -1176,14 +1262,14 @@ async function loadOpenTickets() {
             div.id = 'ticket-' + t.id;
             div.style.cssText = 'cursor:pointer;padding:0.75rem;margin-bottom:0.5rem;background:#1a1a3a;border-radius:8px;border:1px solid #00d4ff;display:flex;align-items:center;gap:0.5rem;';
             div.onclick = () => openTicketModal(t.id);
-            div.innerHTML = '<span style="color:#00d4ff;font-weight:bold;font-size:1.2rem;">#' + t.id + '</span><span style="color:#fff;font-size:1rem;">' + (t.title || t.subject || 'Без заголовка') + '</span>';
+            div.innerHTML = '<span style="color:#00d4ff;font-weight:bold;font-size:1.2rem;">#' + t.id + '</span><span style="color:#fff;font-size:1rem;">' + (t.title || t.subject || '?????? ??????????????????') + '</span>';
             container.appendChild(div);
         });
         
         console.log('Container children after:', container.children.length);
     } catch (e) {
         console.error('Load open tickets error:', e);
-        container.innerHTML = '<p style="color:var(--jarvis-rose);font-size:0.85rem;">Ошибка: ' + e.message + '</p>';
+        container.innerHTML = '<p style="color:var(--jarvis-rose);font-size:0.85rem;">????????????: ' + e.message + '</p>';
     }
 }
 
@@ -1200,28 +1286,28 @@ async function loadCRMData() {
         window._allCompanies = companies;
         renderCompanies(companies);
     } catch (error) {
-        showToast('Ошибка загрузки CRM', 'error');
+        showToast('???????????? ???????????????? CRM', 'error');
     }
 }
 
 function renderCompanies(companies) {
     const container = document.getElementById('companyCardsGrid');
     if (!companies || companies.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 3rem;">Компании не найдены. Нажмите «Новая компания» чтобы добавить.</p>';
+        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 3rem;">???????????????? ???? ??????????????. ?????????????? ???????????? ?????????????????? ?????????? ????????????????.</p>';
         return;
     }
 
     const industryIcons = {
         'IT': 'fa-laptop-code',
-        'Торговля': 'fa-shopping-cart',
-        'Производство': 'fa-industry',
-        'Финансы': 'fa-university',
-        'Медицина': 'fa-heartbeat',
-        'Образование': 'fa-graduation-cap',
-        'Логистика': 'fa-truck',
-        'Строительство': 'fa-hard-hat',
+        '????????????????': 'fa-shopping-cart',
+        '????????????????????????': 'fa-industry',
+        '??????????????': 'fa-university',
+        '????????????????': 'fa-heartbeat',
+        '??????????????????????': 'fa-graduation-cap',
+        '??????????????????': 'fa-truck',
+        '??????????????????????????': 'fa-hard-hat',
         'HoReCa': 'fa-utensils',
-        'Другое': 'fa-building'
+        '????????????': 'fa-building'
     };
 
     container.innerHTML = companies.map(company => {
@@ -1247,9 +1333,9 @@ function renderCompanies(companies) {
                     ${company.legal_name ? `<p style="margin:2px 0 0;font-size:0.75rem;color:var(--text-low);">${escapeHtml(company.legal_name)}</p>` : ''}
                     <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
                         <span class="badge badge-small" style="background:rgba(99,102,241,0.1);color:var(--accent-indigo);border:1px solid rgba(99,102,241,0.2);padding:2px 8px;border-radius:12px;font-size:0.7rem;">
-                            <i class="fas ${icon}" style="margin-right:3px;"></i>${escapeHtml(company.industry || 'Без отрасли')}
+                            <i class="fas ${icon}" style="margin-right:3px;"></i>${escapeHtml(company.industry || '?????? ??????????????')}
                         </span>
-                        ${company.inn ? `<span style="font-size:0.7rem;color:var(--text-low);">ИНН: ${escapeHtml(company.inn)}</span>` : ''}
+                        ${company.inn ? `<span style="font-size:0.7rem;color:var(--text-low);">??????: ${escapeHtml(company.inn)}</span>` : ''}
                     </div>
                 </div>
             </div>
@@ -1258,13 +1344,13 @@ function renderCompanies(companies) {
             <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;">
                 <span style="font-size:0.7rem;color:var(--text-low);">${formatDate(company.created_at)}</span>
                 <div style="display:flex;gap:6px;">
-                    <button class="btn btn-icon btn-small" onclick="event.stopPropagation();openCompanyDetail(${company.id})" title="Открыть" style="background:rgba(99,102,241,0.1);color:var(--accent-indigo);border:none;border-radius:8px;cursor:pointer;padding:6px 10px;">
+                    <button class="btn btn-icon btn-small" onclick="event.stopPropagation();openCompanyDetail(${company.id})" title="??????????????" style="background:rgba(99,102,241,0.1);color:var(--accent-indigo);border:none;border-radius:8px;cursor:pointer;padding:6px 10px;">
                         <i class="fas fa-external-link-alt"></i>
                     </button>
-                    <button class="btn btn-icon btn-small" onclick="event.stopPropagation();showEditCompanyModal(${company.id})" title="Редактировать" style="background:rgba(99,102,241,0.1);color:#6366f1;border:none;border-radius:8px;cursor:pointer;padding:6px 10px;">
+                    <button class="btn btn-icon btn-small" onclick="event.stopPropagation();showEditCompanyModal(${company.id})" title="??????????????????????????" style="background:rgba(99,102,241,0.1);color:#6366f1;border:none;border-radius:8px;cursor:pointer;padding:6px 10px;">
                         <i class="fas fa-edit"></i>
                     </button>
-                    <button class="btn btn-icon btn-small" onclick="event.stopPropagation();confirmDeleteCompanyById(${company.id},'${escapeHtml(company.name)}')" title="Удалить" style="background:rgba(239,68,68,0.1);color:#ef4444;border:none;border-radius:8px;cursor:pointer;padding:6px 10px;">
+                    <button class="btn btn-icon btn-small" onclick="event.stopPropagation();confirmDeleteCompanyById(${company.id},'${escapeHtml(company.name)}')" title="??????????????" style="background:rgba(239,68,68,0.1);color:#ef4444;border:none;border-radius:8px;cursor:pointer;padding:6px 10px;">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -1330,38 +1416,38 @@ async function handleEditCompany(e) {
             method: 'PATCH',
             body: JSON.stringify(data)
         });
-        showToast('Компания обновлена', 'success');
+        showToast('???????????????? ??????????????????', 'success');
         closeModal('editCompanyModal');
         loadCRMData();
     } catch (error) {
-        showToast(error.message || 'Ошибка обновления компании', 'error');
+        showToast(error.message || '???????????? ???????????????????? ????????????????', 'error');
     }
 }
 
 async function confirmDeleteCompany() {
     const id = document.getElementById('editCompanyId').value;
     const name = document.getElementById('editCompanyName').value;
-    if (!confirm(`Удалить организацию "${name}"?\nЭто действие нельзя отменить.`)) return;
+    if (!confirm(`?????????????? ?????????????????????? "${name}"?\n?????? ???????????????? ???????????? ????????????????.`)) return;
 
     try {
         await api.request(`/crm/companies/${id}`, { method: 'DELETE' });
-        showToast('Организация удалена', 'success');
+        showToast('?????????????????????? ??????????????', 'success');
         closeModal('editCompanyModal');
         loadCRMData();
     } catch (error) {
-        showToast(error.message || 'Ошибка удаления', 'error');
+        showToast(error.message || '???????????? ????????????????', 'error');
     }
 }
 
 async function confirmDeleteCompanyById(id, name) {
-    if (!confirm(`Удалить организацию "${name}"?\nЭто действие нельзя отменить.`)) return;
+    if (!confirm(`?????????????? ?????????????????????? "${name}"?\n?????? ???????????????? ???????????? ????????????????.`)) return;
 
     try {
         await api.request(`/crm/companies/${id}`, { method: 'DELETE' });
-        showToast('Организация удалена', 'success');
+        showToast('?????????????????????? ??????????????', 'success');
         loadCRMData();
     } catch (error) {
-        showToast(error.message || 'Ошибка удаления', 'error');
+        showToast(error.message || '???????????? ????????????????', 'error');
     }
 }
 
@@ -1369,7 +1455,7 @@ async function handleLogoUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
     const companyId = document.getElementById('editCompanyId').value;
-    if (!companyId) { showToast('Сначала сохраните компанию', 'warning'); return; }
+    if (!companyId) { showToast('?????????????? ?????????????????? ????????????????', 'warning'); return; }
 
     const formData = new FormData();
     formData.append('file', file);
@@ -1381,9 +1467,9 @@ async function handleLogoUpload(e) {
         const img = document.getElementById('editLogoImg');
         img.src = result.logo_url;
         preview.style.display = 'block';
-        showToast('Логотип загружен', 'success');
+        showToast('?????????????? ????????????????', 'success');
     } catch (error) {
-        showToast(error.message || 'Ошибка загрузки логотипа', 'error');
+        showToast(error.message || '???????????? ???????????????? ????????????????', 'error');
     }
 }
 
@@ -1400,21 +1486,21 @@ function showToast(message, type = 'success') {
 
 function getStatusClass(status) {
     const map = {
-        'новый': 'new',
-        'в_работе': 'progress',
-        'решён': 'resolved',
-        'Ожидает клиента': 'resolved',
-        'закрыт': 'closed'
+        '??????????': 'new',
+        '??_????????????': 'progress',
+        '??????????': 'resolved',
+        '?????????????? ??????????????': 'resolved',
+        '????????????': 'closed'
     };
     return map[status] || 'new';
 }
 
 function getPriorityClass(priority) {
     const map = {
-        'низкий': 'low',
-        'средний': 'medium',
-        'высокий': 'high',
-        'критичный': 'critical'
+        '????????????': 'low',
+        '??????????????': 'medium',
+        '??????????????': 'high',
+        '??????????????????': 'critical'
     };
     return map[priority] || 'medium';
 }
@@ -1443,7 +1529,7 @@ let currentTicketForRating = null;
 async function openTicketModal(ticketId) {
     currentTicketId = ticketId;
     
-    // Загружаем ВСЕ данные параллельно одним запросом
+    // ?????????????????? ?????? ???????????? ?????????????????????? ?????????? ????????????????
     try {
         const [ticket, timeline] = await Promise.all([
             api.getTicket(ticketId),
@@ -1452,7 +1538,7 @@ async function openTicketModal(ticketId) {
         
         currentTicketForRating = ticket;
 
-        // Показываем модалку только после загрузки данных
+        // ???????????????????? ?????????????? ???????????? ?????????? ???????????????? ????????????
         const modal = document.getElementById('ticketModal');
         modal.classList.remove('hidden');
         
@@ -1462,18 +1548,18 @@ async function openTicketModal(ticketId) {
         }
 
         // Basic Info
-        document.getElementById('modalTicketTitle').textContent = `Тикет #${ticket.readable_id} - ${ticket.title}`;
-        document.getElementById('modalTicketDescription').innerHTML = ticket.description || 'Нет описания';
+        document.getElementById('modalTicketTitle').textContent = `?????????? #${ticket.readable_id} - ${ticket.title}`;
+        document.getElementById('modalTicketDescription').innerHTML = ticket.description || '?????? ????????????????';
 
         // Badges
-        document.getElementById('modalStatusBadge').innerHTML = `<span class="badge badge-${getStatusClass(ticket.status_rel?.name || 'новый')}">${ticket.status_rel?.name || 'новый'}</span>`;
+        document.getElementById('modalStatusBadge').innerHTML = `<span class="badge badge-${getStatusClass(ticket.status_rel?.name || '??????????')}">${ticket.status_rel?.name || '??????????'}</span>`;
         document.getElementById('modalPriorityBadge').innerHTML = `<span class="badge badge-${getPriorityClass(ticket.priority)}">${ticket.priority}</span>`;
 
         // Rating UI
         const clientActions = document.getElementById('clientActions');
         if (clientActions) {
-            const isResolved = ['ожидает клиента', 'решён', 'закрыт', 'resolved', 'closed'].includes(ticket.status_rel?.name?.toLowerCase());
-            const isClosed = ['закрыт', 'closed'].includes(ticket.status_rel?.name?.toLowerCase());
+            const isResolved = ['?????????????? ??????????????', '??????????', '????????????', 'resolved', 'closed'].includes(ticket.status_rel?.name?.toLowerCase());
+            const isClosed = ['????????????', 'closed'].includes(ticket.status_rel?.name?.toLowerCase());
             if (currentUser && currentUser.role === 'client' && isResolved) {
                 clientActions.classList.remove('hidden');
                 const btnRate = document.getElementById('btnRateTicket');
@@ -1491,9 +1577,9 @@ async function openTicketModal(ticketId) {
                 }
                 if (closeSection) {
                     if (isClosed) {
-                        closeSection.innerHTML = '<p style="color:var(--text-med);font-size:0.85rem;">✅ Заявка закрыта</p>';
+                        closeSection.innerHTML = '<p style="color:var(--text-med);font-size:0.85rem;">??? ???????????? ??????????????</p>';
                     } else {
-                        closeSection.innerHTML = `<button class="btn btn-primary" onclick="closeTicketAction(${ticket.id})" style="width:100%;margin-top:0.5rem;">✅ Закрыть заявку</button>`;
+                        closeSection.innerHTML = `<button class="btn btn-primary" onclick="closeTicketAction(${ticket.id})" style="width:100%;margin-top:0.5rem;">??? ?????????????? ????????????</button>`;
                     }
                     closeSection.classList.remove('hidden');
                 }
@@ -1508,32 +1594,32 @@ async function openTicketModal(ticketId) {
         if (ticket.sla_due_at) {
             startSlaTimer(ticket.sla_due_at);
         } else {
-            document.getElementById('modalSlaDeadline').textContent = 'Не установлен';
+            document.getElementById('modalSlaDeadline').textContent = '???? ????????????????????';
             document.getElementById('modalSlaDeadline').classList.remove('sla-urgent');
         }
 
         // Assignee
         const assigneeEl = document.getElementById('modalAssignee');
         if (ticket.assignee) {
-            const name = ticket.assignee.full_name || ticket.assignee.email || '—';
+            const name = ticket.assignee.full_name || ticket.assignee.email || '???';
             const email = ticket.assignee.email ? ` (${ticket.assignee.email})` : '';
             assigneeEl.innerHTML = `<span style="font-weight:500;">${escapeHtml(name)}</span>${email ? `<br><span style="font-size:0.75rem;color:var(--text-med);">${escapeHtml(email)}</span>` : ''}`;
             // Add assign button for admins
             if (currentUser?.role === 'admin' || currentUser?.role === 'super_admin') {
-                assigneeEl.innerHTML += `<br><button class="btn btn-small btn-outline" onclick="showAssignModal(${ticket.id})" style="margin-top:6px;font-size:0.7rem;">↻ Сменить</button>`;
+                assigneeEl.innerHTML += `<br><button class="btn btn-small btn-outline" onclick="showAssignModal(${ticket.id})" style="margin-top:6px;font-size:0.7rem;">??? ??????????????</button>`;
             }
         } else {
-            assigneeEl.innerHTML = '—';
+            assigneeEl.innerHTML = '???';
             if (currentUser?.role === 'admin' || currentUser?.role === 'super_admin') {
-                assigneeEl.innerHTML += `<br><button class="btn btn-small btn-outline" onclick="showAssignModal(${ticket.id})" style="margin-top:6px;font-size:0.7rem;">↻ Назначить</button>`;
+                assigneeEl.innerHTML += `<br><button class="btn btn-small btn-outline" onclick="showAssignModal(${ticket.id})" style="margin-top:6px;font-size:0.7rem;">??? ??????????????????</button>`;
             }
         }
 
         // Workflow button visibility
         const statusName = ticket.status_rel?.name || '';
-        const isNew = statusName === 'Новый';
-        const isInProgress = statusName === 'В работе';
-        const isAwaitingClient = statusName === 'Ожидает клиента';
+        const isNew = statusName === '??????????';
+        const isInProgress = statusName === '?? ????????????';
+        const isAwaitingClient = statusName === '?????????????? ??????????????';
         const isClosed = ticket.status_rel?.is_final;
         const isAgent = currentUser?.role !== 'client';
         
@@ -1564,7 +1650,7 @@ async function openTicketModal(ticketId) {
             adminActions.classList.toggle('hidden', !isAdmin);
         }
 
-        // Timeline - уже загружен выше
+        // Timeline - ?????? ???????????????? ????????
         renderModalTimeline(timeline);
 
         // Load client assets
@@ -1581,7 +1667,7 @@ async function openTicketModal(ticketId) {
 
     } catch (error) {
         console.error('Modal error:', error);
-        showToast('Ошибка загрузки деталей тикета', 'error');
+        showToast('???????????? ???????????????? ?????????????? ????????????', 'error');
         closeTicketModal();
     }
 }
@@ -1599,15 +1685,15 @@ function closeTicketModal() {
 
 async function deleteTicket() {
     if (!currentTicketId) return;
-    if (!confirm('Точно удалить заявку? Это действие необратимо.')) return;
+    if (!confirm('?????????? ?????????????? ????????????? ?????? ???????????????? ????????????????????.')) return;
 
     try {
         await api.request(`/tickets/${currentTicketId}`, { method: 'DELETE' });
-        showToast('Заявка удалена', 'success');
+        showToast('???????????? ??????????????', 'success');
         closeTicketModal();
         loadTickets();
     } catch (error) {
-        showToast(error.message || 'Ошибка удаления заявки', 'error');
+        showToast(error.message || '???????????? ???????????????? ????????????', 'error');
     }
 }
 
@@ -1623,7 +1709,7 @@ function startSlaTimer(deadline) {
         if (!el) return;
 
         if (diff <= 0) {
-            el.textContent = 'Просрочено!';
+            el.textContent = '????????????????????!';
             el.classList.add('sla-urgent');
             clearInterval(slaInterval);
             return;
@@ -1631,7 +1717,7 @@ function startSlaTimer(deadline) {
 
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        el.textContent = `${hours}ч ${mins}м осталось`;
+        el.textContent = `${hours}?? ${mins}?? ????????????????`;
 
         if (hours < 2) {
             el.classList.add('sla-urgent');
@@ -1647,7 +1733,7 @@ function startSlaTimer(deadline) {
 async function loadTicketTime(ticketId) {
     try {
         const total = await api.getTicketTotalTime(ticketId);
-        document.getElementById('modalTotalTime').textContent = `${total.total_hours} ч.`;
+        document.getElementById('modalTotalTime').textContent = `${total.total_hours} ??.`;
 
         const entries = await api.getTicketTimeEntries(ticketId);
         renderTimeEntries(entries);
@@ -1659,13 +1745,13 @@ async function loadTicketTime(ticketId) {
 function renderTimeEntries(entries) {
     const container = document.getElementById('modalTimeList');
     if (!entries.length) {
-        container.innerHTML = '<p class="text-muted">Нет записей</p>';
+        container.innerHTML = '<p class="text-muted">?????? ??????????????</p>';
         return;
     }
 
     container.innerHTML = entries.map(e => `
         <div class="time-log-item">
-            <strong>${(e.minutes / 60).toFixed(1)}ч</strong> - ${escapeHtml(e.description || 'Без описания')}
+            <strong>${(e.minutes / 60).toFixed(1)}??</strong> - ${escapeHtml(e.description || '?????? ????????????????')}
             <div style="font-size: 0.7rem; color: var(--text-dim)">${formatDate(e.created_at)}</div>
         </div>
     `).join('');
@@ -1700,7 +1786,7 @@ setTimeout(() => {
 
             const mins = parseInt(minutesEl.value) || 0;
             if (mins < 1 && !descEl.value.trim()) {
-                showToast('Укажите минуты или описание', 'error');
+                showToast('?????????????? ???????????? ?????? ????????????????', 'error');
                 return;
             }
             try {
@@ -1709,12 +1795,12 @@ setTimeout(() => {
                     minutes: mins,
                     description: descEl.value
                 });
-                showToast('Время сохранено', 'success');
+                showToast('?????????? ??????????????????', 'success');
                 minutesEl.value = '';
                 descEl.value = '';
                 loadTicketTime(currentTicketId);
             } catch (error) {
-                showToast('Ошибка сохранения времени', 'error');
+                showToast('???????????? ???????????????????? ??????????????', 'error');
             }
         });
     }
@@ -1729,14 +1815,14 @@ async function loadAuditLogData() {
         const logs = await api.getAuditLogs({ limit: 50 });
         renderAuditLogs(logs);
     } catch (error) {
-        showToast('Ошибка загрузки аудита', 'error');
+        showToast('???????????? ???????????????? ????????????', 'error');
     }
 }
 
 function renderAuditLogs(logs) {
     const container = document.getElementById('auditLogTableBody');
     if (!logs || logs.length === 0) {
-        container.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">Записи не найдены</td></tr>';
+        container.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">???????????? ???? ??????????????</td></tr>';
         return;
     }
 
@@ -1776,8 +1862,18 @@ async function updateUIForRole() {
         const isAdmin = me.role === 'admin' || me.role === 'super_admin';
 
         const auditLink = document.getElementById('auditNavLink');
+        const usersLink = document.getElementById('usersNavLink');
         if (auditLink) {
             auditLink.style.display = isAdmin ? 'flex' : 'none';
+        }
+        if (usersLink) {
+            if (isAdmin) {
+                usersLink.classList.remove('hidden');
+                usersLink.style.display = 'flex';
+            } else {
+                usersLink.classList.add('hidden');
+                usersLink.style.display = 'none';
+            }
         }
     } catch (e) {
         console.error("UI Update error", e);
@@ -1845,17 +1941,17 @@ function handleWsEvent(event) {
 
     switch (event.type) {
         case 'REFRESH_TICKETS':
-            showToast(event.message || 'Тикет обновлен', 'info');
+            showToast(event.message || '?????????? ????????????????', 'info');
             loadTickets();
             if (activeView === 'dashboard') loadDashboardData();
             break;
 
         case 'TICKET_CREATED':
-            // Показывать всем кроме создателя
+            // ???????????????????? ???????? ?????????? ??????????????????
             if (currentUser && event.data && currentUser.id !== event.data.created_by_id) {
                 showNewTicketNotification(event.data);
             }
-            // Всегда обновляем списки
+            // ???????????? ?????????????????? ????????????
             loadTickets();
             if (activeView === 'dashboard') {
                 loadDashboardData();
@@ -1869,7 +1965,7 @@ function handleWsEvent(event) {
             if (activeView === 'tickets' && currentTicketId === event.data.ticket_id) {
                 loadTicketTimeline(event.data.ticket_id);
             }
-            showToast(`Новое сообщение в тикете #${event.data.ticket_id}`, 'info');
+            showToast(`?????????? ?????????????????? ?? ???????????? #${event.data.ticket_id}`, 'info');
             break;
 
         case 'NEW_NOTIFICATION':
@@ -1896,7 +1992,7 @@ async function loadNotifications() {
 function renderNotifications() {
     const container = document.getElementById('notificationList');
     if (!allNotifications || allNotifications.length === 0) {
-        container.innerHTML = '<p class="text-muted" style="padding: 1rem; text-align: center;">Нет новых уведомлений</p>';
+        container.innerHTML = '<p class="text-muted" style="padding: 1rem; text-align: center;">?????? ?????????? ??????????????????????</p>';
         return;
     }
 
@@ -1941,7 +2037,7 @@ async function markAllNotificationsAsRead() {
         await api.request('/notifications/read-all', { method: 'POST' });
         loadNotifications();
     } catch (e) {
-        showToast('Ошибка при обновлении уведомлений', 'error');
+        showToast('???????????? ?????? ???????????????????? ??????????????????????', 'error');
     }
 }
 
@@ -1954,7 +2050,7 @@ async function loadUsers() {
         const searchInput = document.getElementById('userSearchInput');
         const search = searchInput ? searchInput.value.toLowerCase() : '';
 
-        const filters = {};
+        var filters = {};
         if (role) filters.role = role;
 
         const [users, companies] = await Promise.all([
@@ -1976,7 +2072,7 @@ async function loadUsers() {
         tbody.innerHTML = '';
 
         if (filteredUsers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding: 1rem;">Пользователи не найдены</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding: 1rem;">???????????????????????? ???? ??????????????</td></tr>';
             return;
         }
 
@@ -1988,15 +2084,15 @@ async function loadUsers() {
                     <div class="user-cell" style="display: flex; align-items: center; gap: 0.75rem;">
                         <div class="avatar-small">${(user.full_name || user.email).charAt(0).toUpperCase()}</div>
                         <div>
-                            <div class="font-medium">${escapeHtml(user.full_name || 'Не указано')}</div>
+                            <div class="font-medium">${escapeHtml(user.full_name || '???? ??????????????')}</div>
                         </div>
                     </div>
                 </td>
                 <td>${escapeHtml(user.email)}</td>
                 <td><span class="badge badge-${getRoleBadgeColor(user.role)}">${getRoleLabel(user.role)}</span></td>
-                <td>${company ? escapeHtml(company.name) : '<span class="text-muted">—</span>'}</td>
+                <td>${company ? escapeHtml(company.name) : '<span class="text-muted">???</span>'}</td>
                 <td>
-                    <button class="btn btn-icon btn-small" onclick="showEditUserModal(${user.id})" title="Редактировать">
+                    <button class="btn btn-icon btn-small" onclick="showEditUserModal(${user.id})" title="??????????????????????????">
                         <i class="fas fa-edit"></i>
                     </button>
                 </td>
@@ -2005,16 +2101,16 @@ async function loadUsers() {
         });
     } catch (error) {
         console.error('Errors loading users', error);
-        showToast('Ошибка загрузки пользователей', 'error');
+        showToast('???????????? ???????????????? ??????????????????????????', 'error');
     }
 }
 
 function getRoleLabel(role) {
     const labels = {
-        'admin': 'Админ',
-        'agent': 'Агент',
-        'client': 'Клиент',
-        'super_admin': 'СуперАдмин'
+        'admin': '??????????',
+        'agent': '??????????',
+        'client': '????????????',
+        'super_admin': '????????????????????'
     };
     return labels[role] || role;
 }
@@ -2030,7 +2126,7 @@ async function showEditUserModal(id) {
     document.getElementById('editUserPassword').value = '';
 
     const companySelect = document.getElementById('editUserCompanyId');
-    companySelect.innerHTML = '<option value="">Не выбрано</option>';
+    companySelect.innerHTML = '<option value="">???? ??????????????</option>';
     const companies = window._allCompanies || [];
     companies.forEach(c => {
         const opt = document.createElement('option');
@@ -2063,26 +2159,26 @@ async function handleEditUser(e) {
             method: 'PATCH',
             body: JSON.stringify(data)
         });
-        showToast('Пользователь обновлён', 'success');
+        showToast('???????????????????????? ????????????????', 'success');
         closeModal('editUserModal');
         loadUsers();
     } catch (error) {
-        showToast(error.message || 'Ошибка обновления', 'error');
+        showToast(error.message || '???????????? ????????????????????', 'error');
     }
 }
 
 async function confirmDeleteUser() {
     const id = document.getElementById('editUserId').value;
     const email = document.getElementById('editUserEmail').value;
-    if (!confirm(`Удалить пользователя "${email}"?\nЭто действие нельзя отменить.`)) return;
+    if (!confirm(`?????????????? ???????????????????????? "${email}"?\n?????? ???????????????? ???????????? ????????????????.`)) return;
 
     try {
         await api.request(`/users/${id}`, { method: 'DELETE' });
-        showToast('Пользователь удалён', 'success');
+        showToast('???????????????????????? ????????????', 'success');
         closeModal('editUserModal');
         loadUsers();
     } catch (error) {
-        showToast(error.message || 'Ошибка удаления', 'error');
+        showToast(error.message || '???????????? ????????????????', 'error');
     }
 }
 
@@ -2105,7 +2201,7 @@ async function showCreateUserModal() {
 
     const companySelect = document.getElementById('newUserCompanyId');
     if (companySelect) {
-        companySelect.innerHTML = '<option value="">Не выбрано</option>';
+        companySelect.innerHTML = '<option value="">???? ??????????????</option>';
         try {
             const companies = await api.getCompanies();
             companies.forEach(c => {
@@ -2137,11 +2233,11 @@ async function handleCreateUser(e) {
 
     try {
         await api.createUser(data);
-        showToast('Пользователь создан', 'success');
+        showToast('???????????????????????? ????????????', 'success');
         closeModal('createUserModal');
         loadUsers();
     } catch (error) {
-        showToast(error.message || 'Ошибка создания пользователя', 'error');
+        showToast(error.message || '???????????? ???????????????? ????????????????????????', 'error');
     }
 }
 
@@ -2170,12 +2266,12 @@ async function handleCreateCompany(e) {
 
     try {
         await api.createCompany(data);
-        showToast('Компания создана', 'success');
+        showToast('???????????????? ??????????????', 'success');
         closeModal('createCompanyModal');
         document.getElementById('createCompanyForm').reset();
         loadCRMData();
     } catch (error) {
-        showToast(error.message || 'Ошибка создания компании', 'error');
+        showToast(error.message || '???????????? ???????????????? ????????????????', 'error');
     }
 }
 
@@ -2193,15 +2289,15 @@ async function openCompanyDetail(id) {
     document.getElementById('detailCompanyName').textContent = company.name;
 
     const fields = [
-        ['Юр. название', company.legal_name], ['ИНН', company.inn],
-        ['Отрасль', company.industry], ['Телефон', company.phone],
-        ['Email', company.email], ['Веб-сайт', company.website],
-        ['Домен', company.domain], ['Адрес', company.address],
+        ['????. ????????????????', company.legal_name], ['??????', company.inn],
+        ['??????????????', company.industry], ['??????????????', company.phone],
+        ['Email', company.email], ['??????-????????', company.website],
+        ['??????????', company.domain], ['??????????', company.address],
     ];
     const infoHtml = fields.filter(f => f[1]).map(([label, val]) =>
         `<div style="padding:8px 0;border-bottom:1px solid var(--prism-border);"><span style="color:var(--text-low);font-size:0.75rem;">${label}</span><br><span style="color:var(--text-high);">${escapeHtml(val)}</span></div>`
     ).join('');
-    document.getElementById('detailCompanyInfo').innerHTML = infoHtml || '<p style="color:var(--text-low);grid-column:1/-1;text-align:center;">Нет данных</p>';
+    document.getElementById('detailCompanyInfo').innerHTML = infoHtml || '<p style="color:var(--text-low);grid-column:1/-1;text-align:center;">?????? ????????????</p>';
 
     showDetailTab('info');
     document.getElementById('companyDetailModal').classList.remove('hidden');
@@ -2233,12 +2329,12 @@ async function loadSubscriptions(companyId) {
 function renderSubscriptions(subs) {
     const container = document.getElementById('detailSubsList');
     if (!subs || subs.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-low);text-align:center;padding:2rem;">Нет подписок</p>';
+        container.innerHTML = '<p style="color:var(--text-low);text-align:center;padding:2rem;">?????? ????????????????</p>';
         return;
     }
     const statusColors = { active: '#10b981', expiring: '#f59e0b', expired: '#ef4444', cancelled: '#71717a' };
-    const statusLabels = { active: 'Активна', expiring: 'Истекает', expired: 'Истекла', cancelled: 'Отменена' };
-    const cycleLabels = { monthly: 'Ежемесячная', yearly: 'Ежегодная', quarterly: 'Ежеквартальная' };
+    const statusLabels = { active: '??????????????', expiring: '????????????????', expired: '??????????????', cancelled: '????????????????' };
+    const cycleLabels = { monthly: '??????????????????????', yearly: '??????????????????', quarterly: '????????????????????????????' };
 
     container.innerHTML = subs.map(s => {
         const expDate = s.expires_at ? new Date(s.expires_at) : null;
@@ -2255,15 +2351,15 @@ function renderSubscriptions(subs) {
                     <span style="display:inline-block;margin-left:8px;padding:2px 8px;border-radius:12px;font-size:0.7rem;background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44;">${statusLabel}</span>
                 </div>
                 <div style="display:flex;gap:6px;">
-                    <button class="btn btn-icon btn-small" onclick="event.stopPropagation();editSubscription(${s.id})" title="Редактировать" style="background:rgba(99,102,241,0.1);color:#6366f1;border:none;border-radius:8px;cursor:pointer;padding:4px 8px;"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-icon btn-small" onclick="event.stopPropagation();deleteSub(${s.id})" title="Удалить" style="background:rgba(239,68,68,0.1);color:#ef4444;border:none;border-radius:8px;cursor:pointer;padding:4px 8px;"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-icon btn-small" onclick="event.stopPropagation();editSubscription(${s.id})" title="??????????????????????????" style="background:rgba(99,102,241,0.1);color:#6366f1;border:none;border-radius:8px;cursor:pointer;padding:4px 8px;"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-icon btn-small" onclick="event.stopPropagation();deleteSub(${s.id})" title="??????????????" style="background:rgba(239,68,68,0.1);color:#ef4444;border:none;border-radius:8px;cursor:pointer;padding:4px 8px;"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:0.8rem;color:var(--text-med);">
-                ${s.license_count ? `<span><i class="fas fa-users" style="margin-right:4px;"></i>${s.license_count} лицензий</span>` : ''}
+                ${s.license_count ? `<span><i class="fas fa-users" style="margin-right:4px;"></i>${s.license_count} ????????????????</span>` : ''}
                 ${s.price ? `<span><i class="fas fa-tag" style="margin-right:4px;"></i>${escapeHtml(s.price)} ${s.currency || 'UZS'}</span>` : ''}
                 ${s.billing_cycle ? `<span>${cycleLabels[s.billing_cycle] || s.billing_cycle}</span>` : ''}
-                ${expDate ? `<span class="${urgency}" style="${urgency === 'urgent' ? 'color:#ef4444;font-weight:600;' : urgency === 'warning' ? 'color:#f59e0b;' : ''}"><i class="fas fa-clock" style="margin-right:4px;"></i>${daysLeft !== null ? (daysLeft > 0 ? `${daysLeft} дн.` : 'Истекла') : ''} ${expDate.toLocaleDateString('ru')}</span>` : ''}
+                ${expDate ? `<span class="${urgency}" style="${urgency === 'urgent' ? 'color:#ef4444;font-weight:600;' : urgency === 'warning' ? 'color:#f59e0b;' : ''}"><i class="fas fa-clock" style="margin-right:4px;"></i>${daysLeft !== null ? (daysLeft > 0 ? `${daysLeft} ????.` : '??????????????') : ''} ${expDate.toLocaleDateString('ru')}</span>` : ''}
                 ${s.m365_tenant_id ? `<span style="color:var(--accent-indigo);"><i class="fab fa-microsoft" style="margin-right:4px;"></i>M365</span>` : ''}
             </div>
         </div>`;
@@ -2271,7 +2367,7 @@ function renderSubscriptions(subs) {
 }
 
 function showAddSubModal() {
-    document.getElementById('subModalTitle').textContent = 'Добавить подписку';
+    document.getElementById('subModalTitle').textContent = '???????????????? ????????????????';
     document.getElementById('subForm').reset();
     document.getElementById('subId').value = '';
     document.getElementById('subStatus').value = 'active';
@@ -2284,7 +2380,7 @@ async function editSubscription(subId) {
     const subs = await api.getSubscriptions(window._detailCompanyId);
     const sub = subs.find(s => s.id === subId);
     if (!sub) return;
-    document.getElementById('subModalTitle').textContent = 'Редактировать подписку';
+    document.getElementById('subModalTitle').textContent = '?????????????????????????? ????????????????';
     document.getElementById('subId').value = sub.id;
     document.getElementById('subServiceName').value = sub.service_name || '';
     document.getElementById('subPlan').value = sub.plan || '';
@@ -2325,26 +2421,26 @@ async function handleSubForm(e) {
     try {
         if (subId) {
             await api.updateSubscription(subId, data);
-            showToast('Подписка обновлена', 'success');
+            showToast('???????????????? ??????????????????', 'success');
         } else {
             await api.createSubscription(window._detailCompanyId, data);
-            showToast('Подписка добавлена', 'success');
+            showToast('???????????????? ??????????????????', 'success');
         }
         closeModal('subModal');
         loadSubscriptions(window._detailCompanyId);
     } catch (error) {
-        showToast(error.message || 'Ошибка сохранения подписки', 'error');
+        showToast(error.message || '???????????? ???????????????????? ????????????????', 'error');
     }
 }
 
 async function deleteSub(subId) {
-    if (!confirm('Удалить подписку?')) return;
+    if (!confirm('?????????????? ?????????????????')) return;
     try {
         await api.deleteSubscription(subId);
-        showToast('Подписка удалена', 'success');
+        showToast('???????????????? ??????????????', 'success');
         loadSubscriptions(window._detailCompanyId);
     } catch (error) {
-        showToast(error.message || 'Ошибка удаления', 'error');
+        showToast(error.message || '???????????? ????????????????', 'error');
     }
 }
 
@@ -2364,7 +2460,7 @@ function renderEmployees(emps, contacts) {
     const contactItems = (contacts || []).map(u => ({
         id: u.id,
         full_name: u.full_name || u.email,
-        position: u.role === 'admin' ? 'Администратор' : u.role === 'agent' ? 'Агент' : 'Клиент',
+        position: u.role === 'admin' ? '??????????????????????????' : u.role === 'agent' ? '??????????' : '????????????',
         email: u.email,
         phone: '',
         department: '',
@@ -2375,7 +2471,7 @@ function renderEmployees(emps, contacts) {
     }));
     const all = [...(emps || []), ...contactItems];
     if (!all || all.length === 0) {
-        container.innerHTML = '<p style="color:var(--text-low);text-align:center;padding:2rem;">Нет сотрудников</p>';
+        container.innerHTML = '<p style="color:var(--text-low);text-align:center;padding:2rem;">?????? ??????????????????????</p>';
         return;
     }
     container.innerHTML = all.map(e => `
@@ -2386,19 +2482,19 @@ function renderEmployees(emps, contacts) {
                     <div>
                         <strong style="color:var(--text-high);">${escapeHtml(e.full_name)}</strong>
                         ${e.position ? `<span style="color:var(--text-low);margin-left:8px;font-size:0.8rem;">${escapeHtml(e.position)}</span>` : ''}
-                        ${!e.is_active ? '<span style="margin-left:8px;font-size:0.7rem;color:#71717a;">Неактивен</span>' : ''}
+                        ${!e.is_active ? '<span style="margin-left:8px;font-size:0.7rem;color:#71717a;">??????????????????</span>' : ''}
                         ${e.m365_license ? '<span style="margin-left:8px;color:var(--accent-indigo);font-size:0.75rem;"><i class="fab fa-microsoft"></i> M365</span>' : ''}
                     </div>
                 </div>
                 <div style="display:flex;gap:6px;">
-                    ${e._is_user ? '<span style="font-size:0.75rem;color:var(--text-med);padding:4px 8px;">Учетная запись</span>' : `
-                    <button class="btn btn-icon btn-small" onclick="editEmployee(${e.id})" title="Редактировать" style="background:rgba(99,102,241,0.1);color:#6366f1;border:none;border-radius:8px;cursor:pointer;padding:4px 8px;"><i class="fas fa-edit"></i></button>
-                    <button class="btn btn-icon btn-small" onclick="deleteEmp(${e.id})" title="Удалить" style="background:rgba(239,68,68,0.1);color:#ef4444;border:none;border-radius:8px;cursor:pointer;padding:4px 8px;"><i class="fas fa-trash"></i></button>
+                    ${e._is_user ? '<span style="font-size:0.75rem;color:var(--text-med);padding:4px 8px;">?????????????? ????????????</span>' : `
+                    <button class="btn btn-icon btn-small" onclick="editEmployee(${e.id})" title="??????????????????????????" style="background:rgba(99,102,241,0.1);color:#6366f1;border:none;border-radius:8px;cursor:pointer;padding:4px 8px;"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-icon btn-small" onclick="deleteEmp(${e.id})" title="??????????????" style="background:rgba(239,68,68,0.1);color:#ef4444;border:none;border-radius:8px;cursor:pointer;padding:4px 8px;"><i class="fas fa-trash"></i></button>
                     `}
                 </div>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:0.8rem;color:var(--text-med);">
-                ${e._is_user ? '<span style="color:var(--jarvis-cyan);font-size:0.75rem;padding:0.15rem 0.5rem;background:rgba(0,212,255,0.1);border-radius:4px;"><i class="fas fa-user-check"></i> Пользователь системы</span>' : ''}
+                ${e._is_user ? '<span style="color:var(--jarvis-cyan);font-size:0.75rem;padding:0.15rem 0.5rem;background:rgba(0,212,255,0.1);border-radius:4px;"><i class="fas fa-user-check"></i> ???????????????????????? ??????????????</span>' : ''}
                 ${e.department ? `<span><i class="fas fa-building" style="margin-right:4px;"></i>${escapeHtml(e.department)}</span>` : ''}
                 ${e.email ? `<span><i class="fas fa-envelope" style="margin-right:4px;"></i>${escapeHtml(e.email)}</span>` : ''}
                 ${e.phone ? `<span><i class="fas fa-phone" style="margin-right:4px;"></i>${escapeHtml(e.phone)}</span>` : ''}
@@ -2409,7 +2505,7 @@ function renderEmployees(emps, contacts) {
 }
 
 function showAddEmpModal() {
-    document.getElementById('empModalTitle').textContent = 'Добавить сотрудника';
+    document.getElementById('empModalTitle').textContent = '???????????????? ????????????????????';
     document.getElementById('empForm').reset();
     document.getElementById('empId').value = '';
     document.getElementById('empIsActive').checked = true;
@@ -2420,7 +2516,7 @@ async function editEmployee(empId) {
     const emps = await api.getEmployees(window._detailCompanyId);
     const emp = emps.find(e => e.id === empId);
     if (!emp) return;
-    document.getElementById('empModalTitle').textContent = 'Редактировать сотрудника';
+    document.getElementById('empModalTitle').textContent = '?????????????????????????? ????????????????????';
     document.getElementById('empId').value = emp.id;
     document.getElementById('empFullName').value = emp.full_name || '';
     document.getElementById('empPosition').value = emp.position || '';
@@ -2451,26 +2547,26 @@ async function handleEmpForm(e) {
     try {
         if (empId) {
             await api.updateEmployee(parseInt(empId), data);
-            showToast('Сотрудник обновлён', 'success');
+            showToast('?????????????????? ????????????????', 'success');
         } else {
             await api.createEmployee(window._detailCompanyId, data);
-            showToast('Сотрудник добавлен', 'success');
+            showToast('?????????????????? ????????????????', 'success');
         }
         closeModal('empModal');
         loadEmployees(window._detailCompanyId);
     } catch (error) {
-        showToast(error.message || 'Ошибка сохранения', 'error');
+        showToast(error.message || '???????????? ????????????????????', 'error');
     }
 }
 
 async function deleteEmp(empId) {
-    if (!confirm('Удалить сотрудника?')) return;
+    if (!confirm('?????????????? ?????????????????????')) return;
     try {
         await api.deleteEmployee(empId);
-        showToast('Сотрудник удалён', 'success');
+        showToast('?????????????????? ????????????', 'success');
         loadEmployees(window._detailCompanyId);
     } catch (error) {
-        showToast(error.message || 'Ошибка удаления', 'error');
+        showToast(error.message || '???????????? ????????????????', 'error');
     }
 }
 
@@ -2490,18 +2586,18 @@ async function handleRatingSubmit(e) {
     const comment = document.getElementById('ratingComment').value;
 
     if (!rating || rating < 1) {
-        showToast('Пожалуйста, поставьте оценку', 'warning');
+        showToast('????????????????????, ?????????????????? ????????????', 'warning');
         return;
     }
 
     try {
         await api.rateTicket(ticketId, rating, comment);
-        showToast('Спасибо за отзыв!', 'success');
+        showToast('?????????????? ???? ??????????!', 'success');
         closeModal('ratingModal');
         closeTicketModal();
         loadTickets();
     } catch (error) {
-        showToast(error.message || 'Ошибка отправки отзыва', 'error');
+        showToast(error.message || '???????????? ???????????????? ????????????', 'error');
     }
 }
 
@@ -2547,8 +2643,8 @@ function showNewTicketNotification(ticket) {
         document.body.appendChild(notifContainer);
     }
 
-    const priorityColors = { critical:'#f43f5e', high:'#f59e0b', medium:'#00d4ff', low:'#10b981' };
-    const priorityLabels = { critical:'Критичный', high:'Высокий', medium:'Средний', low:'Низкий' };
+    var priorityColors = { critical:'#f43f5e', high:'#f59e0b', medium:'#00d4ff', low:'#10b981' };
+    var priorityLabels = { critical:'??????????????????', high:'??????????????', medium:'??????????????', low:'????????????' };
     const pc = priorityColors[ticket.priority] || '#00d4ff';
     const pl = priorityLabels[ticket.priority] || ticket.priority;
 
@@ -2559,21 +2655,21 @@ function showNewTicketNotification(ticket) {
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
             <div style="width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:24px;">\uD83D\uDD14</div>
             <div style="flex:1;">
-                <h3 style="margin:0;font-size:16px;font-weight:700;">Новая заявка!</h3>
-                <p style="margin:4px 0 0 0;font-size:13px;opacity:0.9;"><span style="color:${pc};font-weight:600;">\u25CF ${pl}</span> приоритет</p>
+                <h3 style="margin:0;font-size:16px;font-weight:700;">?????????? ????????????!</h3>
+                <p style="margin:4px 0 0 0;font-size:13px;opacity:0.9;"><span style="color:${pc};font-weight:600;">\u25CF ${pl}</span> ??????????????????</p>
             </div>
             <button onclick="this.parentElement.parentElement.remove()" style="background:rgba(255,255,255,0.2);border:none;color:white;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">\u00D7</button>
         </div>
         <div style="background:rgba(0,0,0,0.2);border-radius:12px;padding:12px;margin-bottom:15px;">
-            <p style="margin:0 0 4px 0;font-weight:600;font-size:15px;">${escapeHtml(ticket.title || 'Без заголовка')}</p>
+            <p style="margin:0 0 4px 0;font-weight:600;font-size:15px;">${escapeHtml(ticket.title || '?????? ??????????????????')}</p>
             <p style="margin:0;font-size:13px;opacity:0.8;line-height:1.4;">${escapeHtml((ticket.description || '').substring(0, 120))}</p>
         </div>
         <div style="display:flex;gap:10px;">
             <button onclick="assignTicketToMe(${ticket.id}, this.parentElement.parentElement)" style="flex:1;background:linear-gradient(135deg,#10b981,#059669);border:none;color:white;padding:12px 16px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                <i class="fas fa-check"></i> Принять заявку
+                <i class="fas fa-check"></i> ?????????????? ????????????
             </button>
             <button onclick="openTicketModal(${ticket.id}); this.closest('[id=newTicketNotifications]') && this.closest('[id=newTicketNotifications]').remove();" style="flex:1;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:12px 16px;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                <i class="fas fa-eye"></i> Просмотреть
+                <i class="fas fa-eye"></i> ??????????????????????
             </button>
         </div>
     `;
@@ -2594,12 +2690,12 @@ function showNewTicketNotification(ticket) {
 async function assignTicketToMe(ticketId, notifElement) {
     try {
         const btn = notifElement.querySelector('button');
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Принимаю...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ????????????????...';
         btn.disabled = true;
 
         await api.assignTicket(ticketId, currentUser.id);
 
-        showToast('Заявка принята!', 'success');
+        showToast('???????????? ??????????????!', 'success');
         notifElement.style.opacity = '0';
         notifElement.style.transition = 'opacity 0.3s';
         setTimeout(() => notifElement.remove(), 300);
@@ -2608,9 +2704,9 @@ async function assignTicketToMe(ticketId, notifElement) {
         if (activeView === 'dashboard') loadDashboardData();
     } catch (error) {
         console.error('Error assigning ticket:', error);
-        showToast(error.message || 'Ошибка при принятии заявки', 'error');
+        showToast(error.message || '???????????? ?????? ???????????????? ????????????', 'error');
         const btn = notifElement.querySelector('button');
-        btn.innerHTML = '<i class="fas fa-check"></i> Принять заявку';
+        btn.innerHTML = '<i class="fas fa-check"></i> ?????????????? ????????????';
         btn.disabled = false;
     }
 }
@@ -2649,12 +2745,12 @@ async function loadClientAssets(ticket) {
         }
         
         if (assets.length === 0) {
-            container.innerHTML = '<p class="text-muted" style="font-size:0.8rem;">Нет привязанной техники</p>';
+            container.innerHTML = '<p class="text-muted" style="font-size:0.8rem;">?????? ?????????????????????? ??????????????</p>';
             return;
         }
         
         const icons = { laptop:'fa-laptop', desktop:'fa-desktop', server:'fa-server', printer:'fa-printer', router:'fa-wifi', phone:'fa-mobile-alt', monitor:'fa-tv', other:'fa-box' };
-        const statusLabels = { active:'Активно', repair:'В ремонте', decommissioned:'Списано' };
+        const statusLabels = { active:'??????????????', repair:'?? ??????????????', decommissioned:'??????????????' };
         const statusColors = { active:'#10b981', repair:'#f59e0b', decommissioned:'#6b7280' };
         
         container.innerHTML = assets.map(a => `
@@ -2664,14 +2760,14 @@ async function loadClientAssets(ticket) {
                     <strong style="color:var(--text-primary);font-size:0.85rem;">${escapeHtml(a.name)}</strong>
                     <span style="margin-left:auto;padding:0.1rem 0.5rem;border-radius:10px;font-size:0.7rem;background:${statusColors[a.status]||'#6b7280'}22;color:${statusColors[a.status]||'#6b7280'};">${statusLabels[a.status]||a.status}</span>
                 </div>
-                ${a.model ? `<div style="font-size:0.75rem;color:var(--text-secondary);">Модель: ${escapeHtml(a.model)}</div>` : ''}
+                ${a.model ? `<div style="font-size:0.75rem;color:var(--text-secondary);">????????????: ${escapeHtml(a.model)}</div>` : ''}
                 ${a.serial_number ? `<div style="font-size:0.75rem;color:var(--text-tertiary);">S/N: ${escapeHtml(a.serial_number)}</div>` : ''}
-                ${a.remote_access_id ? `<div style="font-size:0.75rem;color:var(--jarvis-cyan);cursor:pointer;" onclick="navigator.clipboard.writeText('${escapeHtml(a.remote_access_id)}');showToast('ID скопирован','success');"><i class="fas fa-desktop"></i> ${escapeHtml(a.remote_access_id)}</div>` : ''}
+                ${a.remote_access_id ? `<div style="font-size:0.75rem;color:var(--jarvis-cyan);cursor:pointer;" onclick="navigator.clipboard.writeText('${escapeHtml(a.remote_access_id)}');showToast('ID ????????????????????','success');"><i class="fas fa-desktop"></i> ${escapeHtml(a.remote_access_id)}</div>` : ''}
             </div>
         `).join('');
     } catch (e) {
         console.error('Load assets error:', e);
-        container.innerHTML = '<p class="text-muted" style="font-size:0.8rem;">Ошибка загрузки техники</p>';
+        container.innerHTML = '<p class="text-muted" style="font-size:0.8rem;">???????????? ???????????????? ??????????????</p>';
     }
 }
 
@@ -2692,7 +2788,7 @@ async function loadTicketFiles(ticket) {
         }
         
         if (!files || files.length === 0) {
-            container.innerHTML = '<p class="text-muted" style="font-size:0.8rem;">Нет прикреплённых файлов</p>';
+            container.innerHTML = '<p class="text-muted" style="font-size:0.8rem;">?????? ?????????????????????????? ????????????</p>';
             return;
         }
         
@@ -2704,21 +2800,21 @@ async function loadTicketFiles(ticket) {
             return `<div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.1);border-radius:10px;padding:0.75rem;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.75rem;cursor:pointer;" onclick="${f.url ? "window.open('" + f.url + "','_blank')" : ''}">
                 <i class="fas ${icon}" style="color:var(--jarvis-cyan);font-size:1.2rem;"></i>
                 <div style="flex:1;">
-                    <div style="color:var(--text-primary);font-size:0.85rem;font-weight:600;">${escapeHtml(f.filename || f.name || 'Файл')}</div>
+                    <div style="color:var(--text-primary);font-size:0.85rem;font-weight:600;">${escapeHtml(f.filename || f.name || '????????')}</div>
                     ${size ? `<div style="font-size:0.7rem;color:var(--text-tertiary);">${size}</div>` : ''}
                 </div>
                 <i class="fas fa-download" style="color:var(--text-low);font-size:0.8rem;"></i>
             </div>`;
         }).join('');
     } catch (e) {
-        container.innerHTML = '<p class="text-muted" style="font-size:0.8rem;">Нет прикреплённых файлов</p>';
+        container.innerHTML = '<p class="text-muted" style="font-size:0.8rem;">?????? ?????????????????????????? ????????????</p>';
     }
 }
 
 async function loadAssetsView() {
     const container = document.getElementById('assetsList');
     if (!container) return;
-    container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary);"><i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i> Загрузка...</div>';
+    container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary);"><i class="fas fa-spinner fa-spin" style="font-size:2rem;"></i> ????????????????...</div>';
     await loadAssetFilters();
     await loadAssetStats();
     try {
@@ -2726,11 +2822,13 @@ async function loadAssetsView() {
         const assetType = document.getElementById('assetTypeFilter')?.value || '';
         const assetStatus = document.getElementById('assetStatusFilter')?.value || '';
         const assetCondition = document.getElementById('assetConditionFilter')?.value || '';
+        const assetCompany = document.getElementById('assetCompanyFilter')?.value || '';
         let url = '/api/assets?';
         if (search) url += 'search=' + encodeURIComponent(search) + '&';
         if (assetType) url += 'asset_type=' + encodeURIComponent(assetType) + '&';
         if (assetStatus) url += 'status=' + encodeURIComponent(assetStatus) + '&';
         if (assetCondition) url += 'condition=' + encodeURIComponent(assetCondition) + '&';
+        if (assetCompany) url += 'company_id=' + encodeURIComponent(assetCompany) + '&';
         const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') } });
         if (!res.ok) throw new Error('Failed to load assets');
         const assets = await res.json();
@@ -2946,7 +3044,7 @@ function openAssignModal(id, name) {
     _activeAssetId = id;
     _activeAssetName = name;
     var na = document.getElementById('assignAssetName');
-    if (na) na.textContent = 'Устройство: ' + (name || '#' + id);
+    if (na) na.textContent = '????????????????????: ' + (name || '#' + id);
     populateUserSelect('assignEmployee');
     var rr = document.getElementById('assignReason');
     if (rr) rr.value = '';
@@ -3211,7 +3309,7 @@ function demoRate(rating) {
         star.classList.toggle('fas', i < rating);
         star.classList.toggle('far', i >= rating);
     });
-    showToast('Оценка ' + rating + ' сохранена', 'success');
+    showToast('???????????? ' + rating + ' ??????????????????', 'success');
 }
 
 // Initialize demo cards and form handlers
@@ -3222,7 +3320,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const style = document.createElement('style');
     style.textContent = `
         #demoCardsContainer .checklist-item.completed .checklist-checkbox { background: var(--jarvis-emerald); border-color: var(--jarvis-emerald); }
-        #demoCardsContainer .checklist-item.completed .checklist-checkbox::after { content: '✓'; color: white; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; }
+        #demoCardsContainer .checklist-item.completed .checklist-checkbox::after { content: '???'; color: white; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; }
         #demoCardsContainer .checklist-checkbox { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-radius: 4px; display: inline-flex; }
     `;
     document.head.appendChild(style);
@@ -3294,14 +3392,14 @@ async function updateReportPreview() {
     const period = document.getElementById('reportPeriod').value;
     const preview = document.getElementById('reportPreview');
     
-    preview.innerHTML = '<div style="text-align: center; padding: 2rem;"><i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--jarvis-cyan);"></i><p style="margin-top: 0.5rem;">Загрузка данных...</p></div>';
+    preview.innerHTML = '<div style="text-align: center; padding: 2rem;"><i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--jarvis-cyan);"></i><p style="margin-top: 0.5rem;">???????????????? ????????????...</p></div>';
     
     try {
         const data = await getReportData(type, period);
         currentReportData = data;
         renderReportPreview(type, data, preview);
     } catch (error) {
-        preview.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--danger);"><i class="fas fa-exclamation-triangle"></i><p>Ошибка загрузки данных</p></div>';
+        preview.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--danger);"><i class="fas fa-exclamation-triangle"></i><p>???????????? ???????????????? ????????????</p></div>';
     }
 }
 
@@ -3329,7 +3427,7 @@ async function getFallbackReportData(type, period) {
     switch(type) {
         case 'tickets':
             try {
-                const tickets = await api.request('/tickets');
+                var tickets = await api.request('/tickets');
                 return { type: 'tickets', data: tickets, dateFrom: '', dateTo: '' };
             } catch { return { type: 'tickets', data: [], dateFrom: '', dateTo: '' }; }
         case 'users':
@@ -3344,7 +3442,7 @@ async function getFallbackReportData(type, period) {
             } catch { return { type: 'companies', data: [], dateFrom: '', dateTo: '' }; }
         case 'performance':
             try {
-                const tickets = await api.request('/tickets');
+                var tickets = await api.request('/tickets');
                 return { type: 'performance', data: tickets, dateFrom: '', dateTo: '' };
             } catch { return { type: 'performance', data: [], dateFrom: '', dateTo: '' }; }
         case 'audit':
@@ -3354,7 +3452,7 @@ async function getFallbackReportData(type, period) {
             } catch { return { type: 'audit', data: [], dateFrom: '', dateTo: '' }; }
         case 'financial':
             try {
-                const tickets = await api.request('/tickets');
+                var tickets = await api.request('/tickets');
                 return { type: 'financial', data: tickets, dateFrom: '', dateTo: '' };
             } catch { return { type: 'financial', data: [], dateFrom: '', dateTo: '' }; }
         default:
@@ -3364,7 +3462,7 @@ async function getFallbackReportData(type, period) {
 
 function renderReportPreview(type, reportData, container) {
     if (!reportData.data || reportData.data.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-tertiary);"><i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.3;"></i><p style="margin-top: 0.5rem;">Нет данных для отображения</p></div>';
+        container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-tertiary);"><i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.3;"></i><p style="margin-top: 0.5rem;">?????? ???????????? ?????? ??????????????????????</p></div>';
         return;
     }
     
@@ -3373,40 +3471,40 @@ function renderReportPreview(type, reportData, container) {
     switch(type) {
         case 'tickets':
             const total = reportData.data.length;
-            const resolved = reportData.data.filter(t => t.status === 'Ожидает клиента' || t.status === 'решён' || t.status === 'resolved' || t.status === 'closed').length;
-            const critical = reportData.data.filter(t => t.priority === 'критичный' || t.priority === 'critical').length;
-            html += `<div class="report-summary-item"><h4>${total}</h4><p>Всего заявок</p></div>`;
-            html += `<div class="report-summary-item"><h4>${resolved}</h4><p>Решено</p></div>`;
-            html += `<div class="report-summary-item"><h4>${critical}</h4><p>Критичных</p></div>`;
+            const resolved = reportData.data.filter(t => t.status === '?????????????? ??????????????' || t.status === '??????????' || t.status === 'resolved' || t.status === 'closed').length;
+            const critical = reportData.data.filter(t => t.priority === '??????????????????' || t.priority === 'critical').length;
+            html += `<div class="report-summary-item"><h4>${total}</h4><p>?????????? ????????????</p></div>`;
+            html += `<div class="report-summary-item"><h4>${resolved}</h4><p>????????????</p></div>`;
+            html += `<div class="report-summary-item"><h4>${critical}</h4><p>??????????????????</p></div>`;
             break;
         case 'users':
-            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>Пользователей</p></div>`;
+            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>??????????????????????????</p></div>`;
             const admins = reportData.data.filter(u => u.role === 'admin').length;
-            html += `<div class="report-summary-item"><h4>${admins}</h4><p>Администраторов</p></div>`;
-            html += `<div class="report-summary-item"><h4>${reportData.data.length - admins}</h4><p>Агентов</p></div>`;
+            html += `<div class="report-summary-item"><h4>${admins}</h4><p>??????????????????????????????</p></div>`;
+            html += `<div class="report-summary-item"><h4>${reportData.data.length - admins}</h4><p>??????????????</p></div>`;
             break;
         case 'performance':
             const avgTime = calculateAvgResolutionTime(reportData.data);
-            html += `<div class="report-summary-item"><h4>${avgTime}</h4><p>Ср. время (ч)</p></div>`;
-            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>Обработано</p></div>`;
+            html += `<div class="report-summary-item"><h4>${avgTime}</h4><p>????. ?????????? (??)</p></div>`;
+            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>????????????????????</p></div>`;
             html += `<div class="report-summary-item"><h4>95%</h4><p>SLA</p></div>`;
             break;
         case 'companies':
-            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>Компаний</p></div>`;
+            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>????????????????</p></div>`;
             const active = reportData.data.filter(c => c.status === 'active').length;
-            html += `<div class="report-summary-item"><h4>${active}</h4><p>Активных</p></div>`;
-            html += `<div class="report-summary-item"><h4>${reportData.data.length - active}</h4><p>Неактивных</p></div>`;
+            html += `<div class="report-summary-item"><h4>${active}</h4><p>????????????????</p></div>`;
+            html += `<div class="report-summary-item"><h4>${reportData.data.length - active}</h4><p>????????????????????</p></div>`;
             break;
         case 'audit':
-            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>Событий</p></div>`;
+            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>??????????????</p></div>`;
             const logins = reportData.data.filter(a => a.action?.includes('login') || a.action?.includes('auth')).length;
-            html += `<div class="report-summary-item"><h4>${logins}</h4><p>Входов</p></div>`;
-            html += `<div class="report-summary-item"><h4>${reportData.data.length - logins}</h4><p>Других</p></div>`;
+            html += `<div class="report-summary-item"><h4>${logins}</h4><p>????????????</p></div>`;
+            html += `<div class="report-summary-item"><h4>${reportData.data.length - logins}</h4><p>????????????</p></div>`;
             break;
         case 'financial':
-            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>Заявок</p></div>`;
-            html += `<div class="report-summary-item"><h4>0</h4><p>Часов работы</p></div>`;
-            html += `<div class="report-summary-item"><h4>0</h4><p>Сумма (SUM)</p></div>`;
+            html += `<div class="report-summary-item"><h4>${reportData.data.length}</h4><p>????????????</p></div>`;
+            html += `<div class="report-summary-item"><h4>0</h4><p>?????????? ????????????</p></div>`;
+            html += `<div class="report-summary-item"><h4>0</h4><p>?????????? (SUM)</p></div>`;
             break;
     }
     
@@ -3414,22 +3512,22 @@ function renderReportPreview(type, reportData, container) {
     
     switch(type) {
         case 'tickets':
-            html += '<th>ID</th><th>Название</th><th>Статус</th><th>Приоритет</th><th>Создан</th><th>Обновлён</th>';
+            html += '<th>ID</th><th>????????????????</th><th>????????????</th><th>??????????????????</th><th>????????????</th><th>????????????????</th>';
             break;
         case 'users':
-            html += '<th>ID</th><th>Имя</th><th>Email</th><th>Роль</th><th>Статус</th>';
+            html += '<th>ID</th><th>??????</th><th>Email</th><th>????????</th><th>????????????</th>';
             break;
         case 'companies':
-            html += '<th>ID</th><th>Название</th><th>Email</th><th>Телефон</th><th>Статус</th>';
+            html += '<th>ID</th><th>????????????????</th><th>Email</th><th>??????????????</th><th>????????????</th>';
             break;
         case 'audit':
-            html += '<th>Время</th><th>Действие</th><th>Пользователь</th><th>IP</th>';
+            html += '<th>??????????</th><th>????????????????</th><th>????????????????????????</th><th>IP</th>';
             break;
         case 'performance':
-            html += '<th>ID</th><th>Название</th><th>Время создания</th><th>Время решения</th><th>SLA</th>';
+            html += '<th>ID</th><th>????????????????</th><th>?????????? ????????????????</th><th>?????????? ??????????????</th><th>SLA</th>';
             break;
         case 'financial':
-            html += '<th>ID</th><th>Название</th><th>Статус</th><th>Время</th><th>Приоритет</th>';
+            html += '<th>ID</th><th>????????????????</th><th>????????????</th><th>??????????</th><th>??????????????????</th>';
             break;
     }
     
@@ -3443,7 +3541,7 @@ function renderReportPreview(type, reportData, container) {
                 html += `<td>${item.id}</td><td>${escapeHtml(item.title || item.name || '')}</td><td><span class="badge badge-${getStatusClass(item.status)}">${item.status || ''}</span></td><td><span class="badge badge-${getPriorityClass(item.priority)}">${item.priority || ''}</span></td><td>${formatDate(item.created_at)}</td><td>${formatDate(item.updated_at)}</td>`;
                 break;
             case 'users':
-                html += `<td>${item.id}</td><td>${escapeHtml(item.full_name || item.name || '')}</td><td>${escapeHtml(item.email || '')}</td><td>${item.role || 'user'}</td><td><span class="badge badge-${item.is_active ? 'green' : 'gray'}">${item.is_active ? 'Активен' : 'Неактивен'}</span></td>`;
+                html += `<td>${item.id}</td><td>${escapeHtml(item.full_name || item.name || '')}</td><td>${escapeHtml(item.email || '')}</td><td>${item.role || 'user'}</td><td><span class="badge badge-${item.is_active ? 'green' : 'gray'}">${item.is_active ? '??????????????' : '??????????????????'}</span></td>`;
                 break;
             case 'companies':
                 html += `<td>${item.id}</td><td>${escapeHtml(item.name || '')}</td><td>${escapeHtml(item.email || '')}</td><td>${escapeHtml(item.phone || '')}</td><td><span class="badge badge-${item.status === 'active' ? 'green' : 'gray'}">${item.status || ''}</span></td>`;
@@ -3455,7 +3553,7 @@ function renderReportPreview(type, reportData, container) {
                 const created = new Date(item.created_at);
                 const updated = new Date(item.updated_at || item.resolved_at || now);
                 const hours = Math.round((updated - created) / (1000 * 60 * 60));
-                html += `<td>${item.id}</td><td>${escapeHtml(item.title || '')}</td><td>${formatDate(item.created_at)}</td><td>${hours}ч</td><td>${hours <= 24 ? '✓' : '✗'}</td>`;
+                html += `<td>${item.id}</td><td>${escapeHtml(item.title || '')}</td><td>${formatDate(item.created_at)}</td><td>${hours}??</td><td>${hours <= 24 ? '???' : '???'}</td>`;
                 break;
             case 'financial':
                 html += `<td>${item.id}</td><td>${escapeHtml(item.title || '')}</td><td><span class="badge badge-${getStatusClass(item.status)}">${item.status || ''}</span></td><td>${formatDate(item.created_at)}</td><td><span class="badge badge-${getPriorityClass(item.priority)}">${item.priority || ''}</span></td>`;
@@ -3466,7 +3564,7 @@ function renderReportPreview(type, reportData, container) {
     
     html += '</tbody></table>';
     if (reportData.data.length > 10) {
-        html += `<p style="text-align: center; padding: 1rem; color: var(--text-tertiary);">Показано 10 из ${reportData.data.length} записей</p>`;
+        html += `<p style="text-align: center; padding: 1rem; color: var(--text-tertiary);">???????????????? 10 ???? ${reportData.data.length} ??????????????</p>`;
     }
     
     container.innerHTML = html;
@@ -3475,19 +3573,19 @@ function renderReportPreview(type, reportData, container) {
 function getStatusClass(status) {
     if (!status) return 'gray';
     const s = status.toLowerCase();
-    if (s.includes('новый') || s.includes('new')) return 'new';
-    if (s.includes('работа') || s.includes('progress')) return 'progress';
-    if (s.includes('Ожидает') || s.includes('решён') || s.includes('resolved')) return 'green';
-    if (s.includes('закрыт') || s.includes('closed')) return 'closed';
+    if (s.includes('??????????') || s.includes('new')) return 'new';
+    if (s.includes('????????????') || s.includes('progress')) return 'progress';
+    if (s.includes('??????????????') || s.includes('??????????') || s.includes('resolved')) return 'green';
+    if (s.includes('????????????') || s.includes('closed')) return 'closed';
     return 'gray';
 }
 
 function getPriorityClass(priority) {
     if (!priority) return 'low';
     const p = priority.toLowerCase();
-    if (p.includes('критичн') || p.includes('critical')) return 'critical';
-    if (p.includes('высок') || p.includes('high')) return 'high';
-    if (p.includes('средн') || p.includes('medium')) return 'medium';
+    if (p.includes('??????????????') || p.includes('critical')) return 'critical';
+    if (p.includes('??????????') || p.includes('high')) return 'high';
+    if (p.includes('??????????') || p.includes('medium')) return 'medium';
     return 'low';
 }
 
@@ -3517,7 +3615,7 @@ async function exportReport() {
     const format = document.getElementById('exportFormat').value;
     const period = document.getElementById('reportPeriod').value;
     
-    showToast('Экспорт отчёта...', 'info');
+    showToast('?????????????? ????????????...', 'info');
     
     try {
         // Use API export endpoint
@@ -3538,7 +3636,7 @@ async function exportReport() {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            showToast('Отчёт скачан!', 'success');
+            showToast('?????????? ????????????!', 'success');
         } else {
             // Fallback to local CSV generation
             if (!currentReportData) {
@@ -3592,7 +3690,7 @@ function downloadAsCSV(type, reportData) {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     
-    showToast('Отчёт скачан!', 'success');
+    showToast('?????????? ????????????!', 'success');
     
     // Save to recent reports
     saveToRecentReports(type, reportData);
@@ -3601,19 +3699,19 @@ function downloadAsCSV(type, reportData) {
 function getReportHeaders(type) {
     switch(type) {
         case 'tickets':
-            return ['ID', 'Название', 'Описание', 'Статус', 'Приоритет', 'Компания', 'Создатель', 'Исполнитель', 'Создан', 'Обновлён'];
+            return ['ID', '????????????????', '????????????????', '????????????', '??????????????????', '????????????????', '??????????????????', '??????????????????????', '????????????', '????????????????'];
         case 'users':
-            return ['ID', 'Имя', 'Email', 'Роль', 'Статус', 'Компания', 'Создан'];
+            return ['ID', '??????', 'Email', '????????', '????????????', '????????????????', '????????????'];
         case 'companies':
-            return ['ID', 'Название', 'Email', 'Телефон', 'Адрес', 'Статус', 'Создан'];
+            return ['ID', '????????????????', 'Email', '??????????????', '??????????', '????????????', '????????????'];
         case 'audit':
-            return ['Время', 'Действие', 'Пользователь', 'IP адрес', 'Детали'];
+            return ['??????????', '????????????????', '????????????????????????', 'IP ??????????', '????????????'];
         case 'performance':
-            return ['ID', 'Название', 'Статус', 'Приоритет', 'Время создания', 'Время решения', 'SLA'];
+            return ['ID', '????????????????', '????????????', '??????????????????', '?????????? ????????????????', '?????????? ??????????????', 'SLA'];
         case 'financial':
-            return ['ID', 'Название', 'Статус', 'Приоритет', 'Время', 'Компания'];
+            return ['ID', '????????????????', '????????????', '??????????????????', '??????????', '????????????????'];
         default:
-            return ['ID', 'Данные'];
+            return ['ID', '????????????'];
     }
 }
 
@@ -3638,7 +3736,7 @@ function getReportRow(type, item) {
                 item.full_name || item.name || '',
                 item.email || '',
                 item.role || 'user',
-                item.is_active ? 'Активен' : 'Неактивен',
+                item.is_active ? '??????????????' : '??????????????????',
                 item.company_name || '',
                 item.created_at || ''
             ];
@@ -3671,7 +3769,7 @@ function getReportRow(type, item) {
                 item.priority || '',
                 item.created_at || '',
                 item.resolved_at || item.updated_at || '',
-                hours <= 24 ? 'Выполнено' : 'Просрочено'
+                hours <= 24 ? '??????????????????' : '????????????????????'
             ];
         case 'financial':
             return [
@@ -3708,28 +3806,28 @@ function loadRecentReports() {
     const recentReports = JSON.parse(localStorage.getItem('recentReports') || '[]');
     
     if (recentReports.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-tertiary);"><i class="fas fa-file-alt" style="font-size: 2rem; opacity: 0.3; margin-bottom: 1rem;"></i><p>Созданные отчёты появятся здесь</p></div>';
+        container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-tertiary);"><i class="fas fa-file-alt" style="font-size: 2rem; opacity: 0.3; margin-bottom: 1rem;"></i><p>?????????????????? ???????????? ???????????????? ??????????</p></div>';
         return;
     }
     
     const typeNames = {
-        'tickets': 'По заявкам',
-        'users': 'По пользователям',
-        'performance': 'По производительности',
-        'companies': 'По компаниям',
-        'audit': 'Аудит безопасности',
-        'financial': 'Финансовый'
+        'tickets': '???? ??????????????',
+        'users': '???? ??????????????????????????',
+        'performance': '???? ????????????????????????????????????',
+        'companies': '???? ??????????????????',
+        'audit': '?????????? ????????????????????????',
+        'financial': '????????????????????'
     };
     
     container.innerHTML = `
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Тип отчёта</th>
-                    <th>Период</th>
-                    <th>Записей</th>
-                    <th>Дата создания</th>
-                    <th>Действия</th>
+                    <th>?????? ????????????</th>
+                    <th>????????????</th>
+                    <th>??????????????</th>
+                    <th>???????? ????????????????</th>
+                    <th>????????????????</th>
                 </tr>
             </thead>
             <tbody>
@@ -3740,7 +3838,7 @@ function loadRecentReports() {
                         <td>${r.count}</td>
                         <td>${new Date(r.date).toLocaleString('ru-RU')}</td>
                         <td>
-                            <button class="btn-icon" onclick="regenerateReport('${r.type}')" title="Обновить">
+                            <button class="btn-icon" onclick="regenerateReport('${r.type}')" title="????????????????">
                                 <i class="fas fa-sync-alt"></i>
                             </button>
                         </td>
@@ -3765,18 +3863,18 @@ function downloadCurrentReport() {
 // ===== CLOSE TICKET =====
 async function closeTicket() {
     if (!currentTicketId) {
-        showToast('Ошибка: тикет не выбран', 'error');
+        showToast('????????????: ?????????? ???? ????????????', 'error');
         return;
     }
     
     try {
-        showToast('Закрытие тикета...', 'info');
+        showToast('???????????????? ????????????...', 'info');
         
         await api.request(`/tickets/${currentTicketId}/close`, {
             method: 'POST'
         });
         
-        showToast('Тикет закрыт!', 'success');
+        showToast('?????????? ????????????!', 'success');
         
         // Reload ticket details
         loadTicketDetails(currentTicketId);
@@ -3795,26 +3893,26 @@ async function closeTicket() {
         
     } catch (error) {
         console.error('Close ticket error:', error);
-        showToast('Ошибка закрытия тикета: ' + error.message, 'error');
+        showToast('???????????? ???????????????? ????????????: ' + error.message, 'error');
     }
 }
 
 // ===== RESOLVE TICKET =====
 async function resolveTicket() {
     if (!currentTicketId) {
-        showToast('Ошибка: тикет не выбран', 'error');
+        showToast('????????????: ?????????? ???? ????????????', 'error');
         return;
     }
     
-    var comment = prompt('Комментарий о выполненной работе (необязательно):');
+    var comment = prompt('?????????????????????? ?? ?????????????????????? ???????????? (??????????????????????????):');
     if (comment === null) return;
     
     try {
-        showToast('Завершение работы...', 'info');
+        showToast('???????????????????? ????????????...', 'info');
         
         await api.resolveTicket(currentTicketId, comment);
         
-        showToast('Тикет завершён! Клиент уведомлён о выполнении.', 'success');
+        showToast('?????????? ????????????????! ???????????? ?????????????????? ?? ????????????????????.', 'success');
         
         // Reload ticket details
         loadTicketDetails(currentTicketId);
@@ -3826,7 +3924,7 @@ async function resolveTicket() {
         
     } catch (error) {
         console.error('Resolve ticket error:', error);
-        showToast('Ошибка завершения тикета: ' + error.message, 'error');
+        showToast('???????????? ???????????????????? ????????????: ' + error.message, 'error');
     }
 }
 
@@ -3878,7 +3976,7 @@ function generateTelegramLink() {
 async function generateTelegramLinkCode() {
     const btn = document.querySelector('#telegramLinkContent button');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Генерация...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ??????????????????...';
     try {
         const res = await fetch('/api/auth/telegram/link-token', {
             method: 'POST',
@@ -3895,10 +3993,10 @@ async function generateTelegramLinkCode() {
         document.getElementById('telegramLinkCodeInline').textContent = data.token;
     } catch (e) {
         console.error('Telegram link error:', e);
-        alert('Ошибка генерации кода. Попробуйте ещё раз.');
+        alert('???????????? ?????????????????? ????????. ???????????????????? ?????? ??????.');
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-key"></i> Получить код';
+        btn.innerHTML = '<i class="fas fa-key"></i> ???????????????? ??????';
     }
 }
 
@@ -3907,10 +4005,10 @@ function copyTelegramCode() {
     navigator.clipboard.writeText(code).then(() => {
         const btn = document.querySelector('#telegramLinkResult .btn');
         const orig = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-check"></i> Скопировано';
+        btn.innerHTML = '<i class="fas fa-check"></i> ??????????????????????';
         setTimeout(() => btn.innerHTML = orig, 2000);
     }).catch(() => {
-        alert('Скопируйте код вручную: ' + code);
+        alert('???????????????????? ?????? ??????????????: ' + code);
     });
 }
 
@@ -3923,7 +4021,7 @@ Router.register('/tickets/:id', function(id, action) {
     else { showView('tickets'); openTicketModal(id); }
 });
 Router.register('/companies', function() { showView('crm'); });
-Router.register('/companies/new', function() { showView('crm'); showNewCompanyModal(); });
+Router.register('/companies/new', function() { showView('crm'); showCreateCompanyModal(); });
 Router.register('/companies/:id/edit', function(id) { showView('crm'); showEditCompanyModal(id); });
 Router.register('/users', function() { showView('users'); });
 Router.register('/users/new', function() { showView('users'); showNewUserModal(); });
@@ -3935,11 +4033,6 @@ Router.register('/monitoring', function() { showView('monitoring'); });
 Router.register('/settings', function() { showView('dashsettings'); });
 Router.register('/dashboard', function() { showView('dashboard'); });
 
-// Helper functions for modals (stubs that use UIManager)
-function showNewCompanyModal() { showToast('CRM: Создание компании через UIManager', 'info'); loadCRMData(); }
-function showEditCompanyModal(id) { showToast('CRM: Редактирование компании #' + id, 'info'); loadCRMData(); }
-function showNewUserModal() { showView('users'); }
-function showEditUserModal(id) { showView('users'); }
 function showAddAssetModal() { UIManager.closeAll(); var m = document.getElementById('addAssetModal'); if (m) { m.classList.remove('hidden'); m.style.display = 'flex'; document.body.style.overflow = 'hidden'; } }
 
 // Initialize Router
@@ -3979,12 +4072,12 @@ function checkAccess(role, route) {
 
     if (role === 'client' && !clientAllowed.some(function(r) { return route.startsWith(r); })) {
         Router.navigate('#/tickets');
-        UIManager.toast(i18n.t('no_access') || 'Нет доступа', 'warning');
+        UIManager.toast(i18n.t('no_access') || '?????? ??????????????', 'warning');
         return false;
     }
     if (role === 'agent' && !agentAllowed.some(function(r) { return route.startsWith(r); })) {
         Router.navigate('#/tickets');
-        UIManager.toast(i18n.t('no_access') || 'Нет доступа', 'warning');
+        UIManager.toast(i18n.t('no_access') || '?????? ??????????????', 'warning');
         return false;
     }
     return true;
@@ -3996,3 +4089,27 @@ window.loginSuccess = function(user) {
     renderNavForRole((user.role || '').toLowerCase());
     if (_originalLoginSuccess) _originalLoginSuccess(user);
 };
+
+
+// Re-render current view when locale changes
+document.addEventListener('localeChanged', function() {
+    var view = activeView || 'dashboard';
+    if (view === 'dashboard') {
+        if (typeof loadHUDDashboard === 'function') loadHUDDashboard();
+        else if (typeof loadDashboardData === 'function') loadDashboardData();
+    } else if (view === 'tickets') {
+        loadTickets();
+    } else if (view === 'crm') {
+        loadCRMData();
+    } else if (view === 'monitoring') {
+        loadMonitoringData();
+    } else if (view === 'audit') {
+        loadAuditLogData();
+    } else if (view === 'users') {
+        loadUsers();
+    } else if (view === 'assets') {
+        loadAssetsView();
+    } else if (view === 'create') {
+        loadOpenTickets();
+    }
+});
