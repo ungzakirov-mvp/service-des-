@@ -53,17 +53,4 @@ async def get_current_user(
     return user
 
 
-async def get_current_active_user(
-    current_user: User = Depends(get_current_user)
-) -> User:
-    """
-    Dependency для получения активного пользователя
-    В будущем можно добавить проверку is_active флага
-    
-    Args:
-        current_user: Текущий пользователь
-    
-    Returns:
-        Активный пользователь
-    """
-    return current_user
+# get_current_active_user removed — is_active check is already in get_current_user

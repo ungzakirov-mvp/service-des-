@@ -62,7 +62,10 @@ def _record_login_attempt(ip: str):
 @router.post("/register", response_model=schemas.Token, status_code=status.HTTP_201_CREATED,
              summary="Регистрация нового пользователя",
              description="Создание нового пользователя. В MVP версии все пользователи попадают в Demo Company.")
-def register(user_data: schemas.UserCreate, db: Session = Depends(get_db)):
+def register(request: Request, user_data: schemas.UserCreate, db: Session = Depends(get_db)):
+    ip = request.client.host if request.client else "unknown"
+    _check_login_rate_limit(ip)
+    _record_login_attempt(ip)
     # Проверка существования пользователя
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:

@@ -495,6 +495,7 @@ class TimeEntryBase(BaseModel):
 
 class TimeEntryCreate(TimeEntryBase):
     ticket_id: int
+    minutes: int = 0
 
 class TimeEntryUpdate(BaseModel):
     description: Optional[str] = None

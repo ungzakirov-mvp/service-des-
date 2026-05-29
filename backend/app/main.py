@@ -2,7 +2,17 @@ import os
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.routers import auth, tickets, comments, notifications, webhooks, analytics, users, crm, timetracking, audit, features, reports, assets, company_dashboard, monitoring, dashboard_hud, dashboard_v2, organizations, tariffs
+from app.routers import webhooks, analytics, users, features, reports, assets, company_dashboard, dashboard_hud, dashboard_v2, organizations
+from app.domains.auth.router import router as auth_router
+from app.domains.organizations.router import router as org_router
+from app.domains.crm.router import router as crm_router
+from app.domains.monitoring.router import router as mon_router
+from app.domains.tariffs.router import router as tariffs_router
+from app.domains.tickets.router import router as tickets_router
+from app.domains.comments.router import router as comments_router
+from app.domains.timetracking.router import router as timetracking_router
+from app.domains.notifications.router import router as notifications_router
+from app.domains.audit.router import router as audit_router
 from app.config import settings
 from app.logger import log_request, setup_logging, logger
 from app.services.websocket_manager import manager
@@ -142,25 +152,25 @@ async def logging_middleware(request: Request, call_next):
     return response
 
 # Register routers
-app.include_router(auth.router, prefix="/api")
-app.include_router(tickets.router, prefix="/api")
-app.include_router(comments.router, prefix="/api")
-app.include_router(notifications.router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
+app.include_router(tickets_router, prefix="/api")
+app.include_router(comments_router, prefix="/api")
+app.include_router(notifications_router, prefix="/api")
 app.include_router(webhooks.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
-app.include_router(crm.router, prefix="/api")
-app.include_router(timetracking.router, prefix="/api")
-app.include_router(audit.router, prefix="/api")
+app.include_router(crm_router, prefix="/api")
+app.include_router(timetracking_router, prefix="/api")
+app.include_router(audit_router, prefix="/api")
 app.include_router(company_dashboard.router, prefix="/api")
-app.include_router(monitoring.router, prefix="/api")
+app.include_router(mon_router, prefix="/api")
 app.include_router(features.router, prefix="")
 app.include_router(assets.router, prefix="")
 app.include_router(reports.router, prefix="/api")
 app.include_router(dashboard_hud.router, prefix="/api")
 app.include_router(dashboard_v2.router, prefix="/api")
-app.include_router(organizations.router, prefix="/api")
-app.include_router(tariffs.router, prefix="/api")
+app.include_router(org_router, prefix="/api")
+app.include_router(tariffs_router, prefix="/api")
 
 
 # Health check

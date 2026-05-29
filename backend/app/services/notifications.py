@@ -31,3 +31,26 @@ async def notify_status_changed(db: Session, ticket: Ticket):
     }
     # Notify everyone in tenant for now, to ensure UI updates
     await manager.broadcast_to_tenant(message, ticket.tenant_id)
+
+from typing import Optional
+from app.models import Notification
+
+
+async def broadcast_notification(db: Session, user_id: int, tenant_id: int,
+                                  title: str, message: str, link: Optional[str] = None):
+    """Canonical notification creation + WebSocket delivery."""
+    notif = Notification(
+        tenant_id=tenant_id,
+        user_id=user_id,
+        title=title,
+        message=message,
+        link=link
+    )
+    db.add(notif)
+    db.flush()
+    from app.services.websocket_manager import manager
+    await manager.send_personal_message({
+        "type": "NEW_NOTIFICATION",
+        "message": title,
+        "content": message
+    }, user_id=user_id, tenant_id=tenant_id)

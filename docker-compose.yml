@@ -2,6 +2,7 @@ services:
   backend:
     build: .
     container_name: backend
+    restart: unless-stopped
     environment:
       - TELEGRAM_CLIENT_BOT_TOKEN=${TELEGRAM_CLIENT_BOT_TOKEN}
       - TELEGRAM_AGENT_BOT_TOKEN=${TELEGRAM_AGENT_BOT_TOKEN}
@@ -13,10 +14,17 @@ services:
       - ./data:/code/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   nginx:
     image: nginx:alpine
     container_name: nginx
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -29,6 +37,30 @@ services:
     networks:
       - app-network
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres-sandbox
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: servicedesk_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-servicedesk_sandbox_pass}
+      POSTGRES_DB: servicedesk_sandbox
+    volumes:
+      - pgdata_sandbox:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U servicedesk_user -d servicedesk_sandbox"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  pgdata_sandbox:

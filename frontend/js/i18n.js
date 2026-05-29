@@ -189,6 +189,7 @@ const i18n = {
             hud_in_progress: 'В работе',
             hud_waiting: 'Ожидает ответа',
             hud_online: 'Онлайн',
+            hud_online_dot: 'ОНЛАЙН',
             hud_idle: 'Неактивен',
             hud_offline: 'Офлайн',
             hud_created: 'Создано',
@@ -314,8 +315,6 @@ const i18n = {
             requests_coming_soon: 'Раздел заявок на услуги будет доступен в следующей версии',
             tariffs: 'Тарифы',
         },
-        
-        en: {,
         
         en: {
             // Navigation
@@ -629,8 +628,6 @@ const i18n = {
             tariffs: 'Tariffs',
         },
         
-        uz: {,
-        
         uz: {
             // Navigation
             dashboard: 'Boshqaruv paneli',
@@ -738,12 +735,12 @@ const i18n = {
             
             // KB
             search_kb: 'Bilim bazasidan qidirish...',
-            monitoring_center: 'Monitori\u043dg',
-            monitoring_desc: 'Tashkilotlar bo\u0437icha tizim va uskunalar holati',
+            monitoring_center: 'Monitoring',
+            monitoring_desc: 'Tashkilotlar bo\u2019yicha tizim va uskunalar holati',
             assets: 'Texnika',
             assets_title: 'Texnika boshqaruvi',
-            add_asset: 'Qurilma qo\u0440shish',
-            search_assets: 'Nomi, modeli, seriya raqami bo\u0437icha qidirish...',
+            add_asset: 'Qurilma qo\u2019shish',
+            search_assets: 'Nomi, modeli, seriya raqami bo\u2019yicha qidirish...',
             all_types: 'Barcha turlar',
             network_status: 'Tarmoq holati',
             equipment_status: 'Uskunalar holati',
@@ -752,13 +749,13 @@ const i18n = {
             offline_count: 'Offlayn',
             active_users_now: 'Faol foydalanuvchilar',
             system_uptime: 'Tizim ish vaqti',
-            key_indicators: 'Asosiy ko\u0442satkichlar',
+            key_indicators: 'Asosiy ko\u2019rsatkichlar',
             server_status: 'Server holati',
-            database_status: 'Ma\u043blumotlar bazasi holati',
+            database_status: 'Ma\u2019lumotlar bazasi holati',
             bot_status: 'Bot holati',
             total_devices: 'Jami qurilmalar',
             active_devices: 'Faol',
-            in_repair: 'Ta\u043cmirlashda',
+            in_repair: 'Ta\u2019mirlashda',
             decommissioned: 'Yozib tashlangan',
             categories: 'Kategoriyalar',
             articles: 'Maqolalar',
@@ -816,6 +813,7 @@ const i18n = {
             hud_in_progress: 'Jarayonda',
             hud_waiting: 'Javob kutilmoqda',
             hud_online: 'Onlayn',
+            hud_online_dot: 'ONLAYN',
             hud_idle: 'Harakatsiz',
             hud_offline: 'Offlayn',
             hud_created: 'Yaratilgan',
@@ -941,7 +939,6 @@ const i18n = {
             requests_coming_soon: "Xizmat arizalari bo‘limi keyingi versiyada mavjud bo‘ladi",
             tariffs: 'Tariflar',
         }
-    },
     },
 
     t(key) {

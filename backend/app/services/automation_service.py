@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models import Ticket, User, UserRole
 from app.logger import logger
-from app.services.notifications import notify_ticket_created, notify_status_changed
+from app.services.notifications import notify_status_changed
 
 class AutomationService:
     @staticmethod

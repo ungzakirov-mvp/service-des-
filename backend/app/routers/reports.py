@@ -260,7 +260,10 @@ def get_audit_report(
 ):
     date_from, date_to = get_period_dates(period)
     
-    events = db.query(TicketTimeline).filter(
+    events = db.query(TicketTimeline).join(
+        Ticket, TicketTimeline.ticket_id == Ticket.id
+    ).filter(
+        Ticket.tenant_id == current_user.tenant_id,
         TicketTimeline.created_at >= date_from,
         TicketTimeline.created_at <= date_to
     ).order_by(desc(TicketTimeline.created_at)).limit(500).all()
@@ -273,7 +276,7 @@ def get_audit_report(
         items.append({
             "id": e.id,
             "created_at": e.created_at.isoformat() if e.created_at else None,
-            "action": e.event_type.value if e.event_type else "",
+            "action": e.event_type if e.event_type else "",
             "content": e.content or "",
             "user_name": user.full_name if user else "",
             "user_email": user.email if user else "",

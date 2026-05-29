@@ -21,7 +21,7 @@ class TariffPlan(Base):
     sort_order = Column(Integer, default=0)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     features = relationship("TariffFeature", back_populates="tariff", cascade="all, delete-orphan", order_by="TariffFeature.sort_order")
 
@@ -45,7 +45,7 @@ class OrgSubscription(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
-    tariff_id = Column(Integer, ForeignKey("tariff_plans.id"), nullable=False)
+    tariff_id = Column(Integer, ForeignKey("tariff_plans.id", ondelete="RESTRICT"), nullable=False)
     status = Column(String(20), default="active")
     started_at = Column(DateTime(timezone=True), server_default=func.now())
     expires_at = Column(DateTime(timezone=True), nullable=True)
@@ -84,13 +84,13 @@ class ServiceRequest(Base):
     __tablename__ = "service_requests"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
-    requested_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    requested_by = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     status = Column(String(20), default="pending")
     total_monthly = Column(BigInteger, nullable=True)
     total_one_time = Column(BigInteger, nullable=True)
     notes = Column(Text, nullable=True)
-    reviewed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reviewed_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -104,7 +104,7 @@ class ServiceRequestItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     request_id = Column(Integer, ForeignKey("service_requests.id", ondelete="CASCADE"), nullable=False)
-    service_id = Column(Integer, ForeignKey("service_catalog.id"), nullable=False)
+    service_id = Column(Integer, ForeignKey("service_catalog.id", ondelete="RESTRICT"), nullable=False)
     quantity = Column(Integer, default=1)
     unit_price = Column(BigInteger, nullable=False)
     subtotal = Column(BigInteger, nullable=False)

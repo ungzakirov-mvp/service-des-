@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects import postgresql as unused_postgresql  # kept for reference
 
 # revision identifiers, used by Alembic.
 revision: str = '0c7241e355ea'
@@ -66,7 +66,7 @@ def upgrade() -> None:
     op.add_column('tickets', sa.Column('status_id', sa.Integer(), nullable=False))
     op.add_column('tickets', sa.Column('sla_due_at', sa.DateTime(timezone=True), nullable=True))
     op.alter_column('tickets', 'priority',
-               existing_type=postgresql.ENUM('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', name='ticketpriority'),
+               existing_type=sa.Enum('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', name='ticketpriority'),
                type_=sa.String(),
                existing_nullable=False)
     op.drop_index('ix_tickets_priority', table_name='tickets')
@@ -88,7 +88,7 @@ def downgrade() -> None:
     op.drop_column('users', 'avatar_url')
     op.drop_column('users', 'role')
     op.drop_column('users', 'tenant_id')
-    op.add_column('tickets', sa.Column('status', postgresql.ENUM('NEW', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', name='ticketstatus'), autoincrement=False, nullable=False))
+    op.add_column('tickets', sa.Column('status', sa.Enum('NEW', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', name='ticketstatus'), autoincrement=False, nullable=False))
     op.drop_constraint(None, 'tickets', type_='foreignkey')
     op.drop_constraint(None, 'tickets', type_='foreignkey')
     op.drop_index(op.f('ix_tickets_tenant_id'), table_name='tickets')
@@ -96,7 +96,7 @@ def downgrade() -> None:
     op.create_index('ix_tickets_priority', 'tickets', ['priority'], unique=False)
     op.alter_column('tickets', 'priority',
                existing_type=sa.String(),
-               type_=postgresql.ENUM('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', name='ticketpriority'),
+               type_=sa.Enum('LOW', 'MEDIUM', 'HIGH', 'CRITICAL', name='ticketpriority'),
                existing_nullable=False)
     op.drop_column('tickets', 'sla_due_at')
     op.drop_column('tickets', 'status_id')

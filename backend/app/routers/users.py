@@ -4,6 +4,7 @@ from typing import List, Optional
 from app.database import get_db
 from app.models import User, UserRole, Tenant
 from app.dependencies import get_current_user
+from app.authz import require_admin
 from app.security import hash_password
 from app import schemas
 
@@ -43,16 +44,12 @@ List users in the tenant. Filterable by role.
 @router.post("/", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(
     user_in: schemas.UserCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """
     Create a new user (Admin only).
     """
-    if current_user.role not in [UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.AGENT]: # Allow agents to create clients? Usually Admins.
-        # Let's restrict to Admin/Manager for now as per request "profile administrator"
-        if current_user.role != UserRole.ADMIN:
-             raise HTTPException(status_code=403, detail="Only admins can create users")
 
     # Check existence
     if db.query(User).filter(User.email == user_in.email).first():
@@ -107,14 +104,12 @@ def update_me(
 def update_user_admin(
     user_id: int,
     update_data: schemas.UserUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """
     Update any user (Admin only).
     """
-    if current_user.role not in [UserRole.ADMIN, UserRole.SUPER_ADMIN]:
-        raise HTTPException(status_code=403, detail="Только администраторы могут редактировать пользователей")
 
     user = db.query(User).filter(User.id == user_id, User.tenant_id == current_user.tenant_id).first()
     if not user:
@@ -135,14 +130,12 @@ def update_user_admin(
 @router.delete("/{user_id}", status_code=204)
 def delete_user(
     user_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
     """
     Delete a user (Admin only). Cannot delete yourself.
     """
-    if current_user.role not in [UserRole.ADMIN, UserRole.SUPER_ADMIN]:
-        raise HTTPException(status_code=403, detail="Только администраторы могут удалять пользователей")
 
     if current_user.id == user_id:
         raise HTTPException(status_code=400, detail="Нельзя удалить свой аккаунт")

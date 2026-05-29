@@ -34,3 +34,17 @@ scripts/check_*.py
 data/*.db
 data/*.db-*
 ssl/
+
+# Backups & temp data
+backup/
+data/*.py
+data/*.db-*
+# Planning docs
+STAGE_B_PLAN.md
+affected_endpoints.md
+authorization_map.md
+pg_compatibility_notes.md
+tenant_safety_checklist.md
+# Temp scripts
+backend/test_pg_info_schema.py
+backend/write_migration.py

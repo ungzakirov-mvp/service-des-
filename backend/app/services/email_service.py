@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy.orm import Session
 from app.models import User, Ticket, Tenant, TicketStatus, TicketTimeline, TimelineEventType, UserRole
 from app.security import hash_password
@@ -11,22 +12,26 @@ def process_inbound_email(
     email_from: str,
     subject: str,
     body: str,
-    sender_name: str = None
+    sender_name: str = None,
+    tenant_id: Optional[int] = None,
 ):
     """
     Parses an inbound email and creates a ticket.
     If user doesn't exist, creates a Client account in Demo Tenant.
     """
     
-    # 1. Resolve Tenant (For MVP, hardcode to Demo or find by domain)
-    # Ideally: analyze "To" address (support@tenant.upservice.io)
-    # Fallback to default Demo tenant
-    tenant = db.query(Tenant).filter(Tenant.slug == "demo").first()
-    if not tenant:
-        # Fallback to any first tenant if demo missing
-        tenant = db.query(Tenant).first()
+    # 1. Resolve Tenant
+    if tenant_id is not None:
+        tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
         if not tenant:
-            raise Exception("No tenant configured")
+            raise Exception(f"Tenant {tenant_id} not found")
+    else:
+        # Legacy fallback -- for backward compat only
+        tenant = db.query(Tenant).filter(Tenant.slug == "demo").first()
+        if not tenant:
+            tenant = db.query(Tenant).first()
+            if not tenant:
+                raise Exception("No tenant configured")
 
     # 2. Find or Create User
     user = db.query(User).filter(User.email == email_from).first()

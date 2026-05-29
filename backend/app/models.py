@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, JSON, Time
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, JSON, Time, Table
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.database import Base
@@ -58,7 +58,7 @@ class Company(Base):
     __tablename__ = "companies"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     name = Column(String, nullable=False)
     legal_name = Column(String, nullable=True)
     inn = Column(String, nullable=True)
@@ -84,8 +84,8 @@ class CompanySubscription(Base):
     __tablename__ = "company_subscriptions"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
     service_name = Column(String, nullable=False)
     plan = Column(String, nullable=True)
     license_count = Column(Integer, nullable=True)
@@ -109,8 +109,8 @@ class CompanyEmployee(Base):
     __tablename__ = "company_employees"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, index=True)
     full_name = Column(String, nullable=False)
     position = Column(String, nullable=True)
     department = Column(String, nullable=True)
@@ -129,12 +129,12 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=True) # Nullable only for Super Admins
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=True) # Nullable only for Super Admins
     email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
     role = Column(String, default=UserRole.CLIENT)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="SET NULL"), nullable=True)
     is_active = Column(Boolean, default=True)
     avatar_url = Column(String, nullable=True)
     is_available = Column(Boolean, default=True) # For Auto-routing
@@ -142,7 +142,7 @@ class User(Base):
     telegram_chat_id = Column(String, nullable=True) # Link to TG User
     anudesk_email = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     tenant = relationship("Tenant", back_populates="users")
     company = relationship("Company", back_populates="contacts")
@@ -164,11 +164,11 @@ class UserOrganization(Base):
     __tablename__ = "user_organizations"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     is_default = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
-    role_in_org = Column(String, default=UserRole.AGENT)
+    role = Column(String, default=UserRole.AGENT)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User")
@@ -179,7 +179,7 @@ class RefreshToken(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     token_hash = Column(String, unique=True, nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     revoked = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -191,7 +191,7 @@ class TicketStatus(Base):
     __tablename__ = "ticket_statuses"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     name = Column(String, nullable=False)
     color = Column(String, default="#808080")  # Hex color for badges
     order = Column(Integer, default=0)         # Kanban order
@@ -204,34 +204,34 @@ class Ticket(Base):
     __tablename__ = "tickets"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
     readable_id = Column(Integer, nullable=False)
     
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     
-    status_id = Column(Integer, ForeignKey("ticket_statuses.id"), nullable=False)
+    status_id = Column(Integer, ForeignKey("ticket_statuses.id", ondelete="RESTRICT"), nullable=False)
     priority = Column(String, default=TicketPriority.MEDIUM, nullable=False)
     category = Column(String, nullable=True)
     tags = Column(JSON, default=[])
     
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    assigned_to = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="SET NULL"), nullable=True)
     
     sla_due_at = Column(DateTime(timezone=True), nullable=True)
     scheduled_at = Column(DateTime(timezone=True), nullable=True)
     accepted_at = Column(DateTime(timezone=True), nullable=True)
     first_response_at = Column(DateTime(timezone=True), nullable=True)
     resolved_at = Column(DateTime(timezone=True), nullable=True)
-    resolved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    closed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    resolved_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    closed_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     
     rating = Column(Integer, nullable=True)
     rating_comment = Column(Text, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     tenant = relationship("Tenant")
     status_rel = relationship("TicketStatus", back_populates="tickets")
@@ -254,15 +254,15 @@ class Attachment(Base):
     __tablename__ = "attachments"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    ticket_id = Column(Integer, ForeignKey("tickets.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    ticket_id = Column(Integer, ForeignKey("tickets.id", ondelete="CASCADE"), nullable=False)
     
     filename = Column(String(255), nullable=False)
     file_path = Column(String(500), nullable=False)
     file_size = Column(Integer)  # bytes
     mime_type = Column(String(100))
     
-    uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    uploaded_by = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     tenant = relationship("Tenant")
@@ -277,8 +277,8 @@ class TicketTimeline(Base):
     __tablename__ = "ticket_timeline"
 
     id = Column(Integer, primary_key=True, index=True)
-    ticket_id = Column(Integer, ForeignKey("tickets.id"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False) # Actor
+    ticket_id = Column(Integer, ForeignKey("tickets.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False) # Actor
     
     event_type = Column(String, default=TimelineEventType.COMMENT)
     content = Column(Text, nullable=True) # Message body or system text
@@ -295,8 +295,8 @@ class Notification(Base):
     __tablename__ = "notifications"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     
     title = Column(String, nullable=False)
     message = Column(Text, nullable=False)
@@ -310,7 +310,7 @@ class SLAPolicy(Base):
     __tablename__ = "sla_policies"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     name = Column(String, nullable=False)
     priority = Column(String, nullable=False) # e.g. "критичный"
     response_time_minutes = Column(Integer)
@@ -324,9 +324,9 @@ class TimeEntry(Base):
     __tablename__ = "time_entries"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    ticket_id = Column(Integer, ForeignKey("tickets.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    ticket_id = Column(Integer, ForeignKey("tickets.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     
     # Timer fields
     started_at = Column(DateTime(timezone=True), nullable=True)  # When timer was started
@@ -346,16 +346,16 @@ class CannedResponse(Base):
     __tablename__ = "canned_responses"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     
-    title = Column(String, nullable=False)           # "Перезагрузка"
-    shortcut = Column(String, nullable=True)         # "/reboot" для быстрого поиска
-    content = Column(Text, nullable=False)           # Текст ответа
-    is_personal = Column(Boolean, default=False)     # Личный или общий
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    shortcut = Column(String, nullable=True)
+    content = Column(Text, nullable=False)
+    is_personal = Column(Boolean, default=False)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     tenant = relationship("Tenant")
     creator = relationship("User")
@@ -365,15 +365,15 @@ class TicketChecklist(Base):
     __tablename__ = "ticket_checklists"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    ticket_id = Column(Integer, ForeignKey("tickets.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    ticket_id = Column(Integer, ForeignKey("tickets.id", ondelete="CASCADE"), nullable=False)
     
-    title = Column(String, nullable=False)           # "Диагностика сети"
-    description = Column(Text, nullable=True)        # Описание шага
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
     is_completed = Column(Boolean, default=False)
-    completed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    completed_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
-    order = Column(Integer, default=0)               # Порядок выполнения
+    order = Column(Integer, default=0)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
@@ -386,12 +386,12 @@ class TicketRating(Base):
     __tablename__ = "ticket_ratings"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    ticket_id = Column(Integer, ForeignKey("tickets.id"), nullable=False, unique=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    ticket_id = Column(Integer, ForeignKey("tickets.id", ondelete="CASCADE"), nullable=False, unique=True)
     
-    rating = Column(Integer, nullable=False)         # 1-5 звезд
-    comment = Column(Text, nullable=True)            # "Отличная работа!"
-    is_public = Column(Boolean, default=False)       # Показывать ли в публичном рейтинге
+    rating = Column(Integer, nullable=False)
+    comment = Column(Text, nullable=True)
+    is_public = Column(Boolean, default=False)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
@@ -403,15 +403,15 @@ class InternalNote(Base):
     __tablename__ = "internal_notes"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    ticket_id = Column(Integer, ForeignKey("tickets.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    ticket_id = Column(Integer, ForeignKey("tickets.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     
     content = Column(Text, nullable=False)
-    is_pinned = Column(Boolean, default=False)       # Закрепленная заметка
+    is_pinned = Column(Boolean, default=False)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     tenant = relationship("Tenant")
     ticket = relationship("Ticket", back_populates="internal_notes")
@@ -422,21 +422,18 @@ class AutomationRule(Base):
     __tablename__ = "automation_rules"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
-    order = Column(Integer, default=0)               # Порядок выполнения правил
+    order = Column(Integer, default=0)
     
-    # Условия (JSON для гибкости)
-    conditions = Column(JSON, default={})            # {"field": "priority", "operator": "equals", "value": "critical"}
-    
-    # Действия
-    actions = Column(JSON, default={})               # {"action": "assign_agent", "value": 5}
+    conditions = Column(JSON, default={})
+    actions = Column(JSON, default={})
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     tenant = relationship("Tenant")
 
@@ -445,12 +442,11 @@ class BusinessHours(Base):
     __tablename__ = "business_hours"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
     
-    name = Column(String, nullable=False)            # "Стандартный график"
+    name = Column(String, nullable=False)
     timezone = Column(String, default="Asia/Tashkent")
     
-    # Рабочие дни (JSON)
     schedule = Column(JSON, default={
         "monday": {"start": "09:00", "end": "18:00", "is_working": True},
         "tuesday": {"start": "09:00", "end": "18:00", "is_working": True},
@@ -461,7 +457,7 @@ class BusinessHours(Base):
         "sunday": {"is_working": False}
     })
     
-    holidays = Column(JSON, default=[])              # ["2024-01-01", "2024-03-08"]
+    holidays = Column(JSON, default=[])
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
@@ -472,36 +468,33 @@ class CustomerAsset(Base):
     __tablename__ = "customer_assets"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
     readable_id = Column(String, nullable=True, unique=True)
     
-    asset_type = Column(String, nullable=False)      # "computer", "server", "printer", "network"
-    name = Column(String, nullable=False)            # "PC-001"
-    model = Column(String, nullable=True)            # "Dell OptiPlex 7090"
+    asset_type = Column(String, nullable=False)
+    name = Column(String, nullable=False)
+    model = Column(String, nullable=True)
     serial_number = Column(String, nullable=True)
     inventory_number = Column(String, nullable=True)
-    condition = Column(String, default="good")       # "new", "excellent", "good", "fair", "poor", "damaged", "broken"
+    condition = Column(String, default="good")
     
-    # Спецификации
-    specifications = Column(JSON, default={})        # {"cpu": "i7", "ram": "16GB", "disk": "512GB SSD"}
+    specifications = Column(JSON, default={})
     
-    # Доступ
-    remote_access_id = Column(String, nullable=True) # TeamViewer ID
+    remote_access_id = Column(String, nullable=True)
     remote_access_password = Column(String, nullable=True)
     
-    # Гарантия
     purchase_date = Column(DateTime(timezone=True), nullable=True)
     warranty_end = Column(DateTime(timezone=True), nullable=True)
     
-    status = Column(String, default="active")        # "active", "repair", "retired"
-    assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
+    status = Column(String, default="active")
+    assigned_to = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     assigned_at = Column(DateTime(timezone=True), nullable=True)
-    location = Column(String, nullable=True)          # "Офис, этаж 3, каб. 305"
+    location = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     tenant = relationship("Tenant")
     company = relationship("Company")
@@ -513,10 +506,10 @@ class AssetAssignment(Base):
     __tablename__ = "asset_assignments"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    asset_id = Column(Integer, ForeignKey("customer_assets.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    assigned_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    asset_id = Column(Integer, ForeignKey("customer_assets.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
+    assigned_by = Column(Integer, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False)
     assigned_at = Column(DateTime(timezone=True), server_default=func.now())
     returned_at = Column(DateTime(timezone=True), nullable=True)
     return_condition = Column(String, nullable=True)
@@ -531,14 +524,14 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Null for system actions or failed logins
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     
-    action = Column(String(100), nullable=False) # e.g., TICKET_CREATE, USER_LOGIN_FAILED
-    target_type = Column(String(50)) # e.g., ticket, user, company
+    action = Column(String(100), nullable=False)
+    target_type = Column(String(50))
     target_id = Column(Integer)
     
-    details = Column(JSON) # JSON data about the change
+    details = Column(JSON)
     ip_address = Column(String(45))
     user_agent = Column(String(255))
     
@@ -552,22 +545,40 @@ class CompanyDashboardSettings(Base):
     __tablename__ = "company_dashboard_settings"
 
     id = Column(Integer, primary_key=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=False)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, unique=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
     settings = Column(JSON, default={})
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     tenant = relationship("Tenant")
     company = relationship("Company")
 
+
+class MonitoringMetric(Base):
+    __tablename__ = "monitoring_metrics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)
+    org_id = Column(Integer, default=1)
+    host_name = Column(String(255), default="unknown")
+    host_ip = Column(String(45), default="0.0.0.0")
+    metric_name = Column(String(255), nullable=False)
+    metric_value = Column(String(100), nullable=False)
+    metric_unit = Column(String(50), default="")
+    status = Column(String(50), default="ok")
+    collected_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    tenant = relationship("Tenant")
+
+
 # Association table for Ticket <-> CustomerAsset
-from sqlalchemy import Table
 ticket_assets = Table(
     'ticket_assets',
     Base.metadata,
-    Column('ticket_id', Integer, ForeignKey('tickets.id')),
-    Column('asset_id', Integer, ForeignKey('customer_assets.id'))
+    Column('ticket_id', Integer, ForeignKey('tickets.id', ondelete="CASCADE")),
+    Column('asset_id', Integer, ForeignKey('customer_assets.id', ondelete="CASCADE"))
 )
 
 # Add backrefs

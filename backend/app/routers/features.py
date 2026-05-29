@@ -443,7 +443,8 @@ def get_agent_rating_summary(
     """Сводка рейтинга агента"""
     # Находим тикеты назначенные агенту
     tickets = db.query(models.Ticket.id).filter(
-        models.Ticket.assigned_to == agent_id
+        models.Ticket.assigned_to == agent_id,
+        models.Ticket.tenant_id == current_user.tenant_id
     ).subquery()
     
     ratings = db.query(models.TicketRating).filter(

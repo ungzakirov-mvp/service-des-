@@ -19,8 +19,17 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Use alter_column with new_column_name to preserve data
-    op.alter_column('companies', 'metadata', new_column_name='extra_metadata')
+    # Guard: companies table may not exist on fresh DB (created by application code)
+    conn = op.get_bind()
+    if conn.dialect.name == 'sqlite':
+        tables = [row[0] for row in conn.execute(sa.text("SELECT name FROM sqlite_master WHERE type='table'")).fetchall()]
+    else:
+        tables = [row[0] for row in conn.execute(sa.text("SELECT table_name FROM information_schema.tables")).fetchall()]
+    if 'companies' in tables:
+        # Use alter_column with new_column_name to preserve data
+        op.alter_column('companies', 'metadata', new_column_name='extra_metadata')
+    else:
+        print("SKIP: companies table not found, skipping metadata rename")
 
 
 def downgrade() -> None:

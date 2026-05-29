@@ -11,6 +11,7 @@ class APIClient {
     async request(endpoint, options = {}) {
         const headers = {
             'Content-Type': 'application/json',
+            'Accept-Language': localStorage.getItem('locale') || 'ru',
             ...options.headers
         };
 

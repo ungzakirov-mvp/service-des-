@@ -16,9 +16,14 @@ from app.models import (
     Company, CompanySubscription, CompanyEmployee, SLAPolicy,
     TimeEntry, CannedResponse, TicketChecklist, TicketRating,
     InternalNote, AutomationRule, BusinessHours, CustomerAsset,
-    AssetAssignment, AssetMovement, KBCategory, KBArticle, AuditLog,
+    AssetAssignment, AuditLog,
+    CompanyDashboardSettings, RefreshToken, UserOrganization, Attachment,
     ticket_assets
 )
+
+# Also register tariff/org models
+from app import models_tariffs
+
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
