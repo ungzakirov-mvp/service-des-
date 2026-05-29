@@ -341,8 +341,8 @@ function renderCriticalBlock(d) {
     var prioColor = isP1 ? 'j-red' : 'j-amber';
     var slaColor = t.sla_remaining_minutes < 0 ? 'j-red' : 'j-amber';
     html += '<div class="' + rowClass + '" style="cursor:pointer;">' +
-      '<span class="' + prioColor + '" style="font-size:13px;font-weight:500;width:36px;">[' + prioLabel + ']</span>' +
-      '<span class="j-dim" style="font-size:12px;width:56px;">#' + t.number + '</span>' +
+      '<span class="' + prioColor + '" style="font-size:13px;font-weight:500;flex-shrink:0;">[' + prioLabel + ']</span>' +
+      '<span class="j-dim" style="font-size:12px;white-space:nowrap;">#' + t.number + '</span>' +
       '<span style="flex:1;color:#e6f4ff;">' + escapeHtml(t.title) + '</span>' +
       '<span class="' + slaColor + '" style="font-size:14px;font-weight:500;">' + formatSla(t.sla_remaining_minutes) + '</span>' +
     '</div>';
