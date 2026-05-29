@@ -81,12 +81,16 @@ def get_dashboard(
     total_open = open_q.count()
     assigned = open_q.filter(Ticket.assigned_to != None).count()
     unassigned = total_open - assigned
-    in_progress = open_q.filter(Ticket.status_id.in_(
-        db.query(TicketStatus.id).filter(TicketStatus.tenant_id.in_(tenant_ids), TicketStatus.name.ilike("%в работе%"))
-    )).count() if rid else 0
-    waiting_user = open_q.filter(Ticket.status_id.in_(
-        db.query(TicketStatus.id).filter(TicketStatus.tenant_id.in_(tenant_ids), TicketStatus.name.ilike("%ожида%"))
-    )).count() if rid else 0
+    in_progress_ids = [s[0] for s in db.query(TicketStatus.id).filter(
+        TicketStatus.tenant_id.in_(tenant_ids),
+        TicketStatus.name == "В работе"
+    ).all()]
+    in_progress = open_q.filter(Ticket.status_id.in_(in_progress_ids)).count() if in_progress_ids else 0
+    waiting_ids = [s[0] for s in db.query(TicketStatus.id).filter(
+        TicketStatus.tenant_id.in_(tenant_ids),
+        TicketStatus.name == "Ожидает клиента"
+    ).all()]
+    waiting_user = open_q.filter(Ticket.status_id.in_(waiting_ids)).count() if waiting_ids else 0
 
     # Today's counts (using UTC for simplicity with SQLite)
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)

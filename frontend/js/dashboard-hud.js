@@ -19,35 +19,11 @@ function _t(key, fallback) {
   return fallback || key;
 }
 
-// --- MOCK DATA (заменить на API) ---
-var MOCK = {
-  queue: { open: 147, new_today: 62, resolved_today: 78, assigned: 129, unassigned: 18, in_progress: 94, waiting_user: 35 },
-  sla: { compliance_pct: 93.2, compliance_delta_24h: 2.1, breached: 9, at_risk: 14 },
-  priority: { p1: { count: 12, pct: 8 }, p2: { count: 35, pct: 24 }, p3: { count: 66, pct: 45 }, p4: { count: 34, pct: 23 } },
-  agents: [
-    { id: '1', name: '\u0428\u0430\u0432\u043a\u0430\u0442 \u041a.', status: 'online', active_tickets: 14, capacity_pct: 95 },
-    { id: '2', name: '\u0414\u0438\u043b\u043d\u0443\u0440\u0430 \u0410.', status: 'online', active_tickets: 9, capacity_pct: 65 },
-    { id: '3', name: '\u0411\u0435\u043a\u0437\u043e\u0434 \u041c.', status: 'online', active_tickets: 6, capacity_pct: 42 },
-    { id: '4', name: '\u0410\u043b\u0438\u0448\u0435\u0440 \u0422.', status: 'idle', active_tickets: 3, capacity_pct: 22 },
-    { id: '5', name: 'Akbarov O.', status: 'online', active_tickets: 5, capacity_pct: 35 }
-  ],
-  critical_tickets: [
-    { id: '1', number: 4821, title: '\u041d\u0435 \u0440\u0430\u0431\u043e\u0442\u0430\u0435\u0442 1\u0421 \u2014 \u043e\u0442\u0434\u0435\u043b \u043f\u0440\u043e\u0434\u0430\u0436', priority: 'p1', sla_remaining_minutes: -47 },
-    { id: '2', number: 4815, title: 'Email-\u0441\u0435\u0440\u0432\u0435\u0440 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d', priority: 'p1', sla_remaining_minutes: -12 },
-    { id: '3', number: 4830, title: 'VPN \u0442\u043e\u0440\u043c\u043e\u0437\u0438\u0442 \u0443 \u0443\u0434\u0430\u043b\u0451\u043d\u043d\u044b\u0445', priority: 'p2', sla_remaining_minutes: 38 },
-    { id: '4', number: 4807, title: '\u041f\u0440\u0438\u043d\u0442\u0435\u0440 \u043d\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0435\u0442 \u2014 \u0431\u0443\u0445\u0433\u0430\u043b\u0442\u0435\u0440\u0438\u044f', priority: 'p2', sla_remaining_minutes: 82 }
-  ],
-  kpi: { mttr_minutes: 258, mtta_minutes: 8.4, fcr_pct: 71, csat: 4.6, backlog_7d: 23 },
-  flow_14d: {
-    labels: ['1','2','3','4','5','6','7','8','9','10','11','12','13','14'],
-    created: [58,62,71,55,48,32,65,68,72,59,51,30,68,74],
-    resolved: [52,58,67,62,45,28,61,65,70,63,55,28,66,71],
-    breached: [4,5,7,3,2,1,5,6,8,4,3,1,7,8]
-  }
-};
+// Data loaded from API
 
 // --- HELPERS ---
 function formatSla(minutes) {
+  if (minutes == null || isNaN(minutes)) return 'SLA --:--';
   var abs = Math.abs(minutes);
   var h = String(Math.floor(abs / 60)).padStart(2, '0');
   var m = String(abs % 60).padStart(2, '0');
@@ -55,6 +31,7 @@ function formatSla(minutes) {
 }
 
 function formatDuration(min) {
+  if (min == null || isNaN(min)) return '--:--:--';
   var h = Math.floor(min / 60);
   var m = Math.floor(min % 60);
   return h + ':' + String(m).padStart(2, '0') + ':00';
@@ -132,15 +109,10 @@ var HUD_STYLES = `
 @media(max-width:480px){.j-num-xl{font-size:30px}.j-num-md{font-size:18px}.j-num-sm{font-size:14px}.j-panel{padding:10px 8px}.j-trow{padding:8px 8px;font-size:11px;gap:6px}.j-agent-row{font-size:12px;gap:6px}.j-mrow{padding:8px 0}.j-lbl{font-size:9px}.j-lbl-lg{font-size:10px}.j-root{padding:8px 6px}}
 `;
 
-// --- ORG LIST (mock, потом API) ---
-var ORGS = [
-  { id: 1, name: 'NOVUM TECH' },
-  { id: 2, name: 'UZPHARMA LLC' },
-  { id: 3, name: 'TASHKENT TRADING' }
-];
+// Org name from currentUser (no hardcoded list)
 
 // --- RENDER ---
-function loadHUDDashboard() {
+async function loadHUDDashboard() {
   var container = document.getElementById('hudDashboard');
   if (!container) return;
 
@@ -152,18 +124,30 @@ function loadHUDDashboard() {
     document.head.appendChild(styleEl);
   }
 
-  // Initial org name from current user
+  // Org name from current user
   HUD.orgName = 'NOVUM TECH';
-  if (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant_id) {
-    var found = ORGS.find(function(o) { return o.id === currentUser.tenant_id; });
-    if (found) HUD.orgName = found.name;
+  if (typeof currentUser !== 'undefined' && currentUser) {
+    HUD.orgName = currentUser.tenant_name || currentUser.company_name || 'NOVUM TECH';
   }
 
   HUD.intervals.forEach(function(i) { clearInterval(i); });
   HUD.intervals = [];
 
-  // Use mock for now, replace with API later
-  HUD.data = MOCK;
+  // Load real data from API
+  try {
+    HUD.data = await api.request('/dashboard');
+  } catch (e) {
+    console.error('HUD dashboard API error:', e);
+    HUD.data = {
+      queue: { open: 0, new_today: 0, resolved_today: 0, assigned: 0, unassigned: 0, in_progress: 0, waiting_user: 0 },
+      sla: { compliance_pct: null, compliance_delta_24h: null, breached: 0, at_risk: 0 },
+      priority: { p1: { count: 0, pct: 0 }, p2: { count: 0, pct: 0 }, p3: { count: 0, pct: 0 }, p4: { count: 0, pct: 0 } },
+      agents: [],
+      critical_tickets: [],
+      flow_14d: { labels: [], created: [], resolved: [], breached: [] },
+      kpi: { mttr_minutes: null, mtta_minutes: null, fcr_pct: null, csat: null, backlog_7d: 0 }
+    };
+  }
   renderHUD(container);
 
   HUD.intervals.push(setInterval(updateHUDClock, 1000));
@@ -183,18 +167,9 @@ function renderHUD(container) {
         '<span style="font-size:17px;letter-spacing:.28em;color:#00d4ff;font-weight:500;text-shadow:0 0 15px rgba(0,212,255,.5);">SERVICE DESK // ' + _t('hud_monitoring', '\u041c\u041e\u041d\u0418\u0422\u041e\u0420\u0418\u041d\u0413') + '</span>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:18px;position:relative;">' +
-        '<div style="position:relative;" id="hudOrgSwitcher">' +
-          '<button class="j-org-btn" id="hudOrgBtn">' +
-            '<span class="j-dim" style="font-size:10px;">[ ORG ]</span>' +
-            '<span id="hudOrgName">' + escapeHtml(HUD.orgName) + '</span>' +
-            '<span id="hudOrgArrow">\u25BE</span>' +
-          '</button>' +
-          '<div class="j-org-dd" id="hudOrgDropdown" style="display:none;">' +
-            ORGS.map(function(o) {
-              return '<div class="j-org-item" data-org-id="' + o.id + '">' + escapeHtml(o.name) + '</div>';
-            }).join('') +
-            '<div class="j-org-item" data-org-id="all"><span class="j-cyan">\u2605 ' + _t('hud_all_orgs', '\u0412\u0421\u0415 \u041e\u0420\u0413\u0410\u041d\u0418\u0417\u0410\u0426\u0418\u0418') + '</span></div>' +
-          '</div>' +
+        '<div style="position:relative;">' +
+          '<span class="j-dim" style="font-size:10px;">[ ORG ]</span>' +
+          '<span style="font-size:14px;color:#00d4ff;margin-left:6px;">' + escapeHtml(HUD.orgName) + '</span>' +
         '</div>' +
         '<span style="font-size:12px;" class="j-dim"><span class="j-pdot j-pulse" style="display:inline-block;vertical-align:middle;margin-right:7px;"></span>' + _t('hud_online', 'ONLINE') + '</span>' +
         '<span style="font-size:12px;" class="j-dim" id="hudClock">SYNC 00:00:00</span>' +
@@ -244,9 +219,9 @@ function renderHUD(container) {
       '<div class="j-panel">' +
         '<div class="j-lbl">' + _t('hud_compliance', 'SLA \u0412\u042b\u041f\u041e\u041b\u041d\u0415\u041d\u0418\u0415') + '</div>' +
         '<div style="margin-top:14px;">' +
-          '<span class="j-num-xl j-green j-glow-g">' + d.sla.compliance_pct + '<span style="font-size:30px;">%</span></span>' +
+          '<span class="j-num-xl j-green j-glow-g">' + (d.sla.compliance_pct != null ? d.sla.compliance_pct + '<span style="font-size:30px;">%</span>' : '--') + '</span>' +
         '</div>' +
-        '<div style="font-size:12px;margin-top:10px;letter-spacing:.06em;" class="j-dim">\u2191 ' + d.sla.compliance_delta_24h + '% / 24\u0427</div>' +
+        '<div style="font-size:12px;margin-top:10px;letter-spacing:.06em;" class="j-dim">\u2191 ' + (d.sla.compliance_delta_24h != null ? d.sla.compliance_delta_24h + '% / 24\u0427' : '--') + '</div>' +
       '</div>' +
 
     '</div>' +
@@ -315,19 +290,16 @@ function renderHUD(container) {
         '<span class="j-lbl-lg">' + _t('hud_metrics', '\u041a\u041b\u042e\u0427\u0415\u0412\u042b\u0415 \u041c\u0415\u0422\u0420\u0418\u041a\u0418') + '</span>' +
         '<div style="margin-top:14px;">' +
           renderMetricRow(_t('hud_mttr', '\u0421\u0420\u0415\u0414\u041d\u0415\u0415 \u0412\u0420\u0415\u041c\u042f \u0420\u0415\u0428\u0415\u041d\u0418\u042f'), formatDuration(d.kpi.mttr_minutes), 'j-cyan j-glow-c') +
-          renderMetricRow(_t('hud_mtta', '\u041f\u0415\u0420\u0412\u042b\u0419 \u041e\u0422\u0412\u0415\u0422'), Math.floor(d.kpi.mtta_minutes) + ':' + String(Math.round((d.kpi.mtta_minutes % 1) * 60)).padStart(2, '0') + ':00', 'j-cyan j-glow-c') +
-          renderMetricRow(_t('hud_fcr', '\u0420\u0415\u0428\u0415\u041d\u041e \u0421 1-\u0413\u041e \u0420\u0410\u0417\u0410'), d.kpi.fcr_pct + '%', 'j-green j-glow-g') +
-          renderMetricRow('CSAT', d.kpi.csat + ' / 5.0', 'j-green j-glow-g') +
-          renderMetricRow(_t('hud_backlog', '\u0411\u042d\u041a\u041b\u041e\u0413 >7\u0414'), d.kpi.backlog_7d, 'j-amber j-glow-a') +
+          renderMetricRow(_t('hud_mtta', '\u041f\u0415\u0420\u0412\u042b\u0419 \u041e\u0422\u0412\u0415\u0422'), d.kpi.mtta_minutes != null ? formatDuration(d.kpi.mtta_minutes) : '--:--:--', 'j-cyan j-glow-c') +
+          renderMetricRow(_t('hud_fcr', '\u0420\u0415\u0428\u0415\u041d\u041e \u0421 1-\u0413\u041e \u0420\u0410\u0417\u0410'), d.kpi.fcr_pct != null ? d.kpi.fcr_pct + '%' : '--', 'j-green j-glow-g') +
+          renderMetricRow('CSAT', d.kpi.csat != null ? d.kpi.csat + ' / 5.0' : '--', 'j-green j-glow-g') +
+          renderMetricRow(_t('hud_backlog', '\u0411\u042d\u041a\u041b\u041e\u0413 >7\u0414'), d.kpi.backlog_7d != null ? d.kpi.backlog_7d : '0', 'j-amber j-glow-a') +
         '</div>' +
       '</div>' +
 
     '</div>' +
 
   '</div>';
-
-  // Bind org switcher events
-  bindOrgSwitcher();
 
   // Render chart
   renderFlowChart();
@@ -431,43 +403,7 @@ function renderFlowChart() {
   });
 }
 
-function bindOrgSwitcher() {
-  var btn = document.getElementById('hudOrgBtn');
-  var dd = document.getElementById('hudOrgDropdown');
-  var nameEl = document.getElementById('hudOrgName');
-  var arrowEl = document.getElementById('hudOrgArrow');
-
-  if (!btn || !dd) return;
-
-  btn.onclick = function(e) {
-    e.stopPropagation();
-    HUD.orgOpen = !HUD.orgOpen;
-    dd.style.display = HUD.orgOpen ? 'block' : 'none';
-    if (arrowEl) arrowEl.textContent = HUD.orgOpen ? '\u25B4' : '\u25BE';
-  };
-
-  dd.querySelectorAll('.j-org-item').forEach(function(item) {
-    item.onclick = function(e) {
-      e.stopPropagation();
-      var orgId = this.dataset.orgId;
-      var name = this.textContent.trim();
-      if (nameEl) nameEl.textContent = name;
-      HUD.orgName = name;
-      HUD.orgOpen = false;
-      dd.style.display = 'none';
-      if (arrowEl) arrowEl.textContent = '\u25BE';
-      // TODO: fetch data for selected org: fetch('/api/dashboard?org_id=' + orgId)
-    };
-  });
-
-  document.addEventListener('click', function() {
-    if (HUD.orgOpen) {
-      HUD.orgOpen = false;
-      dd.style.display = 'none';
-      if (arrowEl) arrowEl.textContent = '\u25BE';
-    }
-  });
-}
+// Org switcher removed — API always scopes to current tenant
 
 function updateHUDClock() {
   var el = document.getElementById('hudClock');
@@ -482,13 +418,13 @@ function updateHUDClock() {
 (function() {
   var dv = document.getElementById('dashboardView');
   if (dv && !dv.classList.contains('hidden')) {
-    loadHUDDashboard();
+    loadHUDDashboard()['catch'](function(e) { console.error('HUD load error', e); });
   }
 })();
 
 window.loadHUDDashboard = loadHUDDashboard;
 document.addEventListener('localeChanged', function() {
   var c = document.getElementById('hudDashboard');
-  if (c) renderHUD(c);
+  if (c) loadHUDDashboard();
 });
 window.HUD = HUD;
