@@ -48,3 +48,4 @@ tenant_safety_checklist.md
 # Temp scripts
 backend/test_pg_info_schema.py
 backend/write_migration.py
+data/*.db.*
